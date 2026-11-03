@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the path from problem to signal</title>
+<style>
+:root{--bg:#f5f3ee;--panel:#ffffff;--ink:#1b2430;--muted:#56616e;--line:#d6d1c5;--soft:#ece8de;--accent:#1d5876;--accent-ink:#ffffff;--accent-soft:#e3eef4;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#0a4fc4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:#8a8577}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.pcard.ok{border-left:5px solid var(--ok)}
+.pcard.near{border-left:5px solid var(--near)}
+.pcard.bad{border-left:5px solid var(--bad)}
+.pcard .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.pcard .ptitle{font-weight:600}
+.pcard .pdesc{color:var(--muted);font-size:.93rem}
+.pcard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.pcard .fb{grid-column:1 / -1;margin-top:.2rem}
+li.divider{margin:14px 0;padding:6px 0;text-align:center;font-weight:700;color:var(--accent);border-top:3px solid var(--accent);border-bottom:1px dashed var(--accent);letter-spacing:.04em;text-transform:uppercase;font-size:.85rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pcard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Process assembly</p>
+<h1>Assemble the path from problem to signal</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-problem">
+<h2 id="h-problem">The problem</h2>
+<fieldset id="problem"><legend id="problemLegend"></legend></fieldset>
+<div class="fb" id="fb-problem" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-path">
+<h2 id="h-path">The path</h2>
+<p id="pathNote"></p>
+<ol class="path" id="path"></ol>
+<div class="fb" id="fb-path" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-signal">
+<h2 id="h-signal">The signal</h2>
+<fieldset id="signal"><legend id="signalLegend"></legend></fieldset>
+<div class="fb" id="fb-signal" role="status" aria-live="polite"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my assembly</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A mandate is the agreed statement of what an engagement is for, what it covers, who decides, and what it excludes. Assemble the path that produces one: choose the sentence that states the problem, put the moves in the order they must run, and choose the signal that shows the work succeeded.`,
+ terms:[
+  ['Handoff','The point where the mandate work ends and discovery begins.'],
+  ['Entry conditions','The open questions and non-goals that discovery starts from.'],
+  ['Non-goal','Something the engagement has decided not to do.']
+ ],
+ problemLegend:'Which sentence states the problem in operational terms?',
+ problem:[
+  {id:'pa',text:'The pilot works, so the assistant should reach every region by year end.',
+   whyNot:'That is the sponsor\'s request. It is a goal, and it names no obstacle.'},
+  {id:'pb',ok:true,text:`Discovery is next, but three things are undefined: what the engineer answers for, what the client keeps, and which of ${fmt(8)} candidates the engagement has taken on. Interviews now would gather a great deal and settle nothing.`,
+   okMsg:'The problem is a missing frame, stated as three undefined things. That is what the mandate work supplies.'},
+  {id:'pc',text:'Adjusters spend too long assembling claim information, so the assistant needs better inputs.',
+   whyNot:'That is a cause of slow claims, not what blocks the engagement from starting.'},
+  {id:'pd',text:'The charter names the sponsor as owner of everything, so the charter needs rewriting.',
+   whyNot:'A rewritten charter is one possible repair. The problem is what the charter leaves undefined.'}
+ ],
+ problemFirst:'First move: look for the sentence that says what is undefined and why that blocks the first step, rather than a request, a cause or a repair.',
+ pathNote:'Nine cards, one list. The six above the line are the mandate work, in the order it must run. The three below the line follow the handoff. Use the buttons to move a card up or down.',
+ handoff:'Handoff to discovery',
+ signalLegend:'Which signal shows the mandate work succeeded?',
+ signal:[
+  {id:'sa',text:'The assistant is live in all regions by year end.',
+   whyNot:'That belongs to the delivery that follows, and it covers regions the funding does not name.'},
+  {id:'sb',ok:true,text:'Each move has produced its result, and the handoff gives discovery open questions and non-goals, with no answers settled on its behalf.',
+   okMsg:'The signal can be checked on the day the mandate work ends: every move produced its result, and discovery receives questions, not answers.'},
+  {id:'sc',text:'Adjuster touch time falls in the pilot.',
+   whyNot:'That is a result of the work that follows. It cannot show that the mandate work did its job.'},
+  {id:'sd',text:'Discovery interviews are booked with every claims team.',
+   whyNot:'That shows discovery has started, not that it has a frame.'}
+ ],
+ signalFirst:'First move: ask what you could check on the day this work ends. A signal shows that the work did its job, not that the work after it did.',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ moves:[
+  {id:'m1',title:'Confirm what is authorized',desc:'Sort the initiative\'s statements into funded and proposed, and name who authorized the funding.',
+   why:'Holds. Everything after it is limited by what the funding authorizes.'},
+  {id:'m2',title:'State the intended use and the measured outcome',desc:'Write one outcome statement with subject, direction, evidence, owner and period.',
+   why:'Holds. The intended use cannot exceed the funding, and the boundary is drawn around it.'},
+  {id:'m3',title:'Draw the boundary',desc:'Trace a claim end to end. Give each step a status and an operator, and flag the steps nobody owns.',
+   why:'Holds. The boundary is drawn around the intended use, and decisions arise at its crossings.'},
+  {id:'m4',title:'Assign decision rights',desc:'Give each decision, including proceed, hold and stop, one accountable authority.',
+   why:'Holds. Nobody can name who approves access before the boundary shows what access is needed.'},
+  {id:'m5',title:'Make the call on the adjacent candidates',desc:'Take, narrow or decline each one, with the column that binds the call.',
+   why:'Holds. The call applies the tests the outcome, the boundary and the decision rights set up.'},
+  {id:'m6',title:'Hand discovery its entry conditions',desc:'List unowned steps, open decisions and narrowed candidates as questions. List declined candidates as non-goals.',
+   why:'Holds. Declined candidates become non-goals, so the calls come first.'}
+ ],
+ distractors:[
+  {id:'d1',title:'Interview the adjusters',desc:'Learn how a claim is handled from the people who handle it.'},
+  {id:'d2',title:'Inventory the systems',desc:'List the systems, data and constraints the assistant will touch.'},
+  {id:'d3',title:'Write the requirements',desc:'Write testable requirements for the drafting assistant.'}
+ ],
+ distractorOk:'Holds. This is discovery work. It follows the handoff because it needs the frame the mandate work produces.',
+ premature:'Out of place. This is discovery work, and discovery needs the frame the mandate work produces. Placed inside the path, it is design before the frame exists.',
+ belongsAbove:'Out of place. This move belongs inside the mandate work, above the handoff.',
+ deps:[
+  {before:'m1',after:'m2',why:'The intended use cannot exceed what the funding authorizes, so confirm what is authorized first.'},
+  {before:'m2',after:'m3',why:'The boundary is drawn around the intended use, so state the use first.'},
+  {before:'m3',after:'m4',why:'Decisions arise where the boundary is crossed. Nobody can name who approves access before knowing what access is needed.'},
+  {before:'m2',after:'m5',why:'The call on a candidate applies three tests, and the outcome, the boundary and the decision rights come first.'},
+  {before:'m3',after:'m5',why:'The call on a candidate applies three tests, and the outcome, the boundary and the decision rights come first.'},
+  {before:'m4',after:'m5',why:'The call on a candidate applies three tests, and the outcome, the boundary and the decision rights come first.'},
+  {before:'m5',after:'m6',why:'Declined candidates become non-goals in the handoff, so make the calls first.'}
+ ],
+ pathSet:'Some cards sit on the wrong side of the handoff. Read the notes on the marked cards.',
+ pathOrder:'The right six sit above the line and the discovery work sits below it. The order inside the path is out of place on the marked cards.',
+ pathOk:'The path holds, in the order the moves depend on one another.',
+ summary:{
+  idle:'Choose a problem and a signal, then check again.',
+  some:'Part of the assembly needs another look. Read the notes on each part and check again.',
+  all:'The problem, the path and the signal all hold. Each move closes before the one that depends on it opens.'
+ },
+ initial:['m4','d1','m1','m6','m3','m5','m2','d2','d3'],
+ aboveCount:6
+};
+
+const MOVES={};COPY.moves.forEach(function(m){MOVES[m.id]=m;});
+COPY.distractors.forEach(function(m){MOVES[m.id]=m;});
+function isDistractor(id){return id.charAt(0)==='d';}
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let order=COPY.initial.slice();
+let flags={};   /* path feedback keyed by card id, cleared whenever the order changes */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#problemLegend').textContent=COPY.problemLegend;
+$('#signalLegend').textContent=COPY.signalLegend;
+$('#pathNote').textContent=COPY.pathNote;
+
+function radios(host,name,items){
+  items.forEach(function(o){
+    const inp=h('input',{type:'radio',name:name,value:o.id});
+    inp.addEventListener('change',function(){$('#fb-'+name).className='fb';$('#fb-'+name).textContent='';});
+    host.appendChild(h('label',{class:'opt'},[inp,h('span',{text:o.text})]));
+  });
+}
+radios($('#problem'),'problem',COPY.problem);
+radios($('#signal'),'signal',COPY.signal);
+
+/* The path */
+function renderPath(focusSpec){
+  const ol=$('#path');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    if(i===COPY.aboveCount){
+      const d=h('li',{class:'divider','aria-hidden':'true',text:COPY.handoff});
+      ol.appendChild(d);
+    }
+    const m=MOVES[id];
+    const f=flags[id];
+    const card=h('li',{class:'pcard'+(f?' '+f.s:''),'data-id':id});
+    const zone=(i<COPY.aboveCount)?('Position '+fmt(i+1)+' in the path'):'After the handoff';
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:zone}),h('br'),
+      h('span',{class:'ptitle',text:m.title}),h('br'),
+      h('span',{class:'pdesc',text:m.desc})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: '+m.title,text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: '+m.title,text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function move(id,dir){
+  const i=order.indexOf(id), j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  $('#fb-path').className='fb';$('#fb-path').textContent='';
+  renderPath(id+':'+(dir<0?'up':'down'));
+  const pos=order.indexOf(id);
+  $('#live').textContent=pos<COPY.aboveCount?(MOVES[id].title+' is now at position '+fmt(pos+1)+' in the path.'):(MOVES[id].title+' is now after the handoff.');
+}
+
+/* Keys */
+function setFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m));
+}
+function checkChoice(name,items,first){
+  const sel=document.querySelector('input[name='+name+']:checked');
+  if(!sel)return {s:'idle',m:'Choose one.'};
+  const o=items.filter(function(x){return x.id===sel.value;})[0];
+  if(o.ok)return {s:'ok',m:o.okMsg};
+  return {s:'bad',m:o.whyNot+' '+first};
+}
+function checkPath(){
+  const above=order.slice(0,COPY.aboveCount);
+  const below=order.slice(COPY.aboveCount);
+  const f={};
+  let setErr=false,orderErr=false;
+  above.forEach(function(id){if(isDistractor(id)){f[id]={s:'bad',m:COPY.premature};setErr=true;}});
+  below.forEach(function(id){if(!isDistractor(id)){f[id]={s:'bad',m:COPY.belongsAbove};setErr=true;}});
+  const pos={};above.forEach(function(id,i){pos[id]=i;});
+  COPY.deps.forEach(function(d){
+    if(pos[d.before]!==undefined&&pos[d.after]!==undefined&&pos[d.before]>pos[d.after]){
+      if(!f[d.after])f[d.after]={s:'near',m:'Out of place. '+d.why};
+      orderErr=true;
+    }
+  });
+  let res;
+  if(setErr)res={s:'bad',m:COPY.pathSet};
+  else if(orderErr)res={s:'near',m:COPY.pathOrder};
+  else{
+    res={s:'ok',m:COPY.pathOk};
+    above.forEach(function(id){f[id]={s:'ok',m:MOVES[id].why};});
+    below.forEach(function(id){f[id]={s:'ok',m:COPY.distractorOk};});
+  }
+  flags=f;
+  renderPath(null);
+  setFb($('#fb-path'),res);
+  return res.s;
+}
+
+$('#check').addEventListener('click',function(){
+  const p=checkChoice('problem',COPY.problem,COPY.problemFirst);
+  setFb($('#fb-problem'),p);
+  const pathState=checkPath();
+  const s=checkChoice('signal',COPY.signal,COPY.signalFirst);
+  setFb($('#fb-signal'),s);
+  const allOk=(p.s==='ok'&&pathState==='ok'&&s.s==='ok');
+  const anyIdle=(p.s==='idle'||s.s==='idle');
+  $('#summary').textContent=allOk?COPY.summary.all:(anyIdle?COPY.summary.idle:COPY.summary.some);
+});
+
+renderPath(null);
+})();
+</script>
+</body>
+</html>

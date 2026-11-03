@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Take, narrow or decline a candidate</title>
+<style>
+:root{--bg:#f5f3ee;--panel:#ffffff;--ink:#1b2430;--muted:#56616e;--line:#d6d1c5;--soft:#ece8de;--accent:#1d5876;--accent-ink:#ffffff;--accent-soft:#e3eef4;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#0a4fc4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.card.unscored{background:#faf9f6;border-style:dashed}
+.chead{display:flex;flex-wrap:wrap;gap:.3rem .7rem;align-items:baseline;margin-bottom:.4rem}
+.cname{font-size:1.02rem;font-weight:600}
+.cspon{color:var(--muted);font-size:.9rem}
+.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 18px;margin:.3rem 0 .6rem}
+.facts div{font-size:.93rem}
+.facts .k{display:block;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid #8a8577;border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:#8a8577}
+.nocall{color:var(--muted);font-size:.93rem;margin:.2rem 0 0}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.test{border-top:1px solid var(--line);padding:.6rem 0}
+.test:first-of-type{border-top:0}
+.test p{margin:.15rem 0}
+.lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair,.facts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Take, narrow or decline a candidate</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-tests">
+<h2 id="h-tests">Three tests and four calls</h2>
+<dl id="tests"></dl>
+<dl id="calls"></dl>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">The portfolio</h2>
+<p class="hint" id="workNote"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my calls</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the original consequence</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" class="card" hidden>
+<span class="lab" id="vlab"></span>
+<h3 id="vtitle"></h3>
+<div id="vtests"></div>
+<p id="vclose"></p>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`The funding covers one candidate. Seven more now ask to ride along. A candidate can be taken on only when the decision it feeds, the evidence that it works and the rule for using its output can carry a mandate. Where they cannot, narrow the candidate or decline it. Make the call on four candidates, and name the column of the portfolio that binds each call.`,
+ tests:[
+  ['The decision it feeds','What the output commits the organization to. The more binding the decision, the more evidence and control it needs.'],
+  ['The evidence it works','What shows that the use works in its intended setting. A supplier\'s claim gives you something to investigate, not a basis for judgment.'],
+  ['The rule of use','A written statement of how people may and may not use the output, with a named authority behind it.']
+ ],
+ calls:[
+  ['take','Take','Carry the candidate as proposed.'],
+  ['narrow','Narrow','Lower the consequence the output feeds until the available evidence and controls can support it.'],
+  ['declineNow','Decline for now','The intended use needs evidence or a rule that the organization has yet to establish.'],
+  ['declineProposed','Decline as proposed','The available support cannot justify the commitment requested.']
+ ],
+ columns:[
+  ['consequence','Decision consequence'],
+  ['autonomy','Autonomy'],
+  ['data','Readiness: data'],
+  ['rules','Readiness: rules'],
+  ['org','Readiness: organization'],
+  ['evidence','Evidence'],
+  ['none','None blocks the call']
+ ],
+ workNote:'Four candidates ask for a call and a binding column. The other four are shown so you can see the whole portfolio. Nothing is timed.',
+ noCall:'No call is asked for this candidate. The portfolio gives no defensible call for it, so any call here would be a guess.',
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a call and the column that binds it.',
+  first:'First move: name the decision this output feeds. Then ask what evidence says it works and whether a rule of use exists, and name what is missing.',
+  nearColumn:'The call is right. The binding column is out of place. Test each column against what this use requires, and find the one that falls short, or decide that none does.',
+  nearCall:'The column that binds the call is right. The call that follows from it is out of place. Ask whether a less consequential use could fit the available evidence and controls, whether the missing condition could be established, or whether what exists cannot support the commitment.',
+  nearDecline:'Both calls say the candidate cannot be taken as it stands, which is right. The kind of decline is out of place: ask whether the organization could establish what is missing, or whether what exists cannot support the commitment requested.'
+ },
+ summary:{
+  idle:'Choose a call and a column for all four candidates, then check again.',
+  some:'Some calls need another look. Read the notes on the marked candidates, change your choices and check again.',
+  all:'All four calls hold. Each rests on a column of the portfolio, and none rests on readiness alone.'
+ },
+ second:{
+  intro:'Narrow underwriting submission triage by lowering what its output decides. Then see which of the three tests still fall short.',
+  swap:'Make the triage output advisory instead of binding',
+  restoreNote:'Restored. The consequence is binding again.',
+  label:'Illustrative variant: not part of the portfolio',
+  title:'Underwriting submission triage, narrowed',
+  close:'Narrowing lowered the consequence. The evidence and the rule of use read the same as before. The portfolio gives no defensible call for an advisory candidate that has no evidence and no rule of use, which is why four candidates in the portfolio carry no call here. Nothing in this step is keyed.',
+  rows:[
+   ['The decision it feeds','Binding on submission routing','Advisory to the underwriter on routing','Lower'],
+   ['The evidence it works','None','None','Unchanged'],
+   ['The rule of use','None','None','Unchanged']
+  ],
+  asProposed:'As proposed: ',
+  narrowed:'Narrowed: ',
+  change:'Change: '
+ }
+};
+
+/* The portfolio. Values are taken as given. scored candidates carry a key. */
+const C=[
+ {id:'UC-01',name:'Coverage-determination drafting assistant',sponsor:'Claims operations director',cons:'Binding once the adjuster approves',auto:'Drafts, reviewed',data:'Partial',rules:'Partial',org:'Adequate',ev:'One line, one quarter',
+  scored:true,call:'take',cols:['none'],
+  why:'The use is funded, the output is a draft that an adjuster approves, and a pilot has measured it. Nothing in the portfolio blocks the call. The evidence is thin, one line over one quarter, which is a reason to measure carefully, not a reason to stop.'},
+ {id:'UC-02',name:'Field service technician assistant',sponsor:'Field service operations lead',cons:'Advisory to the technician',auto:'Drafts',data:'Adequate',rules:'None',org:'Adequate',ev:'None',scored:false},
+ {id:'UC-03',name:'Inspection report summarisation',sponsor:'Field service operations lead',cons:'Feeds a binding determination',auto:'Drafts',data:'Weak',rules:'None',org:'Partial',ev:'None',
+  scored:true,call:'narrow',cols:['consequence','data'],
+  why:'The output feeds a binding determination while its source documents are weak. Narrowing it to an input aid, not an input to the determination, lowers the consequence until the data can carry it.'},
+ {id:'UC-04',name:'Underwriting submission triage',sponsor:'Underwriting manager',cons:'Binding on submission routing',auto:'Recommends',data:'Partial',rules:'None',org:'Weak',ev:'None',
+  scored:true,call:'declineNow',cols:['rules','evidence'],
+  why:'The output is binding on submission routing, and the portfolio shows no rule of use and no evidence that it works. The organization can establish both, so the call is not yet, not never.'},
+ {id:'UC-05',name:'Parts demand forecasting',sponsor:'Service contracts manager',cons:'Advisory to planning',auto:'None',data:'Adequate',rules:'None',org:'Adequate',ev:'None',scored:false},
+ {id:'UC-06',name:'Supplier nonconformance drafting',sponsor:'Quality organization lead',cons:'Binding on the quality file',auto:'Drafts, reviewed',data:'Adequate',rules:'Partial',org:'Partial',ev:`Two plants, ${fmt(90)} days`,scored:false},
+ {id:'UC-07',name:'Contact-centre call summarisation',sponsor:'Claims desk supervisor',cons:'Advisory',auto:'Drafts',data:'Adequate',rules:'None',org:'Adequate',ev:'Usage only',scored:false},
+ {id:'UC-08',name:'Claims leakage and anomaly flagging',sponsor:'Finance partner, subsidiary',cons:'Binding on investigation routing',auto:'Recommends',data:'Weak',rules:'None',org:'Weak',ev:'Vendor claim only',
+  scored:true,call:'declineProposed',cols:['evidence'],
+  why:'The only support is a vendor\'s claim. A claim is a lead to investigate, not evidence that the use works here, so nothing available can justify the commitment as proposed.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.tests.forEach(function(t){$('#tests').appendChild(h('dt',{text:t[0]}));$('#tests').appendChild(h('dd',{text:t[1]}));});
+COPY.calls.forEach(function(t){$('#calls').appendChild(h('dt',{text:t[1]}));$('#calls').appendChild(h('dd',{text:t[2]}));});
+$('#workNote').textContent=COPY.workNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+/* Cards */
+function fact(k,v){return h('div',null,[h('span',{class:'k',text:k}),v]);}
+C.forEach(function(c){
+  const card=h('article',{class:'card'+(c.scored?'':' unscored'),id:'card-'+c.id});
+  card.appendChild(h('div',{class:'chead'},[h('span',{class:'cname',text:c.name}),h('span',{class:'cspon',text:'Sponsor: '+c.sponsor})]));
+  card.appendChild(h('div',{class:'facts'},[
+    fact('Decision consequence',c.cons),
+    fact('Autonomy',c.auto),
+    fact('Readiness: data / rules / organization',c.data+' / '+c.rules.toLowerCase()+' / '+c.org.toLowerCase()),
+    fact('Evidence',c.ev)
+  ]));
+  if(c.scored){
+    const call=h('select',{id:'call-'+c.id});
+    call.appendChild(option('','Choose a call'));
+    COPY.calls.forEach(function(x){call.appendChild(option(x[0],x[1]));});
+    const col=h('select',{id:'col-'+c.id});
+    col.appendChild(option('','Choose a column'));
+    COPY.columns.forEach(function(x){col.appendChild(option(x[0],x[1]));});
+    card.appendChild(h('div',{class:'pair'},[
+      h('div',{class:'field'},[h('label',{for:'call-'+c.id,text:'Your call'}),call]),
+      h('div',{class:'field'},[h('label',{for:'col-'+c.id,text:'The column that binds the call'}),col])
+    ]));
+    card.appendChild(h('div',{class:'fb',id:'fb-'+c.id,role:'status','aria-live':'polite'}));
+  }else{
+    card.appendChild(h('p',{class:'nocall',text:COPY.noCall}));
+  }
+  $('#cards').appendChild(card);
+});
+
+/* Keys */
+function candState(selCall,selCol,key){
+  if(!selCall||!selCol)return {s:'idle',m:COPY.msg.idle};
+  const declines=['declineNow','declineProposed'];
+  const callExact=selCall===key.call;
+  const callNear=!callExact&&declines.indexOf(selCall)>-1&&declines.indexOf(key.call)>-1;
+  const colOk=key.cols.indexOf(selCol)>-1;
+  if(callExact&&colOk)return {s:'ok',m:key.why};
+  if(callExact&&!colOk)return {s:'near',m:COPY.msg.nearColumn};
+  if(colOk)return {s:'near',m:callNear?COPY.msg.nearDecline:COPY.msg.nearCall};
+  return {s:'bad',m:COPY.msg.first};
+}
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  C.filter(function(c){return c.scored;}).forEach(function(c){
+    const r=candState($('#call-'+c.id).value,$('#col-'+c.id).value,c);
+    showFb($('#fb-'+c.id),$('#card-'+c.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    C.filter(function(c){return c.scored;}).forEach(function(c){$('#call-'+c.id).disabled=true;$('#col-'+c.id).disabled=true;});
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the same candidate with its consequence lowered */
+$('#swap').addEventListener('click',function(){
+  $('#restoreNote').textContent='';
+  $('#vlab').textContent=COPY.second.label;
+  $('#vtitle').textContent=COPY.second.title;
+  const host=$('#vtests');
+  host.textContent='';
+  COPY.second.rows.forEach(function(r){
+    host.appendChild(h('div',{class:'test'},[
+      h('h3',{text:r[0]}),
+      h('p',null,[h('strong',{text:COPY.second.asProposed}),r[1]]),
+      h('p',null,[h('strong',{text:COPY.second.narrowed}),r[2]]),
+      h('p',null,[h('strong',{text:COPY.second.change}),r[3]])
+    ]));
+  });
+  $('#vclose').textContent=COPY.second.close;
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>
