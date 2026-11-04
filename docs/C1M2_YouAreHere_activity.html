@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two weeks of interviews, one week to the brief</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:880px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.35rem 0}
+.hint{color:var(--muted);font-size:.92rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.mine{border:2px solid var(--accent);background:var(--accent-soft)}
+fieldset{border:1px solid var(--ctl);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.55rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent-text)}
+.opt .d{color:var(--muted);font-size:.92rem}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.chip.open{background:var(--soft);color:var(--ink);border-color:var(--ctl)}
+.chip.partly{background:#fff;color:var(--accent-text);border-color:var(--accent)}
+.qrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:.6rem}
+.q{font-size:.9rem}
+.q .qname{display:block;color:var(--muted);margin-bottom:.15rem}
+.gives,.leaves{margin:.25rem 0}
+.gives strong,.leaves strong{font-weight:600}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;color:var(--accent-text);margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.05em}
+#reveal:focus{outline:none}
+.close{margin-top:1.2rem;padding:14px 16px;border-left:4px solid var(--accent);background:var(--panel)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.qrow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker" id="kicker"></p>
+<h1>Two weeks of interviews, one week to the brief</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-sit">
+<h2 id="h-sit">What you know</h2>
+<ul id="facts"></ul>
+</section>
+
+<section aria-labelledby="h-read">
+<h2 id="h-read">Commit to a reading</h2>
+<p>Choose the move you would make first. Then say which of the three open questions it will settle. Your answer locks before anything is shown.</p>
+<form id="form" novalidate>
+<fieldset id="moves"><legend>Your first move</legend></fieldset>
+<fieldset id="expect"><legend>The three open questions: which do you expect your move to settle?</legend>
+<p class="hint">Tick any. Leave all unticked if you expect it to settle none.</p></fieldset>
+<button type="submit" class="btn" id="lock" disabled>Lock my reading</button>
+</form>
+</section>
+
+<section id="reveal" hidden aria-labelledby="h-rev" tabindex="-1">
+<h2 id="h-rev">What each move settles</h2>
+<div id="revealBody"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy lives in this block. */
+const COPY={
+ kicker:'A fictional case: the Sample Enterprise',
+ lead:`You are the forward deployed engineer, embedded with the insurance subsidiary of the Sample Enterprise. The mandate is agreed and discovery has begun. Discovery is the work of finding out what the engagement will run into before design starts. This is where you stand after two weeks of interviews.`,
+ facts:[
+  `The funded initiative is an assistant that drafts coverage determinations for North American claims. A determination is the insurer's decision on a claim. Cycle time, the calendar days from receipt of a claim to its determination, is ${fmt(9.4,1)} today. The sponsor's target is ${fmt(5,1)}.`,
+  `You have nine sets of interview notes. In each, the owner confirmed what the notes record for their own function.`,
+  `The integration engineer confirms that the assistant reads through the published interfaces, and that three of the seven return what it needs. A published interface, or API, is an agreed way for one system to ask another for data. The enterprise architect confirms that the estate diagram is current.`,
+  `The senior claims adjuster says most handling time goes to assembling provisions, endorsements, inspection reports and service history, and that the service-history match often fails. The data steward says the table that translates unit identifiers between the policy system and the service-contract registry is current and maintained.`,
+  `A pilot on one product line cut adjuster touch time per claim from ${fmt(68)} minutes to ${fmt(51)}. Touch time is the minutes an adjuster actively works one claim. The ${fmt(51)}-minute figure is quoted in meetings.`,
+  `The architecture draft carries a note that the mainframe cannot take more load. No one can say who wrote it.`,
+  `The claims operations director calls the rest of discovery a formality: the systems are known and only need writing down. Design starts when the brief is done, and it builds on whatever the brief treats as settled.`
+ ],
+ questions:[
+  {id:'problem',short:'what is actually happening',text:'What is actually happening in the claims workflow, apart from the solution everyone has named?'},
+  {id:'path',short:'what happens between systems',text:'What happens to the data between systems, and under which account?'},
+  {id:'known',short:'how each statement is known',text:`For each statement in the brief, how do you know it: from a record, from someone's account, or not yet?`}
+ ],
+ moves:[
+  {id:'m1',name:'Complete the system inventory',desc:'List every system, confirm each row with its owner, and attach the estate diagram.',
+   gives:`A complete list of what exists, with each owner's sign-off.`,
+   leaves:'An inventory shows where data rests, not what happens to it between systems or which account acts there. Each owner confirms only their own row, so an account becomes a fact without being checked.',
+   st:['open','open','open']},
+  {id:'m2',name:'Interview the remaining roles',desc:'Talk to the people not yet interviewed and add their accounts to the notes.',
+   gives:'More accounts of how the operation works, from more seats.',
+   leaves:'Each person is accurate about their own segment and silent about the others. Interviews show what happens from each seat, which settles the first question only in part. The path between segments, and how any statement is known, stay open.',
+   st:['partly','open','open']},
+  {id:'m3',name:'Write requirements for the assistant',desc:'Draft testable requirements for the drafting assistant.',
+   gives:'Testable requirements for one candidate solution.',
+   leaves:'Each requirement assumes the problem is understood and the data path is known. Neither has been established, so the requirements would rest on whatever the notes say.',
+   st:['open','open','open']},
+  {id:'m4',name:'Confirm the rollout plan',desc:`Check the sponsor's plan to extend the assistant, since the sponsor says adjusters are the bottleneck.`,
+   gives:'A plan the sponsor recognizes.',
+   leaves:'The plan assumes the assistant is the cure and adjusters are the cause. Whether either is true is what discovery is for.',
+   st:['open','open','open']},
+  {id:'m5',name:'Ask each owner to confirm their statements in writing',desc:'Get written confirmation of what each owner said.',
+   gives:'A source and a date for each statement.',
+   leaves:'A written account is still one person\'s account. It records who said a thing, not whether it holds, and it says nothing about the steps between systems. It settles the third question only in part.',
+   st:['open','open','partly']},
+  {id:'m6',name:'Time the claims workflow end to end',desc:`Measure where an adjuster's time goes on a sample of claims.`,
+   gives:'A measured picture of where handling time goes in the sampled claims.',
+   leaves:'A sample describes the claims and the period it covered. It settles the first question in part. It does not show how data moves between systems, under which account, or how the other statements in the brief are known.',
+   st:['partly','open','open']}
+ ],
+ stateLabel:{open:'Open',partly:'Settled in part'},
+ close1:'Each of these moves is sound work, and each leaves most of the same three questions open. Started without a way to answer them, each gathers a great deal and establishes little.',
+ close2:`What has to be in place first is a discovery that separates what is known from what is only assumed: one that states the problem apart from the solution, follows the data and the accounts that touch it, and says for every statement how it is known. Running that kind of technical discovery is the capability that makes every later step possible to scope.`
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let committed=null;   /* recorded at lock, before anything is revealed */
+
+/* Build the page from the copy block. */
+$('#kicker').textContent=COPY.kicker;
+$('#lead').textContent=COPY.lead;
+COPY.facts.forEach(function(t){$('#facts').appendChild(h('li',{text:t}));});
+
+COPY.moves.forEach(function(m){
+  const inp=h('input',{type:'radio',name:'move',value:m.id});
+  const lab=h('label',{class:'opt'},[inp,h('span',null,[h('strong',{text:m.name}),h('br'),h('span',{class:'d',text:m.desc})])]);
+  $('#moves').appendChild(lab);
+});
+COPY.questions.forEach(function(q){
+  const inp=h('input',{type:'checkbox',name:'expect',value:q.id});
+  $('#expect').appendChild(h('label',{class:'opt'},[inp,h('span',{text:q.text})]));
+});
+
+const form=$('#form');
+const lockBtn=$('#lock');
+form.addEventListener('change',function(){
+  if(committed)return;
+  lockBtn.disabled=!document.querySelector('input[name=move]:checked');
+});
+
+function setLocked(state){
+  document.querySelectorAll('#form input').forEach(function(i){i.disabled=state;});
+  lockBtn.disabled=true;
+}
+
+function expectationText(m,expects){
+  const out=[];
+  const picked=COPY.questions.filter(function(q){return expects.indexOf(q.id)>-1;});
+  if(!picked.length){
+    out.push('You expected it to settle none of the three questions.');
+  }else{
+    picked.forEach(function(q){
+      const i=COPY.questions.indexOf(q);
+      out.push(m.st[i]==='open'
+        ? `You expected it to settle "${q.short}". It leaves that question open.`
+        : `You expected it to settle "${q.short}". It settles that question only in part.`);
+    });
+  }
+  const partlyIdx=m.st.indexOf('partly');
+  if(partlyIdx===-1){out.push('In fact it leaves all three open.');}
+  else{out.push(`In fact it settles "${COPY.questions[partlyIdx].short}" in part and leaves the other two open.`);}
+  return out.join(' ');
+}
+
+function moveCard(m,mine){
+  const card=h('article',{class:'card'+(mine?' mine':'')});
+  if(mine)card.appendChild(h('span',{class:'tag',text:'Your move'}));
+  card.appendChild(h('h3',{text:m.name}));
+  card.appendChild(h('p',{class:'gives'},[h('strong',{text:'What it gives you: '}),m.gives]));
+  card.appendChild(h('p',{class:'leaves'},[h('strong',{text:'What it leaves open: '}),m.leaves]));
+  const row=h('div',{class:'qrow'});
+  COPY.questions.forEach(function(q,i){
+    row.appendChild(h('div',{class:'q'},[
+      h('span',{class:'qname',text:q.text}),
+      h('span',{class:'chip '+m.st[i],text:COPY.stateLabel[m.st[i]]})
+    ]));
+  });
+  card.appendChild(row);
+  return card;
+}
+
+function renderReveal(){
+  const body=$('#revealBody');
+  body.textContent='';
+  const mine=COPY.moves.filter(function(m){return m.id===committed.move;})[0];
+  body.appendChild(h('p',null,[h('strong',{text:'You chose: '}),mine.name+'.']));
+  body.appendChild(h('p',{text:expectationText(mine,committed.expects)}));
+  body.appendChild(moveCard(mine,true));
+  body.appendChild(h('p',{class:'hint',text:'The other five moves, against the same three questions.'}));
+  COPY.moves.forEach(function(m){if(m!==mine)body.appendChild(moveCard(m,false));});
+  body.appendChild(h('div',{class:'close'},[h('p',{text:COPY.close1}),h('p',{text:COPY.close2})]));
+  const again=h('button',{type:'button',class:'btn secondary',id:'again',text:'Start again'});
+  again.addEventListener('click',reset);
+  body.appendChild(h('p',null,[again]));
+}
+
+form.addEventListener('submit',function(e){
+  e.preventDefault();
+  if(committed)return;
+  const mv=document.querySelector('input[name=move]:checked');
+  if(!mv)return;
+  committed={
+    move:mv.value,
+    expects:Array.prototype.map.call(document.querySelectorAll('input[name=expect]:checked'),function(x){return x.value;})
+  };
+  setLocked(true);
+  renderReveal();
+  const box=$('#reveal');
+  box.hidden=false;
+  box.focus();
+});
+
+function reset(){
+  committed=null;
+  document.querySelectorAll('#form input').forEach(function(i){i.checked=false;i.disabled=false;});
+  lockBtn.disabled=true;
+  $('#revealBody').textContent='';
+  $('#reveal').hidden=true;
+  const first=document.querySelector('input[name=move]');
+  if(first)first.focus();
+}
+})();
+</script>
+</body>
+</html>

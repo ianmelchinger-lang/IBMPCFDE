@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace one claim's service history</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.scope{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.scope p{margin:.2rem 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--accent)}
+.card.near{border-left:5px double var(--accent)}
+.card.bad{border-left:5px solid var(--ctl)}
+.stephead{display:flex;gap:.6rem;align-items:baseline;margin-bottom:.5rem}
+.stepid{font-size:.8rem;font-weight:700;color:var(--accent-text);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.stepact{font-size:1.02rem;font-weight:600}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:2px solid var(--ctl);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.flag{display:flex;gap:.6rem;align-items:flex-start;margin:.7rem 0 0;font-size:.95rem;cursor:pointer}
+.flag input{margin-top:.3rem;width:1.05rem;height:1.05rem;flex:0 0 auto;accent-color:var(--accent-text)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}.stephead{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Trace one claim's service history</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-fields">
+<h2 id="h-fields">Four fields for every hop</h2>
+<dl id="fields"></dl>
+<p id="method"></p>
+<div class="scope" id="txn"></div>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">What the records and notes say</h2>
+<h3>Records</h3>
+<ul id="records"></ul>
+<h3>Interview notes</h3>
+<ul id="notes"></ul>
+</section>
+
+<section aria-labelledby="h-trace">
+<h2 id="h-trace">Trace the claim</h2>
+<p class="hint" id="traceNote"></p>
+<div id="steps"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check the trace</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="outside" class="panel" hidden aria-labelledby="h-out">
+<h2 id="h-out" style="margin-top:0">Outside the case</h2>
+<p id="outIntro"></p>
+<ul id="outList"></ul>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the named accounts</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="variant" class="scope" hidden><p id="variantText"></p></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A trace follows one item of data through every system it passes. Each step is a hop: one movement of the data between two systems, or one action on the data inside a system. A list of systems shows where data is kept. A trace shows what happens between them: the copies, the joins and the handoffs, and the account that acts at each one. For every hop, record four fields and decide whether to flag the hop.`,
+ fields:[
+  ['Data action','What is done to the data, such as reading, translating or combining it.'],
+  ['Exchange','How the data moves, such as through a published interface, a lookup or a scheduled extract.'],
+  ['Acting identity','The user account or service account that performs the action. "The application" names software, not an account.'],
+  ['Evidence status','How you know what you wrote for the hop. Documented: a record supports it. Reported: a person told you. Inferred: you drew the conclusion yourself. Unknown: the evidence leaves it open.']
+ ],
+ method:'Give each hop the status of its weakest field. Flag a hop when its exchange or its acting identity is unknown. A flag marks a gap in what the records and notes establish. It does not mark doubt about what a person said.',
+ txn:`A transaction is one unit of work that a system carries out on request, such as opening a claim record. Permission to start a transaction covers that work. It does not show which account later reads the data the work needs. Record the two separately.`,
+ records:[
+  `Policy master: policy and endorsement data on the mainframe, the system of record. A system of record is the authoritative store for a class of business data. The policy master is read-only to anything outside the mainframe release train.`,
+  `Claims master: claim header and detail on the mainframe, updated by transactions. Writes happen only through existing transactions.`,
+  `Published interfaces over the systems of record: published for a subset of fields. Three of the seven return what the assistant needs.`,
+  `Enterprise document store: claim documents, inspection reports and correspondence.`,
+  `Service-contract registry: aftermarket contracts and unit service history. Its unit identifiers follow a different convention from the policy master.`,
+  `Corporate identity provider: staff single sign-on for the enterprise. It does not cover the subsidiary.`,
+  `Subsidiary directory: a separate identity store kept since the acquisition. Federation with the corporate provider requires an entitlement review.`
+ ],
+ notes:[
+  `Integration engineer: the assistant reads through the published interfaces. The claims master accepts writes only through existing transactions.`,
+  `Interview notes on the assistant: it calls the published interfaces and retrieves documents under its own service identity.`,
+  `Data steward: unit identifiers differ between the policy master and the registry. A mapping table translates between them, and the steward reports that it is current and maintained. The registry is read from a nightly extract that an extract job runs.`,
+  `Identity and access lead: adjusters authenticate through the subsidiary directory. Which identity the assistant uses beyond the interface layer is a question for integration.`,
+  `Interview notes on the draft: the assistant combines the policy, service-history and inspection inputs into one draft and returns it to the adjuster's claim view.`
+ ],
+ traceNote:'Choose all four fields for each hop, flag the hops that carry a gap, then check. Nothing is timed.',
+ actions:[['','Choose'],['auth','Authenticate a user'],['read','Read a record'],['write','Write a record'],['translate','Translate an identifier'],['combine','Combine and copy']],
+ exchanges:[['','Choose'],['signon','Sign-on'],['api','Published read interface (API)'],['direct','Direct database read'],['map','Mapping-table lookup'],['extract','Nightly extract'],['doc','Document retrieval'],['return',`Return to the adjuster's view`]],
+ identities:[['','Choose'],
+  ['adj_dir','Adjuster, through the subsidiary directory'],
+  ['adj_sso','Adjuster, through corporate single sign-on'],
+  ['svc',`Assistant's service identity`],
+  ['svc_split',`Assistant's service identity at the interface; the account that reads the claims master is unknown`],
+  ['unk_map','Unknown; how the table is refreshed is also unknown'],
+  ['extract','Extract job identity, as the data steward reports'],
+  ['app','The application']],
+ statuses:[['','Choose'],['documented','Documented'],['reported','Reported'],['inferred','Inferred'],['unknown','Unknown']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose all four fields for this hop, then check.',
+  near:{
+   action:'The rest of this hop holds. The data action is out of place. Ask what is done to the data here.',
+   exchange:'The rest of this hop holds. The exchange is out of place. Ask how the data moves from one place to the next.',
+   identity:'The rest of this hop holds. The acting identity is out of place. Ask which account acts here, and which record or note says so.',
+   status:`The rest of this hop holds. The status is out of place. Ask how you know what you wrote: from a record, from a person's account, from your own conclusion, or not yet. Give the hop the status of its weakest field.`,
+   flagFalse:'The rest of this hop holds. The flag is out of place. Flag a hop only where the exchange or the acting identity is unknown. A reported hop is not a gap.',
+   flagMissed:'The rest of this hop holds. The flag is out of place. Ask whether the records and notes name both the exchange and the account that acts. If either is missing, flag the hop.'
+  },
+  bad:'Work through this hop one field at a time: what is done to the data, how it moves, which account acts, and how you know. Then flag the hop only if its exchange or its acting identity is unknown.',
+  app:'An acting identity names an account. "The application" names software. Name the account, or record that it is unknown.',
+  sso:'Corporate single sign-on does not cover the subsidiary. Check which identity store the adjusters use.'
+ },
+ summary:{
+  idle:'Choose all four fields for every hop, then check again.',
+  some:'Some hops need another look. Read the notes on the marked hops, change your choices and check again.',
+  all:`Every hop holds. ${fmt(2)} of the ${fmt(7)} hops are flagged. The records and notes name no account for the claims master behind the interface at the second hop, and name neither the account nor the refresh of the mapping table at the fourth. Each owner described their own segment accurately. Nobody described these two.`
+ },
+ outIntro:'Two statements about real products sit behind the idea that permission to start a transaction is separate from authority over the data. Each is stated at the strength the checks so far allow.',
+ outList:[
+  `In IBM's CICS documentation, checked September 2026, permission to run a transaction and permission to the resources it uses are checked separately.`,
+  `Authorization can be checked again where a request crosses into a connected system.`
+ ],
+ second:{
+  intro:'Suppose the assistant were tested end to end under a privileged test account, one that can read everything. The case holds no such account. This is an illustration.',
+  swap:'Replay the trace under a privileged test account (illustrative)',
+  variant:`Under that account, hops 2 to 7 all succeed: ${fmt(6)} of ${fmt(6)}. Your trace still flags ${fmt(2)} of those ${fmt(6)}. A successful test under a privileged account shows what that account can do in that test. It does not name the accounts that will run in production, and production may use a different identity.`,
+  restoreNote:'Restored. The trace is back to the accounts the records and notes name.'
+ }
+};
+
+/* The seven hops. key holds the keyed option for each field; flag is the keyed flag. */
+const HOPS=[
+ {id:'H1',title:'The adjuster opens the claim',flag:false,
+  key:{action:'auth',exchange:'signon',identity:'adj_dir',status:'documented'},
+  why:'Correct. A record states that the corporate provider does not cover the subsidiary, and another that the subsidiary keeps its own directory. Every field is documented, so the hop is documented and nothing is flagged.'},
+ {id:'H2',title:'The claim header is fetched',flag:true,
+  key:{action:'read',exchange:'api',identity:'svc_split',status:'unknown'},
+  why:`Correct. The exchange is known, and the assistant's service identity acts at the interface. The account that reads the claims master behind the interface is unknown, and permission to start the transaction is a separate matter from authority over the data it reaches. The hop is unknown and flagged.`},
+ {id:'H3',title:'Provisions and endorsements in force are fetched',flag:false,
+  key:{action:'read',exchange:'api',identity:'svc',status:'reported'},
+  why:`Correct. The policy data is read through a published interface under the assistant's service identity, as the notes report. No record documents it yet, so the status is reported, and nothing is flagged.`},
+ {id:'H4',title:'The unit identifier is converted',flag:true,
+  key:{action:'translate',exchange:'map',identity:'unk_map',status:'unknown'},
+  why:'Correct. The exchange is a mapping-table lookup, but no record or note says which account performs it or how the table is refreshed. The hop is unknown and flagged.'},
+ {id:'H5',title:'Service history is fetched',flag:false,
+  key:{action:'read',exchange:'extract',identity:'extract',status:'reported'},
+  why:`Correct. The registry is read from a nightly extract under the extract job's identity, as the data steward reports. The status is reported, and nothing is flagged.`},
+ {id:'H6',title:'The inspection report is fetched',flag:false,
+  key:{action:'read',exchange:'doc',identity:'svc',status:'reported'},
+  why:`Correct. The inspection report is retrieved from the document store under the assistant's service identity, as the notes report. The status is reported, and nothing is flagged.`},
+ {id:'H7',title:'The inputs are assembled into the draft',flag:false,
+  key:{action:'combine',exchange:'return',identity:'svc',status:'reported'},
+  why:`Correct. The assistant combines the inputs and returns the draft to the adjuster's view under its service identity, as the notes report. The status is reported, and nothing is flagged.`}
+];
+const FIELDS=['action','exchange','identity','status'];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.fields.forEach(function(f){$('#fields').appendChild(h('dt',{text:f[0]}));$('#fields').appendChild(h('dd',{text:f[1]}));});
+$('#method').textContent=COPY.method;
+$('#txn').appendChild(h('p',{text:COPY.txn}));
+COPY.records.forEach(function(t){$('#records').appendChild(h('li',{text:t}));});
+COPY.notes.forEach(function(t){$('#notes').appendChild(h('li',{text:t}));});
+$('#traceNote').textContent=COPY.traceNote;
+$('#outIntro').textContent=COPY.outIntro;
+COPY.outList.forEach(function(t){$('#outList').appendChild(h('li',{text:t}));});
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+/* Hop cards */
+function sel(id,opts){
+  const s=h('select',{id:id});
+  opts.forEach(function(o){s.appendChild(option(o[0],o[1]));});
+  return s;
+}
+const LISTS={action:COPY.actions,exchange:COPY.exchanges,identity:COPY.identities,status:COPY.statuses};
+const LABELS={action:'Data action',exchange:'Exchange',identity:'Acting identity',status:'Evidence status'};
+HOPS.forEach(function(p){
+  const card=h('article',{class:'card',id:'card-'+p.id});
+  card.appendChild(h('div',{class:'stephead'},[h('span',{class:'stepid',text:p.id}),h('span',{class:'stepact',text:p.title})]));
+  const grid=h('div',{class:'pair'});
+  FIELDS.forEach(function(f){
+    grid.appendChild(h('div',{class:'field'},[h('label',{for:f+'-'+p.id,text:LABELS[f]}),sel(f+'-'+p.id,LISTS[f])]));
+  });
+  card.appendChild(grid);
+  const cb=h('input',{type:'checkbox',id:'flag-'+p.id});
+  card.appendChild(h('label',{class:'flag',for:'flag-'+p.id},[cb,h('span',{text:'Flag this hop: its exchange or its acting identity is unknown'})]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+p.id,role:'status','aria-live':'polite'}));
+  $('#steps').appendChild(card);
+});
+
+/* Feedback */
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Key: five elements per hop, the four fields and the flag. */
+function hopState(p){
+  const v={};
+  FIELDS.forEach(function(f){v[f]=$('#'+f+'-'+p.id).value;});
+  const flagged=$('#flag-'+p.id).checked;
+  if(!v.action||!v.exchange||!v.identity||!v.status)return {s:'idle',m:COPY.msg.idle};
+  const wrong=[];
+  FIELDS.forEach(function(f){if(v[f]!==p.key[f])wrong.push(f);});
+  if(flagged!==p.flag)wrong.push(p.flag?'flagMissed':'flagFalse');
+  const extras=[];
+  if(v.identity==='app')extras.push(COPY.msg.app);
+  if(v.identity==='adj_sso')extras.push(COPY.msg.sso);
+  if(!wrong.length)return {s:'ok',m:p.why};
+  if(wrong.length===1)return {s:'near',m:[COPY.msg.near[wrong[0]]].concat(extras).join(' ')};
+  return {s:'bad',m:[COPY.msg.bad].concat(extras).join(' ')};
+}
+
+function lockAll(state){
+  HOPS.forEach(function(p){
+    FIELDS.forEach(function(f){$('#'+f+'-'+p.id).disabled=state;});
+    $('#flag-'+p.id).disabled=state;
+  });
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  HOPS.forEach(function(p){
+    const r=hopState(p);
+    showFb($('#fb-'+p.id),$('#card-'+p.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    lockAll(true);
+    $('#check').hidden=true;
+    $('#outside').hidden=false;
+    $('#second').hidden=false;
+    $('#summary').textContent=COPY.summary.all;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the same trace, replayed under a privileged test account */
+$('#swap').addEventListener('click',function(){
+  $('#variantText').textContent=COPY.second.variant;
+  $('#variant').hidden=false;
+  $('#restoreNote').textContent='';
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  $('#variant').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

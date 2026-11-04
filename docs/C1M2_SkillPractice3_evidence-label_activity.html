@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Label what you know and how you know it</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.scope{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.scope p{margin:.2rem 0}
+.pack{display:grid;grid-template-columns:1fr 1fr;gap:12px 20px}
+.pack ul{padding-left:1.1rem;font-size:.93rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--accent)}
+.card.near{border-left:5px double var(--accent)}
+.card.bad{border-left:5px solid var(--ctl)}
+.stephead{display:flex;gap:.6rem;align-items:baseline;margin-bottom:.35rem}
+.stepid{font-size:.8rem;font-weight:700;color:var(--accent-text);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem;white-space:nowrap}
+.stepact{font-size:1.02rem;font-weight:600}
+.raised{margin:0 0 .6rem;font-size:.9rem;color:var(--muted)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+.span2{grid-column:1 / -1}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:2px solid var(--ctl);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+fieldset{border:0;margin:.6rem 0 0;padding:0}
+legend{font-weight:600;font-size:.95rem;padding:0;margin-bottom:.3rem}
+.opt{display:flex;gap:.6rem;align-items:flex-start;margin:.35rem 0;font-size:.95rem;cursor:pointer}
+.opt input{margin-top:.28rem;width:1.05rem;height:1.05rem;flex:0 0 auto;accent-color:var(--accent-text)}
+.side{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.side p{margin:.2rem 0 .5rem}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+input[type=range]{width:100%;accent-color:var(--accent-text);margin:.4rem 0}
+output{display:block;margin:.4rem 0 .6rem}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair,.pack{grid-template-columns:1fr}.stephead{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>Label what you know and how you know it</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">The labels</h2>
+<p id="how"></p>
+<h3>Status: how you know a line</h3>
+<dl id="statusDefs"></dl>
+<h3>Disposition: what a stated limit or want amounts to</h3>
+<dl id="dispDefs"></dl>
+<div class="scope" id="rule"></div>
+</section>
+
+<section aria-labelledby="h-pack">
+<h2 id="h-pack">The evidence pack</h2>
+<p class="hint" id="packNote"></p>
+<div class="pack">
+<div><h3>Records</h3><ul id="records"></ul></div>
+<div><h3>Interview notes</h3><ul id="notes"></ul></div>
+</div>
+</section>
+
+<section aria-labelledby="h-lines">
+<h2 id="h-lines">Label the twelve lines</h2>
+<p class="hint" id="linesNote"></p>
+<div id="lines"></div>
+</section>
+
+<section aria-labelledby="h-conf">
+<h2 id="h-conf">Keep both sides of a conflict</h2>
+<p class="hint" id="confNote"></p>
+<div id="conflicts"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check the labels</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the open question</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="variant" class="scope" hidden>
+<label for="meas" id="measLabel"></label>
+<input type="range" id="meas" min="0" max="100" step="1" value="50">
+<output id="measOut" for="meas" role="status" aria-live="polite"></output>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A discovery brief is only as strong as the label on each line. The forward deployed engineer gives every line two labels: how it is known, and, for a stated limit or want, what it amounts to. A line copied into a design without its label looks as solid as the strongest line beside it, and nobody can tell which one to challenge. Below is the pack of notes and records gathered at the Sample Enterprise. Label twelve lines from it, then handle two places where the pack contradicts itself.`,
+ how:'For each line, choose a status and the strongest source in the pack that states it. For each line that states a limit or a want, also choose a disposition. Then deal with the two conflicts and check. Nothing is timed.',
+ statusDefs:[
+  ['Documented','A record, rule or measurement in the pack states it.'],
+  ['Reported','A person said it, and no record in the pack states it.'],
+  ['Inferred','You drew it from other facts. Nothing in the pack states it.'],
+  ['Unknown','The pack leaves it open.']
+ ],
+ statusNote:'Not every label is needed for every pack.',
+ dispDefs:[
+  ['Binding','A documented authority stands behind the limit, so the design has to live within it.'],
+  ['Preference','Someone wants it, and no authority stands behind it.'],
+  ['Open question','A limit is stated, but nothing in the pack documents it. Open means unsupported in the pack. It does not mean false.']
+ ],
+ rule:`Label a line by the strongest source in the pack that states it. A line can be raised in an interview and still be documented, if a record states it too. Never label a line stronger than its source. A statement that cannot be traced to a document, a rule or a measurement does not bind anything yet.`,
+ packNote:'Each entry is shown as the pack holds it.',
+ records:[
+  [`Claims baseline, cycle time`,`Cycle time from receipt to determination is ${fmt(9.4,1)} calendar days.`],
+  [`Claims baseline, joins`,`${fmt(11)} percent of claims cannot be joined to the service-contract registry without a mapping table.`],
+  [`Systems extract, claims master`,`Claim header and detail on the mainframe, updated by transactions. Writes happen only through existing transactions.`],
+  [`Systems extract, coverage rules repository`,`Policy forms, endorsements and wordings, kept by version. Superseded forms stay retrievable, as retention requires.`],
+  [`Systems extract, subsidiary directory`,`A separate identity store kept since the acquisition. Federation requires an entitlement review.`],
+  [`Regulatory register, determination letters`,`A determination letter must cite the policy provision relied upon.`],
+  [`Regulatory register, record retention`,`Claim records are kept for ${fmt(7)} years.`],
+  [`Regulatory register, data residency`,`EU policyholder data is processed in the EU region.`]
+ ],
+ notes:[
+  [`Regulatory compliance officer`,`Determination letters cite the provision relied on. Claim records are kept for ${fmt(7)} years. EU policyholder data is processed in the EU region.`],
+  [`Claims desk supervisor`,`The pilot cut touch time to ${fmt(51)} minutes. Adjusters want the draft inside their existing claim view.`],
+  [`Enterprise architect`,`The mainframe can't take more load. The estate diagram is current.`],
+  [`Integration engineer, systems of record`,`The assistant reads through the published interfaces, and ${fmt(3)} of ${fmt(7)} return what it needs. The claims master accepts writes only through existing transactions. Superseded forms are archived out of the rules repository.`],
+  [`Data steward, policy and claims data`,`Unit identifiers differ between the policy master and the service-contract registry. The mapping table is current and maintained. The registry is read from a nightly extract.`],
+  [`Identity and access lead`,`Adjusters authenticate through the subsidiary directory. Federation requires an entitlement review. The assistant's identity beyond the interface layer is a question for integration.`]
+ ],
+ linesNote:'Choose from the sources offered for each line. "Nothing in the pack" is one of them.',
+ confNote:'Two pairs of lines above disagree. Keep both sides of each pair in the brief. Then choose the one observation that would show which side is true.',
+ statuses:[['','Choose'],['documented','Documented'],['reported','Reported'],['inferred','Inferred'],['unknown','Unknown']],
+ disps:[['','Choose'],['binding','Binding'],['preference','Preference'],['open','Open question']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose every field for this line, then check.',
+  near:{
+   status:'The rest of this line holds. The status is out of place. Look at the kind of source you chose: a record, rule or measurement makes a line documented, a person’s account makes it reported, your own conclusion makes it inferred, and an empty pack makes it unknown.',
+   source:'The rest of this line holds. The source is out of place. Find the entry in the pack that states this line, and check it says what the line says.',
+   sourceWeak:'The rest of this line holds. The source is out of place. The pack holds a record that states this line too. Label a line by the strongest source behind it, not by the person who repeated it.',
+   disposition:'The rest of this line holds. The disposition is out of place. Ask what stands behind it: a documented authority makes a limit binding, a want with no authority is a preference, and a limit with no document behind it in the pack is an open question, which means unsupported, not false.'
+  },
+  bad:'Start with the source. Find the entry in the pack that states this line most strongly, and ask whether it is a record or a person’s account. The status follows from that. For a limit or a want, then ask whether a documented authority stands behind it.'
+ },
+ conf:{
+  idle:'Keep both statements, then choose an observation.',
+  near:{
+   keep:'The observation holds. A statement has been dropped, and that is out of place. Deleting a side also deletes the observation that would settle the conflict. Keep both.',
+   testimony:'Keeping both sides holds. The observation is out of place. Asking again produces more testimony, and testimony is what is in conflict. Ask what you could observe in the estate instead.',
+   rule:'Keeping both sides holds. The observation is out of place. A rule says what should be. The conflict is about what is. Ask what you could observe in the estate instead.',
+   escalation:'Keeping both sides holds. The observation is out of place. A decision from someone with more authority picks a side and shows nothing about the estate. Ask what you could observe instead.'
+  },
+  bad:'Two things need another look. Keep both statements in the brief. Then ask what you could count or retrieve in the estate that would show which statement is true, and choose that.'
+ },
+ summary:{
+  idle:'Choose every field for every line, an observation for each conflict, and check again.',
+  some:'Some items need another look. Read the notes on the marked items, change your choices and check again.'
+ },
+ second:{
+  intro:`The line about the mainframe has only one person’s remark behind it, so it stays open. Suppose someone measured the peak consumption of the interface layer against its published limit. The share you set below is your assumption. It is not a figure from the case.`,
+  swap:'Replace the remark with a measurement (illustrative)',
+  label:'Measured peak consumption, as a share of the published limit',
+  start:'Move the slider to set a measured share.',
+  restoreNote:'Restored. The line is back to an open question: unsupported in the pack, not false.'
+ }
+};
+
+/* Sources. kind: record, note or none. */
+const SRC={
+ base_cycle:{kind:'record',label:'Claims baseline, cycle time'},
+ base_join:{kind:'record',label:'Claims baseline, joins'},
+ ext_claims:{kind:'record',label:'Systems extract, claims master'},
+ ext_rules:{kind:'record',label:'Systems extract, coverage rules repository'},
+ ext_dir:{kind:'record',label:'Systems extract, subsidiary directory'},
+ reg_letter:{kind:'record',label:'Regulatory register, determination letters'},
+ reg_retain:{kind:'record',label:'Regulatory register, record retention'},
+ reg_eu:{kind:'record',label:'Regulatory register, data residency'},
+ n_comp:{kind:'note',label:'Interview note, regulatory compliance officer'},
+ n_desk:{kind:'note',label:'Interview note, claims desk supervisor'},
+ n_arch:{kind:'note',label:'Interview note, enterprise architect'},
+ n_integ:{kind:'note',label:'Interview note, integration engineer'},
+ n_steward:{kind:'note',label:'Interview note, data steward'},
+ n_iam:{kind:'note',label:'Interview note, identity and access lead'},
+ none:{kind:'none',label:'Nothing in the pack'}
+};
+
+/* The twelve lines. key: status, source, optional weak same-topic sources, optional disposition. */
+const LINES=[
+ {n:1,text:'EU policyholder data is processed in the EU region.',raised:'the interview note from the regulatory compliance officer',gloss:'',
+  opts:['n_comp','reg_eu','ext_dir','none'],key:{status:'documented',source:'reg_eu',weak:['n_comp'],disp:'binding'},
+  ok:`Correct. Documented, and binding. Scope: any extension of the assistant to European business, which lies outside the funded boundary, so the line is kept as a condition and not dropped. Authority: the data residency rule in the regulatory register, enforced through supervision. Consequence: processing EU policyholder data outside the EU region would breach the rule.`},
+ {n:2,text:`Cycle time is ${fmt(9.4,1)} days, from receipt to determination.`,raised:'the claims baseline',gloss:'',
+  opts:['n_desk','base_cycle','base_join','none'],key:{status:'documented',source:'base_cycle'},
+  ok:'Correct. Documented. The claims baseline states it. It is a measured fact and not a limit, so it takes no disposition.'},
+ {n:3,text:'The mapping table is current.',raised:'the interview note from the data steward',gloss:'The mapping table matches unit identifiers in the policy master to those in the service-contract registry, because the two use different conventions.',
+  opts:['base_join','n_steward','n_integ','none'],key:{status:'reported',source:'n_steward'},
+  ok:'Correct. Reported. Only the data steward’s account says it. It sits against the line below, so neither is dropped.'},
+ {n:4,text:`${fmt(11)} percent of claims cannot be joined without the mapping table.`,raised:'the claims baseline',gloss:'',
+  opts:['n_steward','base_join','base_cycle','none'],key:{status:'documented',source:'base_join'},
+  ok:'Correct. Documented. The claims baseline records it. It sits against the line above, so both stay in the brief.'},
+ {n:5,text:'Superseded forms are archived out of the rules repository.',raised:'the interview note from the integration engineer',gloss:'The rules repository holds policy forms and their wordings. A superseded form is an older version that a newer one replaced.',
+  opts:['ext_rules','n_integ','n_steward','none'],key:{status:'reported',source:'n_integ'},
+  ok:'Correct. Reported. Only the integration engineer’s account says it. It sits against the line below, so neither is dropped.'},
+ {n:6,text:'Superseded forms stay retrievable, as retention requires.',raised:'the systems extract',gloss:'',
+  opts:['reg_retain','ext_rules','n_integ','none'],key:{status:'documented',source:'ext_rules'},
+  ok:'Correct. Documented. The systems extract states it. It sits against the line above, so both stay in the brief.'},
+ {n:7,text:'Determination letters cite the provision relied on.',raised:'the interview note from the regulatory compliance officer',gloss:'',
+  opts:['n_comp','reg_retain','reg_letter','none'],key:{status:'documented',source:'reg_letter',weak:['n_comp'],disp:'binding'},
+  ok:'Correct. Documented, and binding. Scope: every determination letter. Authority: the determination requirement in the regulatory register, enforced by the state-level insurance regulators. Consequence: a letter that does not cite the provision relied on is a noncompliant determination.'},
+ {n:8,text:`Claim records are kept for ${fmt(7)} years.`,raised:'the interview note from the regulatory compliance officer',gloss:'',
+  opts:['reg_retain','n_comp','reg_eu','none'],key:{status:'documented',source:'reg_retain',weak:['n_comp'],disp:'binding'},
+  ok:`Correct. Documented, and binding. Scope: claim records. Authority: the retention rule in the regulatory register. Consequence: a record deleted before ${fmt(7)} years have passed is a retention breach.`},
+ {n:9,text:'The claims master accepts writes only through existing transactions.',raised:'the interview note from the integration engineer',gloss:'A transaction is one unit of work that the claims master carries out on request, such as opening a claim record.',
+  opts:['ext_rules','n_integ','ext_claims','none'],key:{status:'documented',source:'ext_claims',weak:['n_integ'],disp:'binding'},
+  ok:'Correct. Documented, and binding. Scope: the claims master. Authority: the systems extract. Consequence: no other write path is available.'},
+ {n:10,text:'Subsidiary identities federate only after an entitlement review.',raised:'the interview note from the identity and access lead',gloss:'An entitlement review checks what access each identity should hold. Federation links the subsidiary directory to corporate single sign-on.',
+  opts:['n_iam','ext_claims','ext_dir','none'],key:{status:'documented',source:'ext_dir',weak:['n_iam'],disp:'binding'},
+  ok:'Correct. Documented, and binding. Scope: the identities of adjusters in the subsidiary. Authority: the systems extract. Consequence: no corporate single sign-on until the review is done.'},
+ {n:11,text:'The mainframe can’t take more load.',raised:'the interview note from the enterprise architect',gloss:'The mainframe hosts the policy master and the claims master.',
+  opts:['ext_claims','n_integ','n_arch','none'],key:{status:'reported',source:'n_arch',disp:'open'},
+  ok:'Correct. Reported, and an open question. One person’s remark is the only support, so the pack leaves the line unsupported. That does not make it false. It stays in the brief as an open question until someone measures consumption against the published limit.'},
+ {n:12,text:'Adjusters want the draft inside the existing claim view.',raised:'the interview note from the claims desk supervisor',gloss:'',
+  opts:['n_arch','n_desk','base_cycle','none'],key:{status:'reported',source:'n_desk',disp:'preference'},
+  ok:'Correct. Reported, and a preference. Adjusters want it, but no document gives anyone authority over it. It informs the design and does not bind it.'}
+];
+
+/* The two conflicts. kind marks why each distractor fails. */
+const CONFLICTS=[
+ {id:'A',title:'Conflict A: is the mapping table current?',sides:[3,4],key:'a1',
+  opts:[
+   ['a3','rule','Read the policy that says the mapping table must be kept current.'],
+   ['a1','key','Join a sample of claims to the registry and count the failures.'],
+   ['a4','escalation','Ask the claims operations director to decide which statement the brief will use.'],
+   ['a2','testimony','Ask the data steward and the senior claims adjuster to state their views again, together.']
+  ],
+  ok:`Correct. Both sides stay in the brief, one reported and one documented. Joining a sample of claims and counting the failures shows whether the table is current. Until someone does it, the brief says only what both lines allow: the data steward describes the table as current, and ${fmt(11)} percent of claims cannot be joined without it.`},
+ {id:'B',title:'Conflict B: are superseded forms still retrievable?',sides:[5,6],key:'b1',
+  opts:[
+   ['b4','escalation','Ask the enterprise architect to decide which statement stands.'],
+   ['b2','testimony','Ask the integration engineer to confirm in writing that superseded forms are archived out.'],
+   ['b1','key','Query the repository for a known superseded form and see whether it comes back.'],
+   ['b3','rule','Read the retention requirement again to see what should be retrievable.']
+  ],
+  ok:'Correct. Both sides stay in the brief, one reported and one documented. Querying the repository for a known superseded form shows which is true. Until someone does it, the brief records both lines and asserts neither.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function lineOf(n){return LINES.filter(function(l){return l.n===n;})[0];}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+$('#how').textContent=COPY.how;
+COPY.statusDefs.forEach(function(d){$('#statusDefs').appendChild(h('dt',{text:d[0]}));$('#statusDefs').appendChild(h('dd',{text:d[1]}));});
+$('#statusDefs').appendChild(h('dd',{class:'hint',text:COPY.statusNote}));
+COPY.dispDefs.forEach(function(d){$('#dispDefs').appendChild(h('dt',{text:d[0]}));$('#dispDefs').appendChild(h('dd',{text:d[1]}));});
+$('#rule').appendChild(h('p',{text:COPY.rule}));
+$('#packNote').textContent=COPY.packNote;
+COPY.records.forEach(function(r){$('#records').appendChild(h('li',{},[h('strong',{text:r[0]+'. '}),r[1]]));});
+COPY.notes.forEach(function(r){$('#notes').appendChild(h('li',{},[h('strong',{text:r[0]+'. '}),r[1]]));});
+$('#linesNote').textContent=COPY.linesNote;
+$('#confNote').textContent=COPY.confNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+$('#measLabel').textContent=COPY.second.label;
+
+function sel(id,opts){
+  const s=h('select',{id:id});
+  opts.forEach(function(o){s.appendChild(option(o[0],o[1]));});
+  return s;
+}
+
+/* Line cards */
+LINES.forEach(function(L){
+  const card=h('article',{class:'card',id:'card-'+L.n});
+  card.appendChild(h('div',{class:'stephead'},[h('span',{class:'stepid',text:'Line '+L.n}),h('span',{class:'stepact',text:L.text})]));
+  card.appendChild(h('p',{class:'raised',text:'Raised in '+L.raised+'.'+(L.gloss?' '+L.gloss:'')}));
+  const grid=h('div',{class:'pair'});
+  grid.appendChild(h('div',{class:'field'},[h('label',{for:'st-'+L.n,text:'Status'}),sel('st-'+L.n,COPY.statuses)]));
+  const srcOpts=[['','Choose']].concat(L.opts.map(function(k){return [k,SRC[k].label];}));
+  grid.appendChild(h('div',{class:'field'},[h('label',{for:'so-'+L.n,text:'Strongest source in the pack'}),sel('so-'+L.n,srcOpts)]));
+  if(L.key.disp){
+    grid.appendChild(h('div',{class:'field span2'},[h('label',{for:'di-'+L.n,text:'Disposition'}),sel('di-'+L.n,COPY.disps)]));
+  }
+  card.appendChild(grid);
+  if(!L.key.disp){
+    const inConf=L.n>=3&&L.n<=6;
+    card.appendChild(h('p',{class:'hint',text:inConf?'This line is one side of a conflict, handled below. It takes no disposition.':'This line states a fact and not a limit or a want, so it takes no disposition.'}));
+  }
+  card.appendChild(h('div',{class:'fb',id:'fb-'+L.n,role:'status','aria-live':'polite'}));
+  $('#lines').appendChild(card);
+});
+
+/* Conflict panels */
+CONFLICTS.forEach(function(C){
+  const card=h('article',{class:'card',id:'cf-'+C.id});
+  card.appendChild(h('h3',{text:C.title}));
+  const grid=h('div',{class:'pair'});
+  C.sides.forEach(function(n){
+    const L=lineOf(n);
+    const cb=h('input',{type:'checkbox',id:'keep-'+C.id+'-'+n});
+    cb.checked=true;
+    grid.appendChild(h('div',{class:'side'},[
+      h('p',{text:'Line '+n+': '+L.text}),
+      h('label',{class:'opt',for:'keep-'+C.id+'-'+n},[cb,h('span',{text:'Keep this line in the brief'})])
+    ]));
+  });
+  card.appendChild(grid);
+  const fs=h('fieldset');
+  fs.appendChild(h('legend',{text:'Which observation would settle it?'}));
+  C.opts.forEach(function(o){
+    const r=h('input',{type:'radio',name:'obs-'+C.id,id:'obs-'+o[0],value:o[0]});
+    fs.appendChild(h('label',{class:'opt',for:'obs-'+o[0]},[r,h('span',{text:o[2]})]));
+  });
+  card.appendChild(fs);
+  card.appendChild(h('div',{class:'fb',id:'fb-c'+C.id,role:'status','aria-live':'polite'}));
+  $('#conflicts').appendChild(card);
+});
+
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Key: status, source and (for limits and wants) disposition per line. */
+function lineState(L){
+  const st=$('#st-'+L.n).value,so=$('#so-'+L.n).value;
+  const di=L.key.disp?$('#di-'+L.n).value:'';
+  if(!st||!so||(L.key.disp&&!di))return {s:'idle',m:COPY.msg.idle};
+  const wrong=[];
+  const weak=L.key.weak&&L.key.weak.indexOf(so)>=0;
+  if(weak&&st==='reported'){
+    wrong.push('sourceWeak');
+  }else{
+    if(so!==L.key.source)wrong.push('source');
+    if(st!==L.key.status)wrong.push('status');
+    if(SRC[so].kind==='note'&&st==='documented'&&wrong.indexOf('status')<0)wrong.push('status');
+  }
+  if(L.key.disp&&di!==L.key.disp)wrong.push('disposition');
+  if(!wrong.length)return {s:'ok',m:L.ok};
+  if(wrong.length===1)return {s:'near',m:COPY.msg.near[wrong[0]]};
+  return {s:'bad',m:COPY.msg.bad};
+}
+
+/* Key: both sides kept, and the one settling observation. */
+function conflictState(C){
+  const kept=C.sides.every(function(n){return $('#keep-'+C.id+'-'+n).checked;});
+  const chosen=document.querySelector('input[name="obs-'+C.id+'"]:checked');
+  const val=chosen?chosen.value:'';
+  if(!val&&kept)return {s:'idle',m:COPY.conf.idle};
+  const wrong=[];
+  if(!kept)wrong.push('keep');
+  if(val!==C.key)wrong.push('obs');
+  if(!wrong.length)return {s:'ok',m:C.ok};
+  if(wrong.length===2)return {s:'bad',m:COPY.conf.bad};
+  if(wrong[0]==='keep')return {s:'near',m:COPY.conf.near.keep};
+  const kind=C.opts.filter(function(o){return o[0]===val;})[0][1];
+  return {s:'near',m:COPY.conf.near[kind]};
+}
+
+function lockAll(state){
+  LINES.forEach(function(L){
+    $('#st-'+L.n).disabled=state;$('#so-'+L.n).disabled=state;
+    if(L.key.disp)$('#di-'+L.n).disabled=state;
+  });
+  CONFLICTS.forEach(function(C){
+    C.sides.forEach(function(n){$('#keep-'+C.id+'-'+n).disabled=state;});
+    C.opts.forEach(function(o){$('#obs-'+o[0]).disabled=state;});
+  });
+}
+
+function summaryAll(){
+  const bind=LINES.filter(function(l){return l.key.disp==='binding';}).length;
+  const pref=LINES.filter(function(l){return l.key.disp==='preference';}).length;
+  const open=LINES.filter(function(l){return l.key.disp==='open';}).length;
+  return `Every item holds. ${fmt(LINES.length)} lines carry a status and a source. ${fmt(bind)} limits bind, ${fmt(pref)} is a preference, and ${fmt(open)} is an open question, which means unsupported in the pack and not false. Both conflicts stay in the brief, each with the observation that would settle it.`;
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  LINES.forEach(function(L){
+    const r=lineState(L);
+    showFb($('#fb-'+L.n),$('#card-'+L.n),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  CONFLICTS.forEach(function(C){
+    const r=conflictState(C);
+    showFb($('#fb-c'+C.id),$('#cf-'+C.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    lockAll(true);
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    $('#summary').textContent=summaryAll();
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: replace the remark with a measured share of the published limit */
+function measText(v){
+  if(v>=100){
+    return `At ${fmt(v)} percent the limit is reached. A measurement now documents the line as holding. It becomes binding: its scope is the mainframe, its authority is the published limit and the measurement, and its consequence is that no further load fits.`;
+  }
+  return `At ${fmt(v)} percent, ${fmt(100-v)} percent of the published limit is unused. A measurement now documents the line as not holding at that use, so it stops being an open question and does not bind. Whether the unused share is enough for the assistant is a separate question, and this measurement does not answer it. The remark was the same in both cases. Only the observation changed its status.`;
+}
+function readMeas(){
+  const m=$('#meas');
+  const v=Number(m.value);
+  m.setAttribute('aria-valuetext',fmt(v)+' percent of the published limit');
+  $('#measOut').textContent=measText(v);
+}
+$('#meas').addEventListener('input',readMeas);
+$('#swap').addEventListener('click',function(){
+  $('#variant').hidden=false;
+  $('#measOut').textContent=COPY.second.start;
+  $('#restoreNote').textContent='';
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#meas').focus();
+});
+$('#restore').addEventListener('click',function(){
+  $('#variant').hidden=true;
+  $('#meas').value=50;
+  $('#measOut').textContent='';
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

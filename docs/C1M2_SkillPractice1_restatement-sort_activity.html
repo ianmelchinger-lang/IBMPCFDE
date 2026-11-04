@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restate the request without the solution</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:880px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.scope{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.scope p{margin:.2rem 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card .lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+.stmt{margin:.2rem 0 .7rem;font-size:1.02rem}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:.4rem 0}
+.ctl label{font-weight:600;font-size:.92rem;min-width:9.5rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:2px solid var(--ctl);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.card.ok{border-left:5px solid var(--accent)}
+.card.near{border-left:5px double var(--accent)}
+.card.bad{border-left:5px solid var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+table.tie{width:100%;border-collapse:collapse;margin:.5rem 0 .8rem;font-size:.95rem}
+table.tie th,table.tie td{text-align:left;vertical-align:top;padding:.5rem .6rem;border-bottom:1px solid var(--line)}
+table.tie th{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.gone{font-weight:600}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.ctl label{min-width:0;width:100%}.ctl select{width:100%}table.tie,table.tie thead,table.tie tbody,table.tie tr,table.tie th,table.tie td{display:block}table.tie thead{position:absolute;left:-9999px}table.tie tr{border-bottom:1px solid var(--line);padding:.4rem 0}table.tie td{border:0;padding:.2rem 0}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Restate the request without the solution</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Four ways a restatement goes wrong</h2>
+<dl id="defs"></dl>
+<div class="panel">
+<h3 id="tests-h"></h3>
+<ul id="tests"></ul>
+</div>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">The request and the notes</h2>
+<div class="scope" id="request"></div>
+<h3>Interview notes</h3>
+<ul id="interviews"></ul>
+<h3>Baseline records</h3>
+<ul id="records"></ul>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Give each restatement a verdict</h2>
+<p id="phaseNote" class="hint"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my verdicts</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="tie" class="panel" hidden aria-labelledby="h-tie">
+<h2 id="h-tie" style="margin-top:0">What the kept restatement rests on</h2>
+<p id="tieIntro"></p>
+<table class="tie" id="tieTable"><thead><tr><th scope="col">Phrase</th><th scope="col">What stands behind it</th></tr></thead><tbody></tbody></table>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the note</button>
+<p id="secondNote" class="hint" role="status" aria-live="polite"></p>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A request often names a solution before anyone has described the problem. "Confirm the rollout plan for the assistant" is one. A solution label packs four questions into one phrase: what happens now, where the consequence appears, which decision or action it touches, and what better would mean. An operational problem statement keeps the four questions and drops the solution. It describes an observable condition in a named workflow, with the change that would count as better. Observable means someone could see it in the work or measure it.`,
+ defs:[
+  ['Names a solution','The sentence names something to build, buy or roll out.'],
+  ['Invents a client fact','The sentence states a figure or fact that no note supports.'],
+  ['States a requirement','The sentence says what must be true afterward, not what is happening now.'],
+  ['Names no observable condition','The sentence is too vague for anyone to see or measure.']
+ ],
+ testsHead:'A restatement is worth keeping only if it passes four tests',
+ tests:[
+  ['Condition','It describes something that happens now in the claims workflow.'],
+  ['Sourced','Every figure and fact traces to a note, or the sentence says plainly that it is not yet known.'],
+  ['Solution-free','It names nothing to build, buy or roll out.'],
+  ['Descriptive','It describes today. It does not set a rule for the outcome.']
+ ],
+ request:`The request as handed over: the claims operations director asks discovery to confirm the rollout plan for the assistant, because adjusters are the bottleneck.`,
+ interviews:[
+  `Claims operations director: adjusters are the bottleneck. More adjusters, or the assistant everywhere, would fix cycle time. The brief should confirm the rollout plan.`,
+  `Claims desk supervisor: the pilot cut touch time to ${fmt(51)} minutes. Adjusters want the draft inside their existing claim view.`,
+  `Senior claims adjuster: most handling time goes to assembling provisions, endorsements, inspection reports and service history. The service-history match often fails.`
+ ],
+ records:[
+  `Touch time, the minutes an adjuster actively works one claim, before the assistant: ${fmt(68)} minutes.`,
+  `Cycle time, the calendar days from receipt to determination: ${fmt(9.4,1)} days.`,
+  `Cycle-time target set by the sponsor: ${fmt(5,1)} calendar days.`,
+  `Claims that need a policy-provision lookup: ${fmt(86)} percent.`,
+  `Claims with a field inspection report attached: ${fmt(41)} percent.`,
+  `Claims that cannot be joined to the service-contract registry without a mapping table: ${fmt(11)} percent. A mapping table translates one system's unit identifiers into another's.`
+ ],
+ phaseNote:'Choose one restatement to keep and give each of the other four its single defect. Then check. Nothing is timed.',
+ options:[
+  ['','Choose a verdict'],
+  ['keep','Keep: it passes all four tests'],
+  ['solution','Names a solution'],
+  ['invented','Invents a client fact'],
+  ['requirement','States a requirement'],
+  ['vague','Names no observable condition']
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ idleMsg:'Choose a verdict for this restatement.',
+ keepBad:'This restatement passes all four tests. First move: run the tests on it one at a time. Mark a defect only where a test fails, and point to the phrase that fails it.',
+ nearTag:'This restatement has a defect, which is right, but it is a different one. Read the sentence against the four tests again and find the one it fails.',
+ summary:{
+  idle:'Give every restatement a verdict, then check again.',
+  some:'Some verdicts need another look. Read the notes on the marked restatements, change your choices and check again.',
+  two:'Only one restatement can be kept. Change one of your keeps, then check again.',
+  all:'Every verdict holds. One restatement is kept, and each of the other four fails in exactly one way.'
+ },
+ tieIntro:`Every phrase in the kept restatement traces to a note or stands as an open item. A phrase with neither is a claim you made yourself.`,
+ second:{
+  intro:'The kept restatement leans on the senior claims adjuster for what adjusters assemble. Take that note away and see what the sentence rests on.',
+  swap:`Remove the senior claims adjuster's note`,
+  note:'The sentence did not change. The ground under one phrase did. A phrase with no note behind it is a claim you made yourself.',
+  restoreNote:'Restored. Each phrase traces to a note or stands as an open item again.',
+  none:'No note supports this phrase. It would have to be dropped or recorded as an open question.'
+ }
+};
+
+/* The five restatements, in the order shown. key is the keyed verdict. */
+const R=[
+ {id:'A',key:'requirement',
+  text:`Every determination must be issued within ${fmt(5,1)} days of receipt.`,
+  first:'First move: ask whether the sentence describes what is happening now or what must be true later. A target says where you want to be. It says nothing about what is happening.',
+  why:'States a requirement. It says what must be true afterward, not what happens today.'},
+ {id:'B',key:'solution',
+  text:`Cycle time is ${fmt(9.4,1)} days because the assistant runs on only one product line.`,
+  first:'First move: read each noun and ask whether it names something to build, buy or roll out.',
+  why:'Names a solution. It presumes the assistant is the answer, and that its absence is the cause.'},
+ {id:'C',key:'keep',
+  text:`Cycle time is ${fmt(9.4,1)} days against a ${fmt(5,1)}-day target. Before each determination, adjusters assemble the provisions in force, the endorsements, the inspection report and the service history; how much of touch time this takes is not yet measured.`,
+  first:'',
+  why:'Kept. It states a condition with figures from the baseline records, names what adjusters assemble, names no solution, and leaves the unmeasured share open.'},
+ {id:'D',key:'vague',
+  text:`Claims handling is inefficient and adjusters are under pressure.`,
+  first:'First move: ask what someone could see or measure in the claims workflow to know the sentence is true.',
+  why:'Names no observable condition. Nobody could see or measure "inefficient" or "under pressure" as written.'},
+ {id:'E',key:'invented',
+  text:`Adjusters spend ${fmt(40)} of their ${fmt(68)} minutes per claim searching for documents.`,
+  first:'First move: find each number in the notes. A figure no note supports is a fact the client has not given you.',
+  why:`Invents a client fact. The ${fmt(68)} minutes is a baseline record. No note supports the ${fmt(40)}.`}
+];
+
+/* Phrases of the kept restatement and what stands behind each. */
+const TIE=[
+ {id:'t1',phrase:`Cycle time is ${fmt(9.4,1)} days against a ${fmt(5,1)}-day target`,
+  behind:'Baseline records: the cycle time and the sponsor\'s target.',kind:'record'},
+ {id:'t2',phrase:'adjusters assemble the provisions in force, the endorsements, the inspection report and the service history',
+  behind:'Interview note: the senior claims adjuster.',kind:'note'},
+ {id:'t3',phrase:'how much of touch time this takes is not yet measured',
+  behind:'Open item: no note measures it. It stays open until someone times the assembly.',kind:'open'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#tests-h').textContent=COPY.testsHead;
+COPY.tests.forEach(function(t){$('#tests').appendChild(h('li',null,[h('strong',{text:t[0]+': '}),t[1]]));});
+$('#request').appendChild(h('p',{text:COPY.request}));
+COPY.interviews.forEach(function(t){$('#interviews').appendChild(h('li',{text:t}));});
+COPY.records.forEach(function(t){$('#records').appendChild(h('li',{text:t}));});
+$('#phaseNote').textContent=COPY.phaseNote;
+$('#tieIntro').textContent=COPY.tieIntro;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+/* Cards */
+R.forEach(function(r){
+  const card=h('article',{class:'card',id:'card-'+r.id});
+  card.appendChild(h('span',{class:'lab',text:'Restatement '+r.id}));
+  card.appendChild(h('p',{class:'stmt',text:r.text}));
+  const sel=h('select',{id:'v-'+r.id});
+  COPY.options.forEach(function(o){sel.appendChild(option(o[0],o[1]));});
+  card.appendChild(h('div',{class:'ctl'},[h('label',{for:'v-'+r.id,text:'Your verdict'}),sel]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+r.id,role:'status','aria-live':'polite'}));
+  $('#cards').appendChild(card);
+});
+
+/* Feedback */
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl){cardEl.className='card '+(res.s==='idle'?'':res.s);}
+}
+
+/* Key */
+function verdictState(sel,r){
+  if(!sel)return {s:'idle',m:COPY.idleMsg};
+  if(r.key==='keep'){
+    if(sel==='keep')return {s:'ok',m:r.why};
+    return {s:'bad',m:COPY.keepBad};
+  }
+  if(sel===r.key)return {s:'ok',m:r.why};
+  if(sel==='keep')return {s:'bad',m:r.first};
+  return {s:'near',m:COPY.nearTag};
+}
+
+function buildTie(removed){
+  const body=$('#tieTable tbody');
+  body.textContent='';
+  TIE.forEach(function(t){
+    const gone=removed&&t.id==='t2';
+    const td=h('td',{class:gone?'gone':'',text:gone?COPY.second.none:t.behind});
+    body.appendChild(h('tr',null,[h('td',{text:t.phrase}),td]));
+  });
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false,keeps=0;
+  R.forEach(function(r){if($('#v-'+r.id).value==='keep')keeps++;});
+  R.forEach(function(r){
+    const sel=$('#v-'+r.id).value;
+    const res=verdictState(sel,r);
+    showFb($('#fb-'+r.id),$('#card-'+r.id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    R.forEach(function(r){$('#v-'+r.id).disabled=true;});
+    $('#phaseNote').textContent='The verdicts are locked.';
+    $('#check').hidden=true;
+    buildTie(false);
+    $('#tie').hidden=false;
+    $('#second').hidden=false;
+    $('#summary').textContent=COPY.summary.all;
+  }else if(keeps>1){
+    $('#summary').textContent=COPY.summary.two;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the same restatement, one note removed */
+$('#swap').addEventListener('click',function(){
+  buildTie(true);
+  $('#secondNote').textContent=COPY.second.note;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  buildTie(false);
+  $('#secondNote').textContent=COPY.second.restoreNote;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>
