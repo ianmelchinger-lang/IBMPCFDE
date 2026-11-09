@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State the collision, or reject it</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.note{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0}
+fieldset{border:1px solid var(--ctl);border-radius:10px;background:var(--panel);margin:10px 0;padding:8px 12px 10px}
+legend{padding:0 .4rem;font-weight:600;font-size:.95rem}
+.opt{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem .2rem;font-weight:400;font-size:.97rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.3rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent-text)}
+label.sel{display:block;font-weight:600;font-size:.95rem;margin:.5rem 0 .2rem}
+select{font:inherit;width:100%;padding:.45rem .5rem;border:1px solid var(--ctl);border-radius:8px;background:#fff;color:var(--ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.chip.doc{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.chip.hyp{background:#fff;color:var(--muted);border-color:var(--ctl);border-style:dashed}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.row{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.row.ok{border-left:5px solid var(--accent)}
+.row.near{border-left:5px double var(--accent)}
+.row.bad{border-left:5px solid var(--ctl)}
+.row .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.row .why{color:var(--muted);font-size:.95rem;margin:.2rem 0 .6rem}
+.row .var{color:var(--accent-text);font-weight:600}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.m{border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:10px 12px;font-size:.93rem}
+.m .role{font-weight:700}
+.m .meta{color:var(--muted);margin-top:.25rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>State the collision, or reject it</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+<div class="note" id="noPredict"></div>
+</header>
+
+<section aria-labelledby="h-rows">
+<h2 id="h-rows">Eight candidate pairings</h2>
+<p id="rowsNote"></p>
+<div id="rows"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my pairings</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the case as given</button>
+<p id="swapNote" class="hint" role="status" aria-live="polite"></p>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const M={
+ sponsor:{role:'Claims operations director (sponsor)',text:`Cycle time of ${fmt(5,1)} calendar days, from ${fmt(9.4,1)} today`,src:'Sponsor objective; fiscal year',st:'Documented'},
+ gov:{role:'Model risk and AI governance lead',text:'Every high-tier use reaches the board with every governance record field evidenced',src:'Governance procedure; per submission',st:'Documented'},
+ rev:{role:'Claims desk supervisor',text:`Reversal rate must not rise above its ${fmt(3.1,1)} percent baseline`,src:`Guardrail; QA sample of ${fmt(400)} claims per quarter`,st:'Documented'},
+ rel:{role:'Release and change manager',text:'Change success, with systems-of-record changes riding the monthly train',src:'Change standard; monthly',st:'Documented'},
+ iam:{role:'Identity and access lead',text:'Entitlement reviews closed with no unreviewed access',src:'Security standard; per review',st:'Documented'},
+ sre:{role:'Site reliability engineer, platform operations',text:'Availability pages answered in on-call hours',src:'Service objective; monthly',st:'Documented'},
+ hall1:{role:'Model risk and AI governance lead',text:'"Doesn\'t want to be blamed for a bad determination"',src:'Hallway remark; no source',st:'Hypothesis'},
+ hall2:{role:'Release and change manager',text:'"Doesn\'t want extra work this quarter"',src:'Hallway remark; no source',st:'Hypothesis'},
+ ack:{role:'Claims desk supervisor',text:`Acknowledgement window met ${fmt(100)} percent of the time, from ${fmt(96.2,1)} percent today`,src:'Regulatory; quarterly',st:'Documented'},
+ avail:{role:'AI platform owner',text:`Availability of ${fmt(99.5,1)} percent during business hours`,src:'Service objective; monthly',st:'Documented'}
+};
+
+const DECS=[
+ {id:'auth',text:'The production authorization date'},
+ {id:'rev',text:'Reviewer time per claim at rollout volume'},
+ {id:'slot',text:'The release slot for systems-of-record changes'},
+ {id:'ent',text:`The entitlement review for the rollout's access changes`},
+ {id:'tgt',text:`The sponsor's cycle-time target itself`},
+ {id:'line',text:'Which product line the pilot covers'}
+];
+const RESS=[
+ {id:'d1',text:'Authorize production: AI review board'},
+ {id:'d2',text:'Accept residual risk: claims operations director'},
+ {id:'d3',text:'Entitlement review: identity and access lead'},
+ {id:'d4',text:'Release slot: release and change manager'},
+ {id:'d5',text:'Extend to further lines: claims operations director, claims desk supervisor consulted'},
+ {id:'d6',text:'Hold a release: AI platform owner or release and change manager'}
+];
+const DLABEL={};DECS.forEach(function(d){DLABEL[d.id]=d.text;});
+const RLABEL={};RESS.forEach(function(d){RLABEL[d.id]=d.text;});
+
+const VERDICTS=[
+ {id:'col',text:'A collision: two documented measures meet at a shared decision or resource'},
+ {id:'motive',text:'Not a collision: one side is a motive or remark with no source'},
+ {id:'vacancy',text:'Not a collision: it is a duty nobody has accepted'},
+ {id:'none',text:'Not a collision: the two measures draw on no shared decision or scarce resource'}
+];
+const REASON={
+ motive:'one side is a remark with no source, so it is a hypothesis about motive and not a measure',
+ vacancy:'it is a duty nobody has accepted, which the map records as a vacancy',
+ none:'the two measures draw on no shared decision or scarce resource'
+};
+
+const COPY={
+ lead:`A stakeholder measure is a documented target, objective, guardrail, budget or audit criterion that a role is held to, with a source and a period. An incentive collision exists when two roles can meet their own measures only by imposing cost, delay, risk or lost control on each other through a shared decision or resource. Stated that way, a collision can be checked and sent to the role that settles it. Stated as reluctance, it invites persuasion that changes neither measure. For each pairing below, decide whether it is a collision. If it is, name the shared decision and the role that resolves it.`,
+ terms:[
+  ['Shared decision or resource','The one decision, slot or stock of time that both measures draw on, so that a gain for one is a loss for the other.'],
+  ['Resolver','The role that owns the decision where the two measures meet and can settle the trade-off. Each choice in the last list names a decision and the role that owns it.'],
+  ['Vacancy','A duty no one has accepted. It is routed by finding a receiver, not by settling a trade-off.']
+ ],
+ noPredict:`This practice does not ask you to predict what anyone will do. No validated method infers behavior from a measure. A measure tells you what a role is held to. How it shapes a person's choices under pressure stays a hypothesis until a real decision corroborates it.`,
+ rowsNote:'Each pairing shows both measures with their source, period and status. Read the status before you decide: only a documented measure can support a collision.',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet answered'},
+ firstCol:'First move: write down both measures with their sources, then ask whether one decision or one scarce resource sits underneath both.',
+ summary:{
+  idle:'Answer every pairing, then check again.',
+  some:'Part of the set needs another look. Read the note on each marked pairing and check again.',
+  all:'All eight pairings hold. Four are collisions, each sent to the role that settles its decision. Four are rejected: one vacancy, two motives with no source, and one pair with no shared decision.',
+  allVar:'All eight pairings hold under the variation. With room on the train, the release-slot pairing is no longer a collision. Three collisions remain, and the other seven pairings are unchanged.'
+ },
+ second:{
+  intro:'A collision depends on scarcity at the shared decision. Suppose the next release train has room for the rollout\'s changes, and see which pairing moves.',
+  swap:'Suppose the next release train has room',
+  on:'Applied. Only the release-slot pairing changed. Update it and check again.',
+  restored:'Restored. In the case as given, the next train is full, so the release-slot pairing is a collision again.'
+ }
+};
+
+const PAIRS=[
+ {id:'p1',why:'The record is not ready for the next board sitting, and each sitting missed moves the date.',a:'sponsor',b:'gov',
+  key:{v:'col',dec:'auth',res:'d1'},
+  ok:'Pulling the date earlier shortens the time to evidence the record, and the procedure holds the record until every field is evidenced, which pushes the date out. Both are documented, and both depend on the production authorization date. The board settles it.',
+  decHint:'Ask which decision decides when the record may reach the board and production may be authorized.',
+  resHint:'Ask who holds authorization before production, and what document confers it.',
+  colWrongNote:''},
+ {id:'p2',why:'Rollout multiplies the claims each reviewer sees.',a:'sponsor',b:'rev',
+  key:{v:'col',dec:'rev',res:'d5'},
+  ok:'Reaching the target means more claims through each reviewer, and the guardrail needs enough minutes per claim for a review to catch an error. Both are documented, and both draw on reviewer time at rollout volume. The sponsor decides whether to extend to further lines, with the claims desk supervisor\'s reviewer commitment as the evidence that decision needs.',
+  decHint:'Ask which scarce thing both the target and the guardrail consume.',
+  resHint:'Ask which decision extends the assistant to more claims, and what evidence it requires.'},
+ {id:'p3',why:'The next release train for changes to the systems of record is full.',a:'sponsor',b:'rel',
+  varWhy:'Variation: the next release train has room for the rollout\'s changes.',
+  key:{v:'col',dec:'slot',res:'d4'},
+  varKey:{v:'none'},
+  ok:'A date earlier than the next open slot cannot be met without displacing other changes, and the change standard protects change success. Both are documented, and both draw on the release slot. The release and change manager owns it.',
+  varOk:'With room on the train, the slot is no longer scarce, so the sponsor\'s date no longer costs change success. The measures still sit side by side, but neither gains at the other\'s expense. The collision depended on scarcity at the shared decision.',
+  varCol:'With room on the next train, the slot is no longer scarce, so the sponsor\'s date no longer costs change success. First move: ask whether one measure\'s gain still costs the other.',
+  decHint:'Ask which decision allocates the slot where systems-of-record changes go live.',
+  resHint:'Ask who owns the slot, and under which standard.'},
+ {id:'p4',why:'The rollout needs access changes for the subsidiary\'s identities, and an entitlement review takes six weeks.',a:'sponsor',b:'iam',
+  key:{v:'col',dec:'ent',res:'d3'},
+  ok:'The date cannot run ahead of a six-week review, and the security standard allows no unreviewed access. Both are documented, and both depend on the entitlement review the access changes require. The identity and access lead owns it.',
+  decHint:'Ask which review the rollout\'s access changes must pass before they take effect.',
+  resHint:'Ask who owns the review, and under which standard.'},
+ {id:'p5',why:'Quality alerts post to a channel nobody owns.',a:'sre',b:'gov',
+  key:{v:'vacancy'},
+  ok:'Platform operations meets its availability objective, and no document gives it the quality signals. This is a duty nobody has accepted, a vacancy. It is routed by finding a receiver, not by settling a trade-off.',
+  colWrong:'Platform operations meets its availability objective, and no document gives it the quality signals. A duty nobody has accepted is a vacancy, not two measures in conflict.'},
+ {id:'p6',why:'Raised in a corridor conversation, not in any document.',a:'sponsor',b:'hall1',
+  key:{v:'motive'},
+  ok:'One side is a remark with no source, so it is a hypothesis about motive and not a measure. A collision needs two documented measures. Persuasion aimed at a motive would change neither measure.',
+  colWrong:'One side is a remark with no source. A collision needs two documented measures, and a motive stays a hypothesis until a source supports it.'},
+ {id:'p7',why:'Raised in a corridor conversation, not in any document.',a:'sponsor',b:'hall2',
+  key:{v:'motive'},
+  ok:'Again one side is a remark with no source. It is a hypothesis about motive and not a measure, so it cannot support a collision.',
+  colWrong:'One side is a remark with no source. A collision needs two documented measures, and a motive stays a hypothesis until a source supports it.'},
+ {id:'p8',why:'Both are service numbers the claims operation watches.',a:'ack',b:'avail',
+  key:{v:'none'},
+  ok:'Both measures are documented, but they draw on no shared decision or scarce resource, so neither gains at the other\'s cost. They need separate analysis.',
+  colWrong:'Both measures are documented, but neither gains at the other\'s cost: they draw on no shared decision or scarce resource.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let variant=false;
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#noPredict').textContent=COPY.noPredict;
+$('#rowsNote').textContent=COPY.rowsNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+function measureBox(m){
+  return h('div',{class:'m'},[
+    h('div',{class:'role',text:m.role}),
+    h('div',{text:m.text}),
+    h('div',{class:'meta',text:'Source and period: '+m.src}),
+    h('div',{class:'meta'},[h('span',{class:'chip '+(m.st==='Documented'?'doc':'hyp'),text:m.st})])
+  ]);
+}
+function selectBox(id,label,items){
+  const sel=h('select',{id:id,name:id});
+  sel.appendChild(h('option',{value:'',text:'Choose one'}));
+  items.forEach(function(o){sel.appendChild(h('option',{value:o.id,text:o.text}));});
+  return [h('label',{class:'sel','for':id,text:label}),sel];
+}
+
+function buildRow(p,i){
+  const card=h('section',{class:'row','data-id':p.id,'aria-labelledby':'t-'+p.id});
+  card.appendChild(h('span',{class:'zone',text:'Pairing '+fmt(i+1)+' of '+fmt(PAIRS.length)}));
+  card.appendChild(h('h3',{id:'t-'+p.id,text:M[p.a].role+' and '+M[p.b].role}));
+  card.appendChild(h('p',{class:'why','data-why':p.id,text:'Why it was raised: '+p.why}));
+  card.appendChild(h('div',{class:'pair'},[measureBox(M[p.a]),measureBox(M[p.b])]));
+
+  const vf=h('fieldset',null,[h('legend',{text:'Your verdict'})]);
+  VERDICTS.forEach(function(v){
+    vf.appendChild(h('label',{class:'opt'},[h('input',{type:'radio',name:'v-'+p.id,value:v.id}),h('span',{text:v.text})]));
+  });
+  card.appendChild(vf);
+
+  const cf=h('fieldset',{'data-col':p.id,hidden:'hidden'},[h('legend',{text:'If it is a collision'})]);
+  selectBox('dec-'+p.id,'The shared decision or resource',DECS).forEach(function(n){cf.appendChild(n);});
+  selectBox('res-'+p.id,'The role that resolves it, and the decision it holds',RESS).forEach(function(n){cf.appendChild(n);});
+  card.appendChild(cf);
+
+  card.appendChild(h('div',{class:'fb','data-fb':p.id,role:'status','aria-live':'polite'}));
+
+  card.addEventListener('change',function(){
+    clearRow(p.id);
+    syncCol(p.id);
+    $('#summary').textContent='';
+  });
+  return card;
+}
+PAIRS.forEach(function(p,i){$('#rows').appendChild(buildRow(p,i));});
+
+function clearRow(id){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  card.className='row';
+  const fb=card.querySelector('[data-fb]');
+  fb.className='fb';fb.textContent='';
+}
+function syncCol(id){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  const on=card.querySelector('input[name="v-'+id+'"]:checked');
+  const show=!!on&&on.value==='col';
+  card.querySelector('[data-col]').hidden=!show;
+  if(!show){
+    card.querySelector('#dec-'+id).value='';
+    card.querySelector('#res-'+id).value='';
+  }
+}
+function readAns(id){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  const v=card.querySelector('input[name="v-'+id+'"]:checked');
+  return {v:v?v.value:null,dec:card.querySelector('#dec-'+id).value||null,res:card.querySelector('#res-'+id).value||null};
+}
+
+/* The key */
+function evalPair(p,a,useVar){
+  const key=(useVar&&p.varKey)?p.varKey:p.key;
+  const okMsg=(useVar&&p.varOk)?p.varOk:p.ok;
+  if(!a.v)return {s:'idle',m:'Choose a verdict.'};
+
+  if(key.v==='col'){
+    if(a.v!=='col'){
+      return {s:'bad',m:'Both measures are documented and both depend on one decision or scarce resource, so this is a collision. '+COPY.firstCol};
+    }
+    const iss=[];
+    if(!a.dec)iss.push('Choose the shared decision or resource.');
+    else if(a.dec!==key.dec)iss.push('That is not the decision where the two measures meet. '+p.decHint);
+    if(!a.res)iss.push('Choose the role that resolves it.');
+    else if(a.res!==key.res)iss.push('That role does not hold the decision that governs this trade-off. '+p.resHint);
+    if(iss.length)return {s:'near',m:'You are right that this is a collision. '+iss.join(' ')};
+    return {s:'ok',m:okMsg};
+  }
+
+  /* the key rejects the pairing */
+  if(a.v==='col'){
+    if(useVar&&p.varCol)return {s:'bad',m:p.varCol};
+    return {s:'bad',m:p.colWrong+' '+COPY.firstCol};
+  }
+  if(a.v!==key.v){
+    return {s:'near',m:'You are right to reject it. The reason that applies is different: '+REASON[key.v]+'.'};
+  }
+  return {s:'ok',m:okMsg};
+}
+
+function showRow(id,res){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  card.className='row '+res.s;
+  const fb=card.querySelector('[data-fb]');
+  fb.className='fb '+res.s;
+  fb.textContent='';
+  fb.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  fb.appendChild(document.createTextNode(res.m));
+}
+
+function paintWhy(){
+  PAIRS.forEach(function(p){
+    if(!p.varWhy)return;
+    const el=document.querySelector('[data-why="'+p.id+'"]');
+    el.textContent='Why it was raised: '+p.why;
+    if(variant){el.appendChild(document.createTextNode(' '));el.appendChild(h('span',{class:'var',text:p.varWhy}));}
+  });
+}
+
+function runCheck(){
+  const states=PAIRS.map(function(p){
+    const res=evalPair(p,readAns(p.id),variant);
+    showRow(p.id,res);
+    return res.s;
+  });
+  const anyIdle=states.indexOf('idle')>-1;
+  const allOk=states.every(function(s){return s==='ok';});
+  $('#summary').textContent=allOk?(variant?COPY.summary.allVar:COPY.summary.all):(anyIdle?COPY.summary.idle:COPY.summary.some);
+  if(allOk){$('#second').hidden=false;}
+  return states;
+}
+
+$('#check').addEventListener('click',runCheck);
+
+/* Second pass: one assumption moves */
+$('#swap').addEventListener('click',function(){
+  variant=true;
+  paintWhy();
+  runCheck();
+  $('#swapNote').textContent=COPY.second.on;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  variant=false;
+  paintWhy();
+  runCheck();
+  $('#swapNote').textContent=COPY.second.restored;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

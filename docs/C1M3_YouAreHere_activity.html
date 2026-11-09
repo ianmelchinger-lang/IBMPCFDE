@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Everyone said yes, and nothing moved</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:880px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.35rem 0}
+.hint{color:var(--muted);font-size:.92rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.mine{border:2px solid var(--accent);background:var(--accent-soft)}
+fieldset{border:1px solid var(--ctl);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.55rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent-text)}
+.opt .d{color:var(--muted);font-size:.92rem}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.chip.open{background:var(--soft);color:var(--ink);border-color:var(--ctl)}
+.chip.partly{background:#fff;color:var(--accent-text);border-color:var(--accent)}
+.qrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:.6rem}
+.q{font-size:.9rem}
+.q .qname{display:block;color:var(--muted);margin-bottom:.15rem}
+.gives,.leaves{margin:.25rem 0}
+.gives strong,.leaves strong{font-weight:600}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;color:var(--accent-text);margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.05em}
+#reveal:focus{outline:none}
+.close{margin-top:1.2rem;padding:14px 16px;border-left:4px solid var(--accent);background:var(--panel)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.qrow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker" id="kicker"></p>
+<h1>Everyone said yes, and nothing moved</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-sit">
+<h2 id="h-sit">What you know</h2>
+<ul id="facts"></ul>
+</section>
+
+<section aria-labelledby="h-read">
+<h2 id="h-read">Commit to a reading</h2>
+<p>Choose the move you would make first. Then say which of the three open questions it will settle. Your answer locks before anything is shown.</p>
+<form id="form" novalidate>
+<fieldset id="moves"><legend>Your first move</legend></fieldset>
+<fieldset id="expect"><legend>The three open questions: which do you expect your move to settle?</legend>
+<p class="hint">Tick any. Leave all unticked if you expect it to settle none.</p></fieldset>
+<button type="submit" class="btn" id="lock" disabled>Lock my reading</button>
+</form>
+</section>
+
+<section id="reveal" hidden aria-labelledby="h-rev" tabindex="-1">
+<h2 id="h-rev">What each move settles</h2>
+<div id="revealBody"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy lives in this block. */
+const COPY={
+ kicker:'A fictional case: the Sample Enterprise',
+ lead:`You are the enterprise AI deployment engineer, embedded with the insurance subsidiary of the Sample Enterprise. The mandate is agreed, discovery is written, and the pilot works. The sponsor now wants North American rollout committed and has asked you for an approval plan. This is where you stand.`,
+ facts:[
+  `The assistant that drafts coverage determinations works on its pilot line. A determination is the insurer's decision on a claim. Cycle time, the calendar days from receipt of a claim to its determination, stands at ${fmt(9.4,1)} days. The sponsor, the claims operations director, has promised ${fmt(5,1)}.`,
+  `The regulatory acknowledgement window, the legal limit on how long a claim may wait before it is acknowledged, is met ${fmt(96.2,1)} percent of the time against a requirement of ${fmt(100)} percent.`,
+  `Production use, meaning live use on real claims, needs approval from the AI review board. The board meets every two weeks, and each sitting missed moves the rollout date by two weeks.`,
+  `A steering meeting of everyone agreed that rollout matters and decided nothing. The sponsor then asked the chief operating officer of the industrial group to "clear the blockers." The chief operating officer asked the governance, security and release functions to support the work. Each said it did. Nothing moved.`,
+  `The model risk and AI governance lead cannot submit the governance record to the board, because its accountable-owner field, the entry naming who answers for the assistant in operation, is blank. The AI platform owner will not fill that field until it knows the conditions the board will attach to its approval.`,
+  `The release and change manager's next release train for changes to the systems of record is full. A release train is a fixed monthly slot in which approved changes go live together.`,
+  `Nobody has been named to receive the assistant's quality alerts. Nobody has asked the claims desk supervisor whether the review time that protects the reversal guardrail, the commitment that the rate of reversed determinations must not rise, survives rollout volume.`
+ ],
+ questions:[
+  {id:'hold',short:'who holds the decisions and duties',text:'Who holds each decision the rollout needs, and who has accepted each duty it creates?'},
+  {id:'collide',short:'where targets collide',text:`Where do two parties' own targets pull against each other, and who can settle it?`},
+  {id:'order',short:'the order of commitments',text:'In what order can the commitments be made?'}
+ ],
+ moves:[
+  {id:'m1',name:'Plot the parties on a power-and-interest grid',desc:'Rate each party on power and interest, manage the powerful closely, and let the sponsor push.',
+   gives:'A quick ranking of who matters, drawn in an afternoon.',
+   leaves:'A grid ranks people. It does not say which decision a role holds, on what authority, or what evidence would move it. It rates low the adjuster of record and the team that inherits the alerts, though the rollout needs their acceptance, and it has no place for a duty nobody holds.',
+   st:['open','open','open']},
+  {id:'m2',name:'Interview each function about what it needs before it can say yes',desc:'Ask governance, security, release, platform operations and claims what each requires.',
+   gives:`Each function's own account of the evidence it needs.`,
+   leaves:'Each function is accurate about its own decision and silent about the others. A duty that reaches no one is mentioned by no one, and two requirements that wait on each other look reasonable one at a time. This settles the first question only in part.',
+   st:['partly','open','open']},
+  {id:'m3',name:'Draft a responsibility chart that names an owner for every open duty',desc:'List each open duty and write a name against it.',
+   gives:'A tidy chart with no blank cells.',
+   leaves:'A name on a chart records who should hold a duty, not who has accepted it. Filling the empty cells by inference hides the gaps instead of finding them, and it may put your own name on a duty the client has not accepted.',
+   st:['open','open','open']},
+  {id:'m4',name:'Ask the chief operating officer to set a date for each function',desc:'Have the executive sponsor of the industrial group put a deadline on every function.',
+   gives:'Visible pressure from the top.',
+   leaves:`This repeats what has been tried. A general instruction changes no one's target, and each function already said it supports the work. The stops are decisions that wait on evidence and commitments that wait on each other, and a date supplies neither.`,
+   st:['open','open','open']},
+  {id:'m5',name:`Collect each function's documented targets and look for conflicts`,desc:'Gather the service objectives, guardrails and audit criteria each role is held to.',
+   gives:'A sourced list of what each party answers for.',
+   leaves:'Targets show what each party is held to. They do not show the decision where two of them meet, or which role can settle it. They say nothing about who holds a duty nobody accepted, or about the order in which commitments can be made. This settles the second question only in part.',
+   st:['open','partly','open']},
+  {id:'m6',name:'Ask the AI platform owner to fill the owner field now',desc:'Request the accountable-owner entry so the record can go to the board.',
+   gives:'A direct answer from the one party the record waits on.',
+   leaves:`The platform owner will say it cannot commit until it knows the board's conditions, and the board's review waits on a named owner. The request exposes the wait but gives neither side what it needs to move. This settles the third question only in part.`,
+   st:['open','open','partly']}
+ ],
+ stateLabel:{open:'Open',partly:'Settled in part'},
+ close1:'Each of these moves is sound work, and each leaves most of the same three questions open. Started without a way to answer them, each gathers a great deal and moves the rollout very little.',
+ close2:`What has to be in place first is a map of who holds standing and on what basis, what each party is measured on, where those measures collide, and the order in which the parties' commitments unlock one another. Mapping stakeholders by authority, exposure and measure is the capability that makes every later step possible to scope.`
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let committed=null;   /* recorded at lock, before anything is revealed */
+
+/* Build the page from the copy block. */
+$('#kicker').textContent=COPY.kicker;
+$('#lead').textContent=COPY.lead;
+COPY.facts.forEach(function(t){$('#facts').appendChild(h('li',{text:t}));});
+
+COPY.moves.forEach(function(m){
+  const inp=h('input',{type:'radio',name:'move',value:m.id});
+  const lab=h('label',{class:'opt'},[inp,h('span',null,[h('strong',{text:m.name}),h('br'),h('span',{class:'d',text:m.desc})])]);
+  $('#moves').appendChild(lab);
+});
+COPY.questions.forEach(function(q){
+  const inp=h('input',{type:'checkbox',name:'expect',value:q.id});
+  $('#expect').appendChild(h('label',{class:'opt'},[inp,h('span',{text:q.text})]));
+});
+
+const form=$('#form');
+const lockBtn=$('#lock');
+form.addEventListener('change',function(){
+  if(committed)return;
+  lockBtn.disabled=!document.querySelector('input[name=move]:checked');
+});
+
+function setLocked(state){
+  document.querySelectorAll('#form input').forEach(function(i){i.disabled=state;});
+  lockBtn.disabled=true;
+}
+
+function expectationText(m,expects){
+  const out=[];
+  const picked=COPY.questions.filter(function(q){return expects.indexOf(q.id)>-1;});
+  if(!picked.length){
+    out.push('You expected it to settle none of the three questions.');
+  }else{
+    picked.forEach(function(q){
+      const i=COPY.questions.indexOf(q);
+      out.push(m.st[i]==='open'
+        ? `You expected it to settle "${q.short}". It leaves that question open.`
+        : `You expected it to settle "${q.short}". It settles that question only in part.`);
+    });
+  }
+  const partlyIdx=m.st.indexOf('partly');
+  if(partlyIdx===-1){out.push('In fact it leaves all three open.');}
+  else{out.push(`In fact it settles "${COPY.questions[partlyIdx].short}" in part and leaves the other two open.`);}
+  return out.join(' ');
+}
+
+function moveCard(m,mine){
+  const card=h('article',{class:'card'+(mine?' mine':'')});
+  if(mine)card.appendChild(h('span',{class:'tag',text:'Your move'}));
+  card.appendChild(h('h3',{text:m.name}));
+  card.appendChild(h('p',{class:'gives'},[h('strong',{text:'What it gives you: '}),m.gives]));
+  card.appendChild(h('p',{class:'leaves'},[h('strong',{text:'What it leaves open: '}),m.leaves]));
+  const row=h('div',{class:'qrow'});
+  COPY.questions.forEach(function(q,i){
+    row.appendChild(h('div',{class:'q'},[
+      h('span',{class:'qname',text:q.text}),
+      h('span',{class:'chip '+m.st[i],text:COPY.stateLabel[m.st[i]]})
+    ]));
+  });
+  card.appendChild(row);
+  return card;
+}
+
+function renderReveal(){
+  const body=$('#revealBody');
+  body.textContent='';
+  const mine=COPY.moves.filter(function(m){return m.id===committed.move;})[0];
+  body.appendChild(h('p',null,[h('strong',{text:'You chose: '}),mine.name+'.']));
+  body.appendChild(h('p',{text:expectationText(mine,committed.expects)}));
+  body.appendChild(moveCard(mine,true));
+  body.appendChild(h('p',{class:'hint',text:'The other five moves, against the same three questions.'}));
+  COPY.moves.forEach(function(m){if(m!==mine)body.appendChild(moveCard(m,false));});
+  body.appendChild(h('div',{class:'close'},[h('p',{text:COPY.close1}),h('p',{text:COPY.close2})]));
+  const again=h('button',{type:'button',class:'btn secondary',id:'again',text:'Start again'});
+  again.addEventListener('click',reset);
+  body.appendChild(h('p',null,[again]));
+}
+
+form.addEventListener('submit',function(e){
+  e.preventDefault();
+  if(committed)return;
+  const mv=document.querySelector('input[name=move]:checked');
+  if(!mv)return;
+  committed={
+    move:mv.value,
+    expects:Array.prototype.map.call(document.querySelectorAll('input[name=expect]:checked'),function(x){return x.value;})
+  };
+  setLocked(true);
+  renderReveal();
+  const box=$('#reveal');
+  box.hidden=false;
+  box.focus();
+});
+
+function reset(){
+  committed=null;
+  document.querySelectorAll('#form input').forEach(function(i){i.checked=false;i.disabled=false;});
+  lockBtn.disabled=true;
+  $('#revealBody').textContent='';
+  $('#reveal').hidden=true;
+  const first=document.querySelector('input[name=move]');
+  if(first)first.focus();
+}
+})();
+</script>
+</body>
+</html>

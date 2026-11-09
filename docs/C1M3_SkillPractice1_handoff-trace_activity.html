@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who receives the work at each handoff</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+fieldset{border:1px solid var(--ctl);border-radius:10px;background:var(--panel);margin:10px 0;padding:8px 12px 10px}
+legend{padding:0 .4rem;font-weight:600;font-size:.95rem}
+.opt{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem .2rem;font-weight:400;font-size:.97rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.3rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent-text)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.pills{display:flex;flex-wrap:wrap;gap:8px;padding:.2rem 0}
+.pill{display:inline-flex;gap:.45rem;align-items:center;padding:.3rem .75rem;border:1px solid var(--ctl);border-radius:999px;background:#fff;font-size:.9rem;cursor:pointer}
+.pill input{width:1rem;height:1rem;accent-color:var(--accent-text)}
+.pill:focus-within{outline:3px solid var(--focus);outline-offset:2px}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.row{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.row.ok{border-left:5px solid var(--accent)}
+.row.near{border-left:5px double var(--accent)}
+.row.bad{border-left:5px solid var(--ctl)}
+.row .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.row .ev{color:var(--muted);font-size:.95rem;margin:.2rem 0 .4rem}
+.row .var{color:var(--accent-text);font-weight:600}
+.flag{margin-top:.2rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.opts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>Who receives the work at each handoff</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-bases">
+<h2 id="h-bases">The six bases of standing</h2>
+<dl id="bases"></dl>
+</section>
+
+<section aria-labelledby="h-rows">
+<h2 id="h-rows">Ten handoffs</h2>
+<p id="rowsNote"></p>
+<div id="rows"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my trace</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the case as given</button>
+<p id="swapNote" class="hint" role="status" aria-live="polite"></p>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const R={
+ board:'AI review board',
+ govlead:'Model risk and AI governance lead',
+ sponsor:'Claims operations director (sponsor)',
+ coo:'Chief operating officer, industrial group',
+ adj:'Senior claims adjuster, as adjuster of record',
+ sup:'Claims desk supervisor',
+ plat:'AI platform owner',
+ sre:'Site reliability engineer, platform operations',
+ desk:'Service desk lead',
+ stew:'Data steward, policy and claims data',
+ scm:'Service contracts manager',
+ rel:'Release and change manager',
+ int:'Integration engineer, systems of record',
+ arch:'Enterprise architect',
+ aud:'Internal audit lead',
+ reg:'Regulatory compliance officer, insurance',
+ you:'You, the enterprise AI deployment engineer',
+ none:'Nobody has accepted it'
+};
+const BASES=[
+ {id:'authorizes',label:'Authorizes',d:'Holds a decision the work requires.'},
+ {id:'resource',label:'Controls a resource',d:'Holds something the work needs, such as a slot or staff time.'},
+ {id:'operates',label:'Operates or inherits the system',d:'Takes on running it, or on the duties it creates.'},
+ {id:'oversees',label:'Oversees it',d:'Examines the work.'},
+ {id:'uses',label:'Uses its outputs',d:'Relies on what it produces.'},
+ {id:'bears',label:'Bears its effects',d:'Carries the consequences of its use.'}
+];
+const BLABEL={};BASES.forEach(function(b){BLABEL[b.id]=b.label;});
+
+const COPY={
+ lead:`A stakeholder map starts with who has standing, and the quickest way to find out is to follow the work. A lifecycle handoff is a point where work, risk or consequence passes from one party to another. An approval chain lists only the senders. Tracing each handoff finds the receiver, whose workload or exposure changes whatever its rank, and it exposes a handoff that has no receiver. For each handoff below, name the receiver, choose its basis of standing, and flag the handoff if nobody has accepted the duty.`,
+ terms:[
+  ['Basis of standing','The stated reason a party belongs on a stakeholder map. A party can have more than one.'],
+  ['Vacancy','A handoff with no receiver, or one whose intended receiver has not accepted the duty. It is recorded as a finding, and the deployment engineer does not fill it.'],
+  ['Documented authority','Authority that a charter, policy or delegation confers and that you can point to. Authority inferred from a title is unverified.'],
+  ['Consulted party','A specialist whose advice shapes a decision that someone else holds.']
+ ],
+ rowsNote:`Each row gives the evidence on file. Choose one receiver, tick every basis the evidence supports, and flag the handoff if the duty has no accepting receiver. If you choose "Authorizes," also mark whether the authority is documented or unverified.`,
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet answered'},
+ first:'First move: find the party whose work, risk or consequence changes at this handoff, then check what document, and not what title, puts it there.',
+ youMsg:'The deployment engineer finds a vacancy and records it. Writing your own name against the duty fills it without anyone accepting it, and the client keeps the gap. First move: ask which party at the client could accept this duty, and record that nobody has.',
+ summary:{
+  idle:'Answer every row, then check again.',
+  some:'Part of the trace needs another look. Read the note on each marked row and check again.',
+  all:'All ten rows hold. Three handoffs are vacancies: quality-signal review, AI-specific incident triage, and upkeep of the service-history match. None is assigned to the deployment engineer.',
+  allVar:'All ten rows hold under the variation. Quality-signal review has moved from vacancy to receiver because acceptance is on record. The other nine rows are unchanged.'
+ },
+ second:{
+  intro:'A vacancy closes when a receiver accepts the duty on record, not when someone names one. Suppose platform operations signs that acceptance for quality-signal review, and see which row moves.',
+  swap:'Suppose platform operations accepts quality-signal review',
+  on:'Applied. Only the row for quality-signal review changed: a receiver has now accepted the duty on record. Update that row and check again.',
+  restored:'Restored. In the case as given, no one has accepted the duty, so quality-signal review is a vacancy again.'
+ }
+};
+
+const ROWS=[
+ {id:'h1',title:'Production authorization',
+  ev:'A high-tier use needs approval from the AI review board before it runs in production. The assistant is rated high tier, and the board meets every two weeks.',
+  opts:['board','govlead','sponsor','coo'],
+  key:{rcv:'board',basis:['authorizes'],auth:'documented',flag:false},
+  ok:'The board is the approval body before production, and the governance procedure documents that authority. What stays unverified is its escalation route, so the map records that as open.',
+  wrong:{
+   govlead:'The governance lead reviews the record and consults. The documented approval before production sits with the board.',
+   sponsor:'The sponsor owns the outcome, not this decision. Production authorization is not the sponsor\'s to give.',
+   coo:'Seniority is not authority. The chief operating officer is an escalation route for other decisions, not the approval body here.'},
+  authNote:'The authority is documented: the governance procedure makes the board the approval body before production. What is unverified is the board\'s escalation route, and that belongs in the map as an open item.'},
+ {id:'h2',title:'Residual-risk acceptance',
+  ev:'After the board approves with conditions, someone must accept the risk that remains. The engagement mandate assigns this decision and names the model risk and AI governance lead as a consulted specialist. The chief operating officer is the route for escalation.',
+  opts:['sponsor','govlead','board','coo'],
+  key:{rcv:'sponsor',basis:['authorizes'],auth:'documented',flag:false},
+  ok:'The sponsor holds this decision under the mandate. The governance lead is consulted: advice shapes a decision without owning it.',
+  wrong:{
+   govlead:'The governance lead is consulted. Advice shapes the decision without owning it, and the mandate names the owner.',
+   board:'The board authorizes production and attaches conditions. Accepting the risk that remains is a separate decision.',
+   coo:'The chief operating officer is the escalation route for this decision, not its owner.'},
+  authNote:'The authority is documented: the engagement mandate confers it. Nothing here is unverified.'},
+ {id:'h3',title:'A draft used in a determination',
+  ev:'The rule of use is drafts only: the adjuster of record decides each determination.',
+  opts:['adj','sup','plat','sponsor'],
+  key:{rcv:'adj',basis:['uses','bears'],auth:null,flag:false},
+  ok:'The adjuster of record receives the assistant\'s output and bears the consequence of each determination. It authorizes nothing about the deployment: production authorization is the board\'s.',
+  wrong:{
+   sup:'The supervisor leads the desk. On each claim, the adjuster of record receives the draft and decides.',
+   plat:'The platform owner answers for what runs on the platform, not for the determinations built on its outputs.',
+   sponsor:'The sponsor owns the outcome. The draft reaches the adjuster of record, who relies on it.'},
+  extra:{authorizes:'The adjuster of record decides each determination, but that is the task the assistant supports. The decision the deployment requires, production authorization, is the board\'s.'}},
+ {id:'h4',title:'Daily review workload',
+  ev:'Adjusters on the claims desk check each draft before it is used, and four reviewers were assigned during the pilot. The claims desk supervisor leads the desk.',
+  opts:['sup','plat','sre','sponsor'],
+  key:{rcv:'sup',basis:['operates'],auth:null,flag:false},
+  ok:'The review workload lands on the claims desk and its supervisor. The desk operates it, whatever the desk\'s rank.',
+  wrong:{
+   plat:'The platform owner answers for what runs on the platform, not for the review time the desk spends on drafts.',
+   sre:'Platform operations covers the platform. Reviewing drafts is claims work.',
+   sponsor:'The sponsor owns the outcome. The review workload is the desk\'s.'}},
+ {id:'h5',title:'Platform operation',
+  ev:'Platform operations covers the platform in business hours only. Availability alerts page its on-call engineer.',
+  opts:['sre','plat','desk','rel'],
+  key:{rcv:'sre',basis:['operates'],auth:null,flag:false},
+  ok:'Platform operations inherits the running of the platform, within business hours. Its availability objective is met, and it has accepted this duty.',
+  wrong:{
+   plat:'The platform owner answers for the platform, but on-call operation sits with platform operations.',
+   desk:'The service desk handles tickets. It does not operate the platform.',
+   rel:'The release and change manager schedules changes. It does not operate the platform.'}},
+ {id:'h6',title:'Quality-signal review',
+  ev:'Quality signals post to a channel nobody owns. Platform operations pages on availability only, and no recipient for a monitoring alert is defined anywhere.',
+  evVar:'Variation: the accountable manager of platform operations has signed a handoff record accepting quality-signal review.',
+  opts:['sre','govlead','you','none'],
+  key:{rcv:'none',basis:[],auth:null,flag:true},
+  varKey:{rcv:'sre',basis:['operates'],auth:null,flag:false},
+  ok:'No document names a recipient, and no one has accepted the duty. This is a vacancy. The deployment engineer records it and does not fill it.',
+  varOk:'With acceptance on record, platform operations is the receiver, and it inherits the duty. A vacancy closes when someone accepts the duty, not when someone is named.',
+  wrong:{
+   sre:'Platform operations pages on availability and has not accepted quality signals. A plausible receiver is not an accepting one.',
+   govlead:'The governance lead reviews records. No document gives that role the alerts.'},
+  varNone:'A signed handoff record now exists, so the duty has a receiver that has accepted it. Platform operations is the receiver, and the vacancy is closed.',
+  varFlag:'The duty is now accepted on record, so there is no vacancy to flag. Clear the flag.'},
+ {id:'h7',title:'AI-specific incident triage',
+  ev:'The ticketing system has no category for AI-specific incidents, and the severity scheme is the existing IT standard. The service desk resolves tickets by category against a monthly target.',
+  opts:['desk','sre','you','none'],
+  key:{rcv:'desk',basis:['operates'],auth:null,flag:true},
+  ok:'The service desk is the natural receiver and runs the queue, but it has no category for this work and has not accepted the duty. The receiver exists and the acceptance does not, so the handoff is flagged.',
+  wrong:{
+   sre:'Platform operations answers availability pages. Incident tickets run through the service desk.'},
+  noneNear:'The service desk is the natural receiver, since it runs the ticket queue. Record it as the receiver, then keep the flag: it has no category for this work and has not accepted the duty.',
+  flagMiss:'The service desk is the natural receiver, but it has no category for this work and has not accepted the duty. Flag the handoff.'},
+ {id:'h8',title:'Upkeep of the service-history match',
+  ev:'About 11 percent of claims cannot be joined to the service-contract registry without a mapping table, so keeping that match current matters. The discovery brief records no role named to keep it current.',
+  opts:['stew','scm','you','none'],
+  key:{rcv:'none',basis:[],auth:null,flag:true},
+  ok:'No role is named to keep the match current. It is a vacancy, and it matters: about 11 percent of claims cannot be joined without the mapping table.',
+  wrong:{
+   stew:'No document names the data steward as keeper of this match. Naming it fills the vacancy by inference.',
+   scm:'Owning the registry does not make a role the keeper of the match. Nothing records that role accepting the upkeep.'}},
+ {id:'h9',title:'Change to the systems-of-record interfaces',
+  ev:'Any change that touches the policy or claims master data rides the monthly mainframe release train. The change standard assigns the release slot to one role.',
+  opts:['rel','int','arch','plat'],
+  key:{rcv:'rel',basis:['resource'],auth:null,flag:false},
+  ok:'The release and change manager controls the slot any change to the systems of record needs. Control of the resource is the basis, not seniority or technical skill.',
+  wrong:{
+   int:'The integration engineer builds against the interfaces, but the slot belongs to another role.',
+   arch:'The enterprise architect shapes the design. The release slot is not the architect\'s to give.',
+   plat:'The platform owner is the escalation route for the slot, not its owner.'}},
+ {id:'h10',title:'Post-deployment audit',
+  ev:'Internal audit reviews claims decisioning once a year. The last review predates the assistant.',
+  opts:['aud','reg','govlead','board'],
+  key:{rcv:'aud',basis:['oversees'],auth:null,flag:false},
+  ok:'Internal audit oversees the work after the fact. It holds no stop before production, so it is a receiver at the end of the lifecycle and not an approver.',
+  wrong:{
+   reg:'The audit plan assigns claims decisioning to internal audit. The regulatory compliance officer is another function.',
+   govlead:'The governance lead advises before production. The annual audit of claims decisioning is internal audit\'s.',
+   board:'The board approves before production. It does not audit afterward.'}}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let variant=false;
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+BASES.forEach(function(b){$('#bases').appendChild(h('dt',{text:b.label}));$('#bases').appendChild(h('dd',{text:b.d}));});
+$('#rowsNote').textContent=COPY.rowsNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+/* Build the rows */
+function buildRow(row,i){
+  const card=h('section',{class:'row','data-id':row.id,'aria-labelledby':'t-'+row.id});
+  card.appendChild(h('span',{class:'zone',text:'Handoff '+fmt(i+1)+' of '+fmt(ROWS.length)}));
+  card.appendChild(h('h3',{id:'t-'+row.id,text:row.title}));
+  const ev=h('p',{class:'ev','data-ev':row.id,text:row.ev});
+  card.appendChild(ev);
+
+  const rf=h('fieldset',null,[h('legend',{text:'Who receives the work?'})]);
+  const og=h('div',{class:'opts'});
+  row.opts.forEach(function(o){
+    const inp=h('input',{type:'radio',name:'rcv-'+row.id,value:o});
+    og.appendChild(h('label',{class:'opt'},[inp,h('span',{text:R[o]})]));
+  });
+  rf.appendChild(og);
+  card.appendChild(rf);
+
+  const bf=h('fieldset',null,[h('legend',{text:'Basis of standing (tick all that apply)'})]);
+  const pills=h('div',{class:'pills'});
+  BASES.forEach(function(b){
+    const inp=h('input',{type:'checkbox',name:'basis-'+row.id,value:b.id});
+    pills.appendChild(h('label',{class:'pill'},[inp,h('span',{text:b.label})]));
+  });
+  bf.appendChild(pills);
+  card.appendChild(bf);
+
+  const af=h('fieldset',{'data-auth':row.id,hidden:'hidden'},[h('legend',{text:'Is the authority documented or unverified?'})]);
+  [['documented','Documented: a charter, policy or delegation confers it'],['unverified','Unverified: inferred from a title or not yet seen']].forEach(function(p){
+    af.appendChild(h('label',{class:'opt'},[h('input',{type:'radio',name:'auth-'+row.id,value:p[0]}),h('span',{text:p[1]})]));
+  });
+  card.appendChild(af);
+
+  const fl=h('label',{class:'opt flag'},[h('input',{type:'checkbox',name:'flag-'+row.id,value:'flag'}),h('span',{text:'Flag as a vacancy: the receiver does not exist or has not accepted the duty'})]);
+  card.appendChild(fl);
+
+  card.appendChild(h('div',{class:'fb','data-fb':row.id,role:'status','aria-live':'polite'}));
+
+  card.addEventListener('change',function(){
+    clearRow(row.id);
+    syncAuth(row.id);
+    $('#summary').textContent='';
+  });
+  return card;
+}
+ROWS.forEach(function(r,i){$('#rows').appendChild(buildRow(r,i));});
+
+function clearRow(id){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  card.className='row';
+  const fb=card.querySelector('[data-fb]');
+  fb.className='fb';fb.textContent='';
+}
+function syncAuth(id){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  const on=card.querySelector('input[name="basis-'+id+'"][value="authorizes"]').checked;
+  card.querySelector('[data-auth]').hidden=!on;
+  if(!on){
+    card.querySelectorAll('input[name="auth-'+id+'"]').forEach(function(x){x.checked=false;});
+  }
+}
+
+function readAns(id){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  const rc=card.querySelector('input[name="rcv-'+id+'"]:checked');
+  const ba=Array.prototype.map.call(card.querySelectorAll('input[name="basis-'+id+'"]:checked'),function(x){return x.value;});
+  const au=card.querySelector('input[name="auth-'+id+'"]:checked');
+  return {rcv:rc?rc.value:null,basis:ba,auth:au?au.value:null,flag:card.querySelector('input[name="flag-'+id+'"]').checked};
+}
+
+/* The key */
+function evalRow(row,a,useVar){
+  const key=(useVar&&row.varKey)?row.varKey:row.key;
+  const okMsg=(useVar&&row.varOk)?row.varOk:row.ok;
+  if(!a.rcv)return {s:'idle',m:'Choose a receiver.'};
+  if(a.rcv==='you')return {s:'bad',m:COPY.youMsg};
+
+  if(key.rcv==='none'){
+    if(a.rcv!=='none'){
+      return {s:'bad',m:(row.wrong[a.rcv]||'This handoff has no accepting receiver.')+' First move: ask whether a document shows this party has accepted the duty, and not only that it could.'};
+    }
+    const iss=[];
+    if(a.basis.length)iss.push('With no receiver there is no basis of standing to record. Clear the basis.');
+    if(!a.flag)iss.push('Flag this handoff as a vacancy.');
+    if(iss.length)return {s:'near',m:'You found that no one receives it. '+iss.join(' ')};
+    return {s:'ok',m:okMsg};
+  }
+
+  if(a.rcv==='none'){
+    if(useVar&&row.varNone)return {s:'bad',m:row.varNone};
+    if(key.flag&&row.noneNear)return {s:'near',m:row.noneNear};
+    return {s:'bad',m:'A receiver exists for this handoff, and the evidence names where the work lands. First move: ask whose workload or exposure changes here, and what shows it.'};
+  }
+  if(a.rcv!==key.rcv){
+    return {s:'bad',m:(row.wrong[a.rcv]||'The evidence does not put the work with this party.')+' '+COPY.first};
+  }
+
+  const iss=[];
+  const miss=key.basis.filter(function(b){return a.basis.indexOf(b)<0;});
+  const extra=a.basis.filter(function(b){return key.basis.indexOf(b)<0;});
+  if(miss.length){iss.push('The basis is incomplete: the evidence also supports "'+miss.map(function(b){return BLABEL[b];}).join('" and "')+'."');}
+  extra.forEach(function(b){
+    iss.push((row.extra&&row.extra[b])?row.extra[b]:'"'+BLABEL[b]+'" is not a basis the evidence supports for this party.');
+  });
+  if(key.basis.indexOf('authorizes')>-1&&a.basis.indexOf('authorizes')>-1){
+    if(!a.auth)iss.push('Mark the authority as documented or unverified.');
+    else if(a.auth!==key.auth)iss.push(row.authNote);
+  }
+  if(key.flag&&!a.flag)iss.push(row.flagMiss||'Flag this handoff as a vacancy.');
+  if(!key.flag&&a.flag)iss.push((useVar&&row.varFlag)?row.varFlag:'This receiver has accepted the duty, so there is no vacancy. Clear the flag.');
+  if(iss.length)return {s:'near',m:'The receiver is right. '+iss.join(' ')};
+  return {s:'ok',m:okMsg};
+}
+
+function showRow(id,res){
+  const card=document.querySelector('.row[data-id="'+id+'"]');
+  card.className='row '+res.s;
+  const fb=card.querySelector('[data-fb]');
+  fb.className='fb '+res.s;
+  fb.textContent='';
+  fb.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  fb.appendChild(document.createTextNode(res.m));
+}
+
+function runCheck(){
+  const states=ROWS.map(function(row){
+    const res=evalRow(row,readAns(row.id),variant);
+    showRow(row.id,res);
+    return res.s;
+  });
+  const anyIdle=states.indexOf('idle')>-1;
+  const allOk=states.every(function(s){return s==='ok';});
+  $('#summary').textContent=allOk?(variant?COPY.summary.allVar:COPY.summary.all):(anyIdle?COPY.summary.idle:COPY.summary.some);
+  if(allOk){$('#second').hidden=false;}
+  return states;
+}
+
+function paintEvidence(){
+  const row=ROWS.filter(function(r){return r.evVar;})[0];
+  const p=document.querySelector('[data-ev="'+row.id+'"]');
+  p.textContent=row.ev;
+  if(variant){p.appendChild(document.createTextNode(' '));p.appendChild(h('span',{class:'var',text:row.evVar}));}
+}
+
+$('#check').addEventListener('click',runCheck);
+
+/* Second pass: one assumption moves */
+$('#swap').addEventListener('click',function(){
+  variant=true;
+  paintEvidence();
+  runCheck();
+  $('#swapNote').textContent=COPY.second.on;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  variant=false;
+  paintEvidence();
+  runCheck();
+  $('#swapNote').textContent=COPY.second.restored;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

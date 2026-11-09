@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order the engagements by what each one supplies</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+fieldset{border:1px solid var(--ctl);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.45rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent-text)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.pcard.ok{border-left:5px solid var(--accent)}
+.pcard.near{border-left:5px double var(--accent)}
+.pcard.bad{border-left:5px solid var(--ctl)}
+.pcard .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.pcard .ptitle{font-weight:600}
+.pcard .pdesc{color:var(--muted);font-size:.93rem}
+.pcard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.pcard .fb{grid-column:1 / -1;margin-top:.2rem}
+.effect{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:10px 0}
+.effect.stands{border-left-color:var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pcard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>Order the engagements by what each one supplies</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-path">
+<h2 id="h-path">The engagements</h2>
+<p id="pathNote"></p>
+<ol class="path" id="path"></ol>
+<div class="fb" id="fb-path" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-circle">
+<h2 id="h-circle">The circle</h2>
+<fieldset id="pair"><legend id="pairLegend"></legend></fieldset>
+<div class="fb" id="fb-pair" role="status" aria-live="polite"></div>
+<fieldset id="breaker"><legend id="breakerLegend"></legend></fieldset>
+<div class="fb" id="fb-breaker" role="status" aria-live="polite"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my order</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<div id="effect" class="effect" role="status" aria-live="polite"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const CARDS=[
+ {id:'e1',party:'Senior claims adjuster',needs:[],supplies:'How drafts are used and where review fails'},
+ {id:'e2',party:'Claims desk supervisor',needs:['e1'],supplies:'A reviewer commitment at rollout volume'},
+ {id:'e3',party:'Site reliability engineer, platform operations',needs:[],supplies:'On-call coverage, and terms for routing quality alerts'},
+ {id:'e4',party:'Identity and access lead',needs:[],supplies:'The entitlement review date'},
+ {id:'e5',party:'AI platform owner',needs:['e3','e6'],supplies:'Acceptance of ownership'},
+ {id:'e6',party:'Model risk and AI governance lead, ahead of the board\'s pre-submission review',needs:['e2','e5'],supplies:'The board\'s conditions'},
+ {id:'e7',party:'Release and change manager',needs:[],supplies:'A release slot'},
+ {id:'e8',party:'Claims operations director (sponsor)',needs:['e2','e4','e6','e7'],supplies:'A dated rollout commitment'}
+];
+const BY={};CARDS.forEach(function(c){BY[c.id]=c;});
+function num(id){return id.slice(1);}
+
+/* The key: a partial order. Cards 5 and 6 move as one block, placed after every input either needs from outside it. */
+const DEPS=[
+ {before:'e1',after:'e2',flag:'e2',why:'The claims desk supervisor can commit reviewer time only once the adjuster\'s account of how drafts are used and where review fails exists.'},
+ {before:'e2',after:'e5',flag:'e5',why:'The two circular cards move as one block, and the block opens only after every outside input either card needs. Engagement 2 supplies the reviewer commitment the board\'s conditions rest on.'},
+ {before:'e2',after:'e6',flag:'e6',why:'The board\'s conditions are set against the reviewer commitment at rollout volume, so engagement 2 comes first.'},
+ {before:'e3',after:'e5',flag:'e5',why:'The platform owner can accept ownership only once the terms for routing quality alerts exist, so engagement 3 comes first.'},
+ {before:'e3',after:'e6',flag:'e6',why:'The two circular cards move as one block, and the block opens only after every outside input either card needs. Engagement 3 supplies the alert-routing terms the ownership acceptance rests on.'},
+ {before:'e4',after:'e8',flag:'e8',why:'The sponsor\'s dated commitment rests on the reviewer commitment, the entitlement review date, the board\'s conditions and the release slot. Put it last, once each exists.'},
+ {before:'e7',after:'e8',flag:'e8',why:'The sponsor\'s dated commitment rests on the reviewer commitment, the entitlement review date, the board\'s conditions and the release slot. Put it last, once each exists.'},
+ {before:'e5',after:'e8',flag:'e8',why:'The sponsor\'s dated commitment rests on the reviewer commitment, the entitlement review date, the board\'s conditions and the release slot. Put it last, once each exists.'},
+ {before:'e6',after:'e8',flag:'e8',why:'The sponsor\'s dated commitment rests on the reviewer commitment, the entitlement review date, the board\'s conditions and the release slot. Put it last, once each exists.'},
+ {before:'e1',after:'e8',flag:'e8',why:'The sponsor\'s dated commitment rests on the reviewer commitment, the entitlement review date, the board\'s conditions and the release slot. Put it last, once each exists.'},
+ {before:'e2',after:'e8',flag:'e8',why:'The sponsor\'s dated commitment rests on the reviewer commitment, the entitlement review date, the board\'s conditions and the release slot. Put it last, once each exists.'},
+ {before:'e3',after:'e8',flag:'e8',why:'The sponsor\'s dated commitment rests on the reviewer commitment, the entitlement review date, the board\'s conditions and the release slot. Put it last, once each exists.'}
+];
+const PAIR_KEY=['e5','e6'];
+
+const BREAKERS=[
+ {id:'escalate',text:'Ask the chief operating officer to instruct both parties to commit'},
+ {id:'blank',text:'Submit the governance record to the board with the owner field blank'},
+ {id:'conditional',text:`Have the platform owner accept ownership in writing, effective once the board's conditions are met`,ok:true},
+ {id:'wait',text:'Wait one board sitting and ask again'}
+];
+const SITTING_DAYS=14;
+
+const COPY={
+ lead:`An engagement is a conversation with one party to obtain something that only that party can supply: evidence, a limit, a commitment or a decision. Each engagement needs inputs and produces an output a later engagement can use, and those links, not rank or the calendar, give the order. Met too early, a decision-maker refuses or answers provisionally, then reviews assumptions it could not shape. Order the eight engagements below, find the two that need each other first, and choose the decision that breaks that circle.`,
+ terms:[
+  ['Engagement sequence','The order of stakeholder engagements, set by what each supplies to the next.'],
+  ['Circular dependency','Two engagements that each need the other\'s output first. Repeating the meetings keeps the same dependency.'],
+  ['Conditional acceptance','A recorded commitment that takes effect once named conditions are met.']
+ ],
+ pathNote:`Eight cards, one list. Each card shows what the party needs before it can engage and what it supplies. Put every card after the inputs it needs. Two cards that need each other cannot both come second, so they move as one block: place that block after every engagement either card needs from outside it. Use the buttons to move a card up or down.`,
+ pairLegend:`Which two engagements each need the other's output first?`,
+ breakerLegend:'Which decision breaks the circle?',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ pathFirst:'First move: find the cards that need nothing from the others, and start there.',
+ pairFirst:'First move: look for two cards whose Needs lists name each other.',
+ breakerFirst:'First move: ask which of the two parties can change what it commits to, and what it would have to record for the other to use.',
+ pathOrderOk:'Every card sits after the inputs it needs.',
+ commute:'Engagements 1 and 3 can come in either order. Engagements 4 and 7 can sit anywhere before engagement 8, including among the others. The two cards in the circle are not scored against each other.',
+ summary:{
+  idle:'Mark the circle and choose a breaking decision, then check again.',
+  some:'Part of the answer needs another look. Read the notes and check again.',
+  all:'The order, the circle and the breaking decision all hold.'
+ },
+ secondIntro:'Choose a different breaking decision above and watch what happens to the same two cards. Nothing here is scored.',
+ pairOk:'Yes. The platform owner waits on the board\'s conditions, and the board\'s pre-submission review waits on a named owner.',
+ effects:{
+  escalate:{stands:true,text:'Engagement 5 still needs engagement 6, and engagement 6 still needs engagement 5. An instruction from above changes neither party\'s ability to commit, and each function already said it supports the work. The circle stands.',
+   why:'An instruction changes no one\'s measure, and each function has already said it supports the work. The circle needs a commitment that one party can give now.'},
+  blank:{stands:true,text:'Engagement 6 cannot open: a high-tier record reaches the board only with every field evidenced, and the accountable-owner field is one of them. The circle stands.',
+   why:'The governance procedure requires every record field evidenced before a high-tier use reaches the board, and the accountable-owner field is one of them.'},
+  wait:{stands:true,text:'A sitting passes and the date moves two weeks, but the same two needs carry over to the next sitting. Engagement 5 still waits on the board\'s conditions, and engagement 6 still waits on a named owner. The circle stands.',
+   why:'Waiting carries the same two needs to the next sitting. Rescheduling changes the date, not what either party can commit to.'},
+  conditional:{stands:false,text:'Engagement 5 now supplies a written conditional acceptance, which is the named owner engagement 6 needs. Engagement 6 can open, and the conditions it sets can then confirm the acceptance. The circle is broken by a commitment, not by a meeting.',
+   why:'A conditional acceptance gives the board\'s review the named owner it needs, and gives the platform owner a way to commit before it knows every condition.'}
+ }
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+/* Count the orders of the eight cards that respect every dependency. */
+function allOrders(items){
+  const out=[];
+  (function build(rest,acc){
+    if(!rest.length){out.push(acc);return;}
+    rest.forEach(function(x,i){build(rest.slice(0,i).concat(rest.slice(i+1)),acc.concat([x]));});
+  })(items,[]);
+  return out;
+}
+const IDS=CARDS.map(function(c){return c.id;});
+const ALL=allOrders(IDS);
+const VALID=ALL.filter(function(o){
+  return DEPS.every(function(d){return o.indexOf(d.before)<o.indexOf(d.after);});
+});
+
+let order=['e8','e6','e4','e2','e5','e7','e3','e1'];
+let flags={};
+let checked=false;
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#pathNote').textContent=COPY.pathNote;
+$('#pairLegend').textContent=COPY.pairLegend;
+$('#breakerLegend').textContent=COPY.breakerLegend;
+$('#secondIntro').textContent=COPY.secondIntro;
+
+CARDS.forEach(function(c){
+  const inp=h('input',{type:'checkbox',name:'pair',value:c.id});
+  inp.addEventListener('change',function(){$('#fb-pair').className='fb';$('#fb-pair').textContent='';});
+  $('#pair').appendChild(h('label',{class:'opt'},[inp,h('span',{text:'Engagement '+num(c.id)+': '+c.party})]));
+});
+BREAKERS.forEach(function(b){
+  const inp=h('input',{type:'radio',name:'breaker',value:b.id});
+  inp.addEventListener('change',function(){
+    $('#fb-breaker').className='fb';$('#fb-breaker').textContent='';
+    if(checked)renderEffect();
+  });
+  $('#breaker').appendChild(h('label',{class:'opt'},[inp,h('span',{text:b.text})]));
+});
+
+function needsText(c){
+  if(!c.needs.length)return 'nothing from the other engagements';
+  return c.needs.map(function(n){return 'engagement '+num(n)+' ('+BY[n].supplies.charAt(0).toLowerCase()+BY[n].supplies.slice(1)+')';}).join(', and ');
+}
+
+/* The list */
+function renderPath(focusSpec){
+  const ol=$('#path');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    const c=BY[id];
+    const f=flags[id];
+    const card=h('li',{class:'pcard'+(f?' '+f.s:''),'data-id':id});
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:'Position '+fmt(i+1)+' of '+fmt(order.length)}),h('br'),
+      h('span',{class:'ptitle',text:'Engagement '+num(id)+': '+c.party}),h('br'),
+      h('span',{class:'pdesc',text:'Needs: '+needsText(c)+'.'}),h('br'),
+      h('span',{class:'pdesc',text:'Supplies: '+c.supplies+'.'})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: engagement '+num(id),text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: engagement '+num(id),text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function move(id,dir){
+  const i=order.indexOf(id),j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  $('#fb-path').className='fb';$('#fb-path').textContent='';
+  $('#summary').textContent='';
+  renderPath(id+':'+(dir<0?'up':'down'));
+  $('#live').textContent='Engagement '+num(id)+' is now at position '+fmt(order.indexOf(id)+1)+' of '+fmt(order.length)+'.';
+}
+
+/* Keys */
+function setFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m));
+}
+function checkPath(){
+  const pos={};order.forEach(function(id,i){pos[id]=i;});
+  const f={};
+  const broken=DEPS.filter(function(d){return pos[d.before]>pos[d.after];});
+  broken.forEach(function(d){
+    if(!f[d.flag])f[d.flag]={s:'near',m:'Out of place. '+d.why};
+  });
+  let res;
+  if(!broken.length){
+    res={s:'ok',m:COPY.pathOrderOk+` Exactly ${fmt(VALID.length)} of the ${fmt(ALL.length)} possible orders respect every dependency, and yours is one of them. ${COPY.commute}`};
+    order.forEach(function(id){f[id]={s:'ok',m:'After the inputs it needs.'};});
+  }else if(Object.keys(f).length>3){
+    res={s:'bad',m:'Several cards sit before inputs they need. '+COPY.pathFirst};
+    order.forEach(function(id){if(f[id])f[id].s='bad';});
+  }else{
+    res={s:'near',m:'The structure is close. The marked cards sit before an input they need.'};
+  }
+  flags=f;
+  renderPath(null);
+  setFb($('#fb-path'),res);
+  return res.s;
+}
+function checkPair(){
+  const sel=Array.prototype.map.call(document.querySelectorAll('input[name=pair]:checked'),function(x){return x.value;}).sort();
+  let res;
+  if(!sel.length)res={s:'idle',m:'Tick the two cards.'};
+  else{
+    const hit=sel.filter(function(x){return PAIR_KEY.indexOf(x)>-1;}).length;
+    if(sel.length===2&&hit===2)res={s:'ok',m:COPY.pairOk};
+    else if(hit>0)res={s:'near',m:'One of the cards you ticked belongs to the circle, and the other does not. A circular pair needs each card to name the other in its Needs list. '+COPY.pairFirst};
+    else res={s:'bad',m:'A circular dependency is two engagements that each need the other\'s output first. '+COPY.pairFirst};
+  }
+  setFb($('#fb-pair'),res);
+  return res.s;
+}
+function checkBreaker(){
+  const sel=document.querySelector('input[name=breaker]:checked');
+  let res;
+  if(!sel)res={s:'idle',m:'Choose a decision.'};
+  else{
+    const b=BREAKERS.filter(function(x){return x.id===sel.value;})[0];
+    if(b.ok)res={s:'ok',m:COPY.effects[b.id].why};
+    else res={s:'bad',m:COPY.effects[b.id].why+' '+COPY.breakerFirst};
+  }
+  setFb($('#fb-breaker'),res);
+  return res.s;
+}
+
+/* The same two cards, under whichever decision is chosen */
+function renderEffect(){
+  const sel=document.querySelector('input[name=breaker]:checked');
+  const box=$('#effect');
+  box.textContent='';
+  if(!sel){box.className='effect';box.textContent='Choose a breaking decision to see what happens to engagements 5 and 6.';return;}
+  const e=COPY.effects[sel.value];
+  box.className='effect'+(e.stands?' stands':'');
+  box.appendChild(h('strong',{text:e.stands?'The circle stands. ':'The circle is broken. '}));
+  box.appendChild(document.createTextNode(e.text));
+  if(sel.value==='wait'){
+    box.appendChild(h('p',{class:'hint',text:`Date effect: ${fmt(SITTING_DAYS)} days later for each sitting that passes, with the dependency unchanged.`}));
+  }
+}
+
+$('#check').addEventListener('click',function(){
+  const p=checkPath();
+  const c=checkPair();
+  const b=checkBreaker();
+  const allOk=(p==='ok'&&c==='ok'&&b==='ok');
+  const anyIdle=(c==='idle'||b==='idle');
+  $('#summary').textContent=allOk?COPY.summary.all:(anyIdle?COPY.summary.idle:COPY.summary.some);
+  checked=true;
+  $('#second').hidden=false;
+  renderEffect();
+});
+
+renderPath(null);
+})();
+</script>
+</body>
+</html>
