@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Would you start design against this list?</title>
+<style>
+:root {
+  --purple: #8A40FC;
+  --lavender: #D6CAFE;
+  --gray: #73777D;
+  --ink: #1D1830;
+  --white: #FFFFFF;
+  --lavender-wash: rgba(214, 202, 254, 0.28);
+  --lavender-hover: rgba(214, 202, 254, 0.55);
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 40px 20px 72px;
+}
+
+h1, h2 {
+  font-family: var(--serif);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ink);
+}
+
+h1 {
+  font-size: 2.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 20px;
+}
+
+h2 { font-size: 1.4rem; font-weight: 700; }
+
+p { margin: 0 0 14px; max-width: 62ch; }
+
+.task {
+  margin: 22px 0 28px;
+  padding: 14px 18px;
+  border-left: 6px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 0 10px 10px 0;
+  font-weight: 600;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+#page-title:focus { outline: none; }
+
+.sheet {
+  border: 2px solid var(--lavender);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.sheet-head {
+  background: var(--lavender);
+  padding: 14px 20px;
+}
+
+.sheet-head p { margin: 0; max-width: none; }
+.sheet-title { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; }
+.sheet-sub { font-size: 0.92rem; }
+
+.lines { list-style: none; margin: 0; padding: 0; }
+
+.line { padding: 22px 20px 24px; }
+.line + .line { border-top: 1px solid var(--lavender); }
+
+.line-head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.statement {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.35;
+  margin: 0;
+  max-width: 38ch;
+}
+
+.signed {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 11px 4px 9px;
+  border: 1px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.signed i {
+  display: inline-block;
+  width: 5px;
+  height: 10px;
+  border-right: 2px solid var(--purple);
+  border-bottom: 2px solid var(--purple);
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.seg { position: relative; flex: 1 1 13rem; }
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.seg label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 2px solid var(--gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.seg label::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray);
+  border-radius: 50%;
+  background: var(--white);
+}
+
+.seg input:hover + label { background: var(--lavender-hover); }
+
+.seg input:checked + label {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: var(--white);
+}
+
+.seg input:checked + label::before {
+  border-color: var(--white);
+  background: var(--white);
+  box-shadow: inset 0 0 0 3px var(--purple);
+}
+
+.seg input:focus-visible + label {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.reveal {
+  margin-top: 16px;
+  padding-left: 16px;
+  border-left: 4px solid var(--lavender);
+}
+
+.chip {
+  display: inline-block;
+  padding: 4px 13px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.chip.build { background: var(--purple); color: var(--white); border: 2px solid var(--purple); }
+.chip.hold { background: var(--white); color: var(--ink); border: 2px solid var(--gray); }
+
+.reveal-label { margin: 12px 0 4px; font-weight: 700; }
+.reveal .gap { margin: 0; }
+
+.commit-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+  margin-top: 24px;
+}
+
+.status { margin: 0; font-size: 0.98rem; max-width: none; }
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 11px 24px;
+  border: 2px solid var(--purple);
+  border-radius: 10px;
+  background: var(--purple);
+  color: var(--white);
+  cursor: pointer;
+}
+
+.btn[aria-disabled="true"] {
+  background: var(--gray);
+  border-color: var(--gray);
+  cursor: default;
+}
+
+.btn:not([aria-disabled="true"]):hover { box-shadow: 0 0 0 4px var(--lavender); }
+
+.linklike {
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.panel {
+  margin: 28px 0;
+  padding: 22px 24px 10px;
+  border-radius: 14px;
+}
+
+.panel h2 { margin-bottom: 12px; }
+.panel h2:focus { outline: none; }
+
+#summary {
+  border-left: 6px solid var(--purple);
+  background: var(--lavender-wash);
+  border-radius: 0 14px 14px 0;
+}
+
+#silence { border: 2px solid var(--lavender); }
+
+#capability { background: var(--lavender); margin-bottom: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal.enter { animation: rise 0.28s ease-out both; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 480px) {
+  main { padding: 28px 16px 56px; }
+  h1 { font-size: 1.75rem; }
+  .line { padding: 20px 16px 22px; }
+  .sheet-head { padding: 14px 16px; }
+  .line-head { flex-direction: column; gap: 10px; }
+  .statement { font-size: 1.2rem; max-width: none; }
+  .choices { flex-direction: column; }
+  .seg { flex: 1 1 auto; }
+  .panel { padding: 20px 18px 8px; }
+  .commit-bar { flex-direction: column; align-items: stretch; }
+  .btn { width: 100%; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1 id="page-title" tabindex="-1">Would you start design against this list?</h1>
+
+  <p>You are the enterprise AI deployment engineer for the Sample Enterprise, a fictional teaching case. Its insurance subsidiary has funded an assistant that drafts coverage determinations, which are the insurer’s decisions on claims, for North American claims. An adjuster approves every draft.</p>
+
+  <p>A half-day workshop of eight roles produced a list of 28 requirements, and every statement is signed. The claims operations director, who sponsors the work, wants the list adopted as the requirements register: the document that design, build and testing all work from. Cycle time, from receipt of a claim to its determination, stands at 9.4 calendar days against a promised 5.0. The AI review board must approve the assistant before it goes live. It sits every two weeks, and each missed sitting moves the date by two weeks.</p>
+
+  <p class="task">Six of the 28 lines are below. For each one, decide whether you would start design against it today or hold it back. Commit your reading before anything is revealed.</p>
+
+  <section id="summary" class="panel" aria-labelledby="summary-h" hidden>
+    <h2 id="summary-h" tabindex="-1">All six lines were signed. None is ready to build against.</h2>
+    <div id="summary-body"></div>
+    <button type="button" class="linklike" id="reset">Clear my answers and start again</button>
+  </section>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      <p class="sheet-title">Requirements workshop list</p>
+      <p class="sheet-sub">Six of the 28 lines. The eight workshop roles signed every one.</p>
+    </div>
+    <ol class="lines" id="lines" role="list"></ol>
+  </div>
+
+  <div class="commit-bar" id="commit-bar">
+    <button type="button" class="btn" id="commit" aria-disabled="true">Commit my reading</button>
+    <p class="status" id="status" role="status" aria-live="polite">0 of 6 decided.</p>
+  </div>
+
+  <section id="silence" class="panel" aria-labelledby="silence-h" hidden>
+    <h2 id="silence-h">What the list leaves out</h2>
+    <p>The list says nothing about the EU region, either way. The claims operations director and the AI platform owner each assume a different answer. A reader cannot tell a region that was ruled out from one that was forgotten, so each reader fills the silence in their own way.</p>
+  </section>
+
+  <section id="capability" class="panel" aria-labelledby="capability-h" hidden>
+    <h2 id="capability-h">The capability this list needs</h2>
+    <p>What the list needs is a capability, not a format. It is the ability to write requirements that a reviewer can test and an engineer can build against: each statement stripped of any solution chosen too early, traced to what imposes it, written so an observation decides it, and placed inside or outside the commitment.</p>
+    <p>It has to be in place before design starts, because every later check is made against what the register says.</p>
+  </section>
+
+  <noscript><p>This activity needs JavaScript to run.</p></noscript>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var LINES = [
+    {
+      id: 'accurate',
+      text: 'The assistant shall return accurate drafts.',
+      gap: 'Accurate against what? Two reviewers can read the same draft, apply different standards and reach opposite verdicts. The line does not say which claims count, what a correct draft is measured against, or what a failing draft looks like.'
+    },
+    {
+      id: 'secure',
+      text: 'The assistant shall be secure, compliant and auditable.',
+      gap: 'Three obligations share one sentence. Each needs different evidence and a different owner, so no single check can show the line was met.'
+    },
+    {
+      id: 'product',
+      text: 'Generate the drafts with watsonx.ai.',
+      gap: 'This names a product, not a need. The line is met the day the product is installed, whether or not any draft is usable. It also settles a choice before anyone has compared the alternatives, and the line cites no authority that fixed it.'
+    },
+    {
+      id: 'mapping',
+      text: 'Fix the mapping table.',
+      gap: 'This prescribes work on the table that matches each claim to its unit’s service history, not a result the assistant must deliver. Eleven percent of claims cannot be joined to that history today. The line says nothing about what the assistant must do for those claims, or who keeps the table right once it is fixed.'
+    },
+    {
+      id: 'regulation',
+      text: 'Comply with applicable regulation.',
+      gap: 'Which rule? The line cites none. Even where a rule exists, someone with authority has to decide that it reaches this assistant, and the line names nobody who did. A reviewer cannot tell what would count as compliance.'
+    },
+    {
+      id: 'cycle',
+      text: 'Cycle time shall fall to 5.0 days.',
+      gap: 'This is a business result, and the business is right to want it. It names no behavior of the assistant that a reviewer could watch for and accept. Staffing, claim volume and the assistant all move the figure, so the figure alone cannot show what the assistant did.'
+    }
+  ];
+
+  var OPTIONS = [
+    { value: 'build', label: 'Start design against it' },
+    { value: 'hold', label: 'Hold it back' }
+  ];
+
+  var decisions = {};
+  var rows = {};
+  var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  var listEl = document.getElementById('lines');
+  var statusEl = document.getElementById('status');
+  var commitBtn = document.getElementById('commit');
+  var commitBar = document.getElementById('commit-bar');
+  var summaryEl = document.getElementById('summary');
+  var summaryHead = document.getElementById('summary-h');
+  var summaryBody = document.getElementById('summary-body');
+  var silenceEl = document.getElementById('silence');
+  var capEl = document.getElementById('capability');
+  var resetBtn = document.getElementById('reset');
+  var titleEl = document.getElementById('page-title');
+
+  function fmt(n) {
+    return n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function buildRows() {
+    LINES.forEach(function (line) {
+      var li = el('li', 'line');
+
+      var head = el('div', 'line-head');
+      var statement = el('p', 'statement', line.text);
+      statement.id = 'st-' + line.id;
+      var signed = el('span', 'signed');
+      var tick = el('i');
+      tick.setAttribute('aria-hidden', 'true');
+      signed.appendChild(tick);
+      signed.appendChild(document.createTextNode('Signed'));
+      head.appendChild(statement);
+      head.appendChild(signed);
+
+      var choices = el('fieldset', 'choices');
+      choices.setAttribute('aria-describedby', statement.id);
+      var legend = el('legend', 'vh', 'Your reading of this line: ' + line.text);
+      choices.appendChild(legend);
+
+      var radios = [];
+      OPTIONS.forEach(function (opt) {
+        var seg = el('div', 'seg');
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'read-' + line.id;
+        input.id = 'read-' + line.id + '-' + opt.value;
+        input.value = opt.value;
+        input.addEventListener('change', function () {
+          decisions[line.id] = opt.value;
+          updateStatus();
+        });
+        var label = el('label', null, opt.label);
+        label.setAttribute('for', input.id);
+        seg.appendChild(input);
+        seg.appendChild(label);
+        choices.appendChild(seg);
+        radios.push(input);
+      });
+
+      var reveal = el('div', 'reveal');
+      reveal.hidden = true;
+      var chip = el('span', 'chip');
+      var gapLabel = el('p', 'reveal-label', 'What it leaves open');
+      var gap = el('p', 'gap', line.gap);
+      reveal.appendChild(chip);
+      reveal.appendChild(gapLabel);
+      reveal.appendChild(gap);
+
+      li.appendChild(head);
+      li.appendChild(choices);
+      li.appendChild(reveal);
+      listEl.appendChild(li);
+
+      rows[line.id] = { choices: choices, radios: radios, reveal: reveal, chip: chip };
+    });
+  }
+
+  function decidedCount() {
+    return LINES.filter(function (l) { return decisions[l.id]; }).length;
+  }
+
+  function updateStatus() {
+    var decided = decidedCount();
+    var total = LINES.length;
+    if (decided === total) {
+      statusEl.textContent = 'All ' + fmt(total) + ' decided. You can commit your reading.';
+      commitBtn.setAttribute('aria-disabled', 'false');
+    } else {
+      statusEl.textContent = fmt(decided) + ' of ' + fmt(total) + ' decided.';
+      commitBtn.setAttribute('aria-disabled', 'true');
+    }
+  }
+
+  function buildSummary() {
+    var total = LINES.length;
+    var built = LINES.filter(function (l) { return decisions[l.id] === 'build'; }).length;
+    var held = total - built;
+
+    summaryBody.textContent = '';
+
+    summaryBody.appendChild(el('p', null,
+      'When the model risk and AI governance lead asked which of these lines the AI review board could check, nobody could say.'));
+
+    if (built === 0) {
+      summaryBody.appendChild(el('p', null,
+        'You held all ' + fmt(total) + ' back, so your caution matches the evidence. The cards below show that the lines fail in different ways, which is why one clean-up pass will not fix them.'));
+    } else {
+      summaryBody.appendChild(el('p', null,
+        'You would have started design against ' + fmt(built) + ' of the ' + fmt(total) + ' lines and held back ' + fmt(held) + '. A line can sound specific and still leave a reviewer unable to decide whether it was met. Each card below shows what its line leaves open.'));
+    }
+
+    summaryBody.appendChild(el('p', null,
+      'A cleaner template would not change this. The first line is already a “shall” statement, and no reviewer can decide it.'));
+  }
+
+  function commit() {
+    var undecided = LINES.filter(function (l) { return !decisions[l.id]; });
+    if (undecided.length) {
+      statusEl.textContent = 'Decide every line first. ' + fmt(undecided.length) +
+        (undecided.length === 1 ? ' line is' : ' lines are') + ' still open.';
+      rows[undecided[0].id].radios[0].focus();
+      return;
+    }
+
+    LINES.forEach(function (line) {
+      var r = rows[line.id];
+      var call = decisions[line.id];
+      r.choices.hidden = true;
+      r.chip.className = 'chip ' + call;
+      r.chip.textContent = call === 'build' ? 'You would start design against this' : 'You held this back';
+      r.reveal.hidden = false;
+      r.reveal.classList.add('enter');
+    });
+
+    buildSummary();
+    summaryEl.hidden = false;
+    silenceEl.hidden = false;
+    capEl.hidden = false;
+    commitBar.hidden = true;
+
+    summaryEl.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    summaryHead.focus({ preventScroll: true });
+  }
+
+  function reset() {
+    decisions = {};
+    LINES.forEach(function (line) {
+      var r = rows[line.id];
+      r.radios.forEach(function (input) { input.checked = false; });
+      r.choices.hidden = false;
+      r.reveal.hidden = true;
+      r.reveal.classList.remove('enter');
+    });
+    summaryEl.hidden = true;
+    silenceEl.hidden = true;
+    capEl.hidden = true;
+    commitBar.hidden = false;
+    updateStatus();
+    titleEl.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    titleEl.focus({ preventScroll: true });
+  }
+
+  commitBtn.addEventListener('click', commit);
+  resetBtn.addEventListener('click', reset);
+
+  buildRows();
+  updateStatus();
+})();
+</script>
+</body>
+</html>

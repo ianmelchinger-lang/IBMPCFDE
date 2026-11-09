@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What does the register say about each request?</title>
+<style>
+:root {
+  --purple: #8A40FC;
+  --lavender: #D6CAFE;
+  --gray: #73777D;
+  --ink: #1D1830;
+  --white: #FFFFFF;
+  --lavender-wash: rgba(214, 202, 254, 0.28);
+  --lavender-hover: rgba(214, 202, 254, 0.55);
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 40px 20px 72px;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ink);
+}
+
+h1 { font-size: 2.05rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 20px; }
+h2 { font-size: 1.35rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+
+p { margin: 0 0 14px; max-width: 62ch; }
+
+.task {
+  margin: 22px 0 28px;
+  padding: 14px 18px;
+  border-left: 6px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 0 10px 10px 0;
+  font-weight: 600;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+#page-title:focus { outline: none; }
+.focus-target:focus { outline: none; }
+
+.terms { display: grid; gap: 12px; margin: 0 0 24px; padding: 0; }
+.terms > div { border-left: 4px solid var(--lavender); padding: 2px 0 2px 14px; }
+.terms dt { font-weight: 700; }
+.terms dd { margin: 2px 0 0; max-width: 62ch; }
+
+.onfile {
+  margin: 0 0 26px;
+  padding: 18px 22px 8px;
+  border-radius: 14px;
+  background: var(--lavender-wash);
+}
+.onfile h2 { font-size: 1.15rem; margin-bottom: 6px; }
+.onfile h3 { font-family: var(--sans); font-size: 1rem; margin: 14px 0 2px; }
+.facts { list-style: none; margin: 0 0 10px; padding: 0; }
+.facts li { padding: 9px 0; border-top: 1px solid var(--lavender); }
+.facts li:first-child { border-top: 0; }
+.facts li.withdrawn .fact-text { text-decoration: line-through; text-decoration-color: var(--gray); }
+.fact-note { display: block; font-size: 0.92rem; font-weight: 600; }
+
+.tagid {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 7px;
+  border: 1px solid var(--lavender);
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sheet {
+  border: 2px solid var(--lavender);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--white);
+}
+.sheet-head { background: var(--lavender); padding: 14px 20px; }
+.sheet-head p { margin: 0; max-width: none; }
+.sheet-title { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; }
+.sheet-sub { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+
+.lines { list-style: none; margin: 0; padding: 0; }
+.line { padding: 22px 20px 24px; }
+.line + .line { border-top: 1px solid var(--lavender); }
+
+.statement {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.4;
+  margin: 0 0 4px;
+  max-width: none;
+}
+.named {
+  text-decoration: underline;
+  text-decoration-color: var(--purple);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+}
+.gloss { margin: 0; font-size: 0.97rem; }
+
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.opts { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 0; }
+.seg { position: relative; flex: 1 1 11rem; }
+.opts.stack .seg { flex: 1 1 100%; }
+.opts.six .seg { flex: 1 1 14rem; }
+.opts.five .seg { flex: 1 1 8.5rem; }
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.seg input:disabled { cursor: default; }
+.seg label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 2px solid var(--gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.seg input:disabled + label { cursor: default; }
+.seg label::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray);
+  border-radius: 50%;
+  background: var(--white);
+}
+.seg input:not(:disabled):hover + label { background: var(--lavender-hover); }
+.seg input:checked + label { background: var(--purple); border-color: var(--purple); color: var(--white); }
+.seg input:checked + label::before {
+  border-color: var(--white);
+  background: var(--white);
+  box-shadow: inset 0 0 0 3px var(--purple);
+}
+.seg input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
+.opts.stack .seg label { font-weight: 500; }
+.opts.stack .seg input:checked + label { font-weight: 600; }
+
+.q { padding: 0; margin: 18px 0 0; font-weight: 700; }
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.fld { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.fld label { font-weight: 600; font-size: 0.97rem; line-height: 1.35; }
+select {
+  font: inherit;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 12px;
+  border: 2px solid var(--gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+}
+select:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.banner {
+  margin: 12px 0 0;
+  padding: 8px 14px;
+  border-left: 6px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 0 10px 10px 0;
+  font-weight: 600;
+  font-size: 0.97rem;
+}
+
+.fb { margin-top: 16px; padding: 12px 16px 4px; border-radius: 10px; }
+.fb p { margin: 0 0 10px; max-width: 62ch; }
+.fb .fb-state { display: flex; align-items: center; gap: 9px; font-weight: 700; }
+.fb .fb-state::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+}
+.fb.correct { background: var(--lavender-wash); border-left: 6px solid var(--purple); }
+.fb.correct .fb-state::before {
+  background: var(--purple);
+  border-color: var(--purple);
+  box-shadow: inset 0 0 0 2px var(--white);
+}
+.fb.near { background: var(--lavender); border-left: 6px dashed var(--ink); }
+.fb.near .fb-state::before { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.fb.wrong { background: var(--white); border: 2px solid var(--gray); border-left-width: 6px; }
+.fb.wrong .fb-state::before { border-color: var(--gray); background: var(--white); }
+.fb.info { background: var(--lavender-wash); border-left: 6px solid var(--lavender); }
+.fb.info .fb-state { display: none; }
+.fb:focus { outline: none; }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 18px; }
+.status { margin: 0; font-size: 0.98rem; max-width: none; font-variant-numeric: tabular-nums; }
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 11px 24px;
+  border: 2px solid var(--purple);
+  border-radius: 10px;
+  background: var(--purple);
+  color: var(--white);
+  cursor: pointer;
+}
+.btn:hover { box-shadow: 0 0 0 4px var(--lavender); }
+.btn.quiet { background: var(--white); color: var(--ink); border-color: var(--gray); }
+.btn:disabled { background: var(--gray); border-color: var(--gray); color: var(--white); cursor: default; box-shadow: none; }
+
+.linklike {
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.panel { margin: 28px 0; padding: 22px 24px 10px; border-radius: 14px; }
+.panel h2 { margin-bottom: 12px; }
+.panel.wash { background: var(--lavender-wash); border-left: 6px solid var(--purple); border-radius: 0 14px 14px 0; }
+.panel.plain { border: 2px solid var(--lavender); }
+.panel.tint { background: var(--lavender); }
+.panel h2:focus { outline: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fb.enter { animation: rise 0.28s ease-out both; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 720px) {
+  .grid3 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  main { padding: 28px 16px 56px; }
+  h1 { font-size: 1.7rem; }
+  .line { padding: 20px 16px 22px; }
+  .sheet-head { padding: 14px 16px; }
+  .statement { font-size: 1.2rem; }
+  .opts { flex-direction: column; }
+  .seg, .opts.six .seg, .opts.five .seg { flex: 1 1 auto; }
+  .panel { padding: 20px 18px 8px; }
+  .onfile { padding: 16px 16px 6px; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .btn { width: 100%; }
+}
+
+/* Five statuses read as three over two, not four over one. */
+@media (min-width: 721px) {
+  .opts.five { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .opts.five .seg { grid-column: span 2; }
+  .opts.five .seg:nth-child(n+4) { grid-column: span 3; }
+}
+/* The record text is long, so each select takes the full row and the learner can read what they chose. */
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="page-title" tabindex="-1">What does the register say about each request?</h1>
+
+  <p>When a request is missing from the register, one stakeholder reads the silence as a commitment and another reads it as an exclusion. A written status removes the guess. Each status also carries a duty, and a status with no authority behind it is still a guess.</p>
+
+  <dl class="terms">
+    <div><dt>Committed</dt><dd>The register will deliver it. It needs an acceptance method.</dd></div>
+    <div><dt>Excluded</dt><dd>Outside the boundary, for a reason, and it stays outside. Exclusion draws a boundary.</dd></div>
+    <div><dt>Deferred</dt><dd>Wanted, but not now. It needs a revisit trigger, the event that brings it back for a decision. Deferral says when to reconsider.</dd></div>
+    <div><dt>Assumed</dt><dd>The plan relies on it, and nobody has confirmed it. It needs a confirming party.</dd></div>
+    <div><dt>Unresolved</dt><dd>Nobody has accepted responsibility. It needs an owner and the decision it blocks.</dd></div>
+  </dl>
+
+  <p class="task">Eight requests are below. Give each one a status, then choose the record that supports it and the person with authority over it. For an unresolved request, choose the person who must answer. For an assumed one, choose the person who must confirm.</p>
+
+  <section class="onfile" aria-labelledby="onfile-h">
+    <h2 id="onfile-h">Records on file</h2>
+    <ul class="facts" id="facts"></ul>
+  </section>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      <p class="sheet-title">Requests gathered from stakeholders</p>
+      <p class="sheet-sub">Choose a status, a record and a person for every request before you check.</p>
+    </div>
+    <ol class="lines" id="rows" role="list"></ol>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" id="check">Check my statuses</button>
+    <p class="status" id="status" role="status" aria-live="polite">0 of 8 correct.</p>
+  </div>
+
+  <section id="wrapup" class="panel wash" aria-labelledby="wrapup-h" hidden>
+    <h2 id="wrapup-h" tabindex="-1" class="focus-target">What the statuses decided</h2>
+    <p>All five statuses appeared. Each one told a reader something different: what is built, what is out for a reason, what returns at a named point, what rests on a promise, and what nobody owns yet.</p>
+    <p>The unresolved quality-alert recipient blocks production authorization until someone accepts it.</p>
+  </section>
+
+  <section id="pass2" class="panel plain" aria-labelledby="pass2-h" hidden>
+    <h2 id="pass2-h">Move one assumption</h2>
+    <p>Suppose the AI platform owner names who receives quality alerts, and that person accepts. This is an illustration: it has not happened in the case. Apply it, then give the alert request its status again and check.</p>
+    <div class="actions">
+      <button type="button" class="btn quiet" id="toggle" aria-pressed="false">A recipient accepts the alerts</button>
+      <p class="status" id="toggle-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <noscript><p>This activity needs JavaScript to run.</p></noscript>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var STATUSES = [
+    { v: 'committed', t: 'Committed' },
+    { v: 'excluded', t: 'Excluded' },
+    { v: 'deferred', t: 'Deferred' },
+    { v: 'assumed', t: 'Assumed' },
+    { v: 'unresolved', t: 'Unresolved' }
+  ];
+
+  var EVIDENCE = [
+    { v: 'E7', tag: 'GOV-06', t: 'The documented rule of use: drafts only, and the adjuster of record decides.' },
+    { v: 'E3', tag: 'HND-06 and GOV-09', t: 'A handoff for quality alerts on the stakeholder map, and governance’s record that no recipient of a monitoring alert is named.' },
+    { v: 'E1', tag: 'INIT-01', t: 'The funded scope: drafting for North American claims.' },
+    { v: 'E5', tag: 'COL-02 and DPT-05', t: 'The stakeholder map records that the plan relies on reviewer capacity at rollout volume. Nobody has confirmed that capacity.' },
+    { v: 'E2', tag: 'INIT-01 and REG-05', t: 'The funded scope, and the rule that EU policyholder data is processed in the EU region.' },
+    { v: 'E4', tag: 'HND-08', t: 'A handoff for keeping the unit-identifier match current on the stakeholder map. The record names no one who has taken it on.' },
+    { v: 'E6', tag: 'EVS-12', t: 'A request recorded in the discovery brief to put the draft inside the existing claim view. It is a request, not a condition.' }
+  ];
+
+  var PEOPLE = [
+    { v: 'DIR', t: 'Claims operations director' },
+    { v: 'AIP', t: 'AI platform owner' },
+    { v: 'SUP', t: 'Claims desk supervisor' },
+    { v: 'GOV', t: 'Model risk and AI governance lead' }
+  ];
+
+  var TEST = {
+    committed: 'A request is committed only when someone with authority has accepted it and a method can decide it. Ask who accepted it, and how a reviewer would decide it.',
+    excluded: 'A request is excluded when a record puts it outside the boundary and a reason can be written. Ask which record draws that boundary.',
+    deferred: 'A request is deferred when it is wanted later and an event can bring it back. Ask what event would reopen it.',
+    assumed: 'A condition is assumed when the plan relies on it and a named party could confirm it. Ask who could confirm it, and whether anyone has.',
+    unresolved: 'A request is unresolved when nobody has accepted responsibility. Ask who must settle it, and which decision waits.'
+  };
+
+  var ROWS = [
+    {
+      id: 's1', text: 'Drafting for North American claims',
+      key: { status: 'committed', ev: 'E1', who: 'DIR' },
+      done: 'Committed. The register now needs an acceptance method for it. The claims operations director funded the scope.'
+    },
+    {
+      id: 's2', text: 'EU and APAC regions',
+      key: { status: 'excluded', ev: 'E2', who: 'DIR' },
+      done: 'Excluded, with a reason: the funded scope is North American claims. The EU data-residency rule stays in the register as a condition on the excluded EU extension, so if EU work is ever funded, the rule binds it.'
+    },
+    {
+      id: 's3', text: 'Link to equipment condition data',
+      key: { status: 'excluded', ev: 'E1', who: 'DIR' },
+      done: 'Excluded, with a reason: the funded scope leaves it out. It is out, not later. Nothing brings it back unless the claims operations director widens the scope.'
+    },
+    {
+      id: 's4', text: 'Recipient of quality alerts', gloss: 'Who receives and acts on a quality alert from the assistant.',
+      key: { status: 'unresolved', ev: 'E3', who: 'AIP' },
+      keyAlt: { status: 'committed', ev: 'E3', who: 'AIP' },
+      done: 'Unresolved. It needs an owner and the decision it blocks. It blocks production authorization, and the AI platform owner is the addressee.',
+      doneAlt: 'Committed. The status moved because someone accepted the work. The request did not change. It now needs an acceptance method.'
+    },
+    {
+      id: 's5', text: 'Upkeep of the unit-identifier match', gloss: 'Who keeps the table that links claims to unit service history up to date.',
+      key: { status: 'unresolved', ev: 'E4', who: 'DIR' },
+      done: 'Unresolved. It needs an owner and the decision it blocks. The claims operations director is the addressee. The register does not yet say which decision waits on it, and it must.'
+    },
+    {
+      id: 's6', text: 'Reviewer capacity at rollout volume', gloss: 'Enough reviewers to check drafts at full North American volume.',
+      key: { status: 'assumed', ev: 'E5', who: 'SUP' },
+      done: 'Assumed. The plan relies on it. The claims desk supervisor must confirm it, and until that happens the register carries it as a promise, not a fact.'
+    },
+    {
+      id: 's7', text: 'Draft inside the existing claim view',
+      key: { status: 'deferred', ev: 'E6', who: 'AIP' },
+      done: 'Deferred. It is wanted but not required now. Its revisit trigger is option comparison, when placement is weighed. The AI platform owner holds it until then.'
+    },
+    {
+      id: 's8', text: 'The assistant writes determinations',
+      key: { status: 'excluded', ev: 'E7', who: 'GOV' },
+      done: 'Excluded, with a reason: the documented rule of use is drafts only, and the adjuster of record decides. The model risk and AI governance lead holds that rule. This is out, not later.'
+    }
+  ];
+
+  var refs = {};
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+  function fmt(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+  function effKey(r) { return r.supplied && r.keyAlt ? r.keyAlt : r.key; }
+
+  function paintFb(wrap, fb) {
+    wrap.textContent = '';
+    if (!fb) { return; }
+    var box = el('div', 'fb ' + fb.state + ' enter');
+    if (fb.title) { box.appendChild(el('p', 'fb-state', fb.title)); }
+    fb.body.forEach(function (b) { box.appendChild(el('p', null, b)); });
+    wrap.appendChild(box);
+  }
+
+  function evaluate(r) {
+    var key = effKey(r);
+    var s = r.sel;
+    if (!s.status || !s.ev || !s.who) {
+      return { state: 'info', title: '', body: ['Finish this row first: choose a status, a record and a person.'] };
+    }
+    if (s.status !== key.status) {
+      var body = [TEST[s.status]];
+      if (s.status === 'committed' && (r.id === 's4' || r.id === 's5')) {
+        body.push('Committing a request that nobody owns is the failure the register exists to prevent.');
+      }
+      return { state: 'wrong', title: 'Not yet', body: body };
+    }
+    var out = [];
+    if (s.ev !== key.ev) { out.push('the record'); }
+    if (s.who !== key.who) { out.push('the person'); }
+    if (!out.length) {
+      return { state: 'correct', title: 'Correct', body: [r.supplied && r.doneAlt ? r.doneAlt : r.done] };
+    }
+    var body2 = ['The status is right. Out of place: ' + out.join(' and ') + '.'];
+    if (out.indexOf('the record') >= 0) {
+      if (key.ev === 'E2' && s.ev === 'E1') {
+        body2.push('The funded scope is part of the reason. A rule that must travel with the exclusion is missing from the record you chose.');
+      } else if (key.ev === 'E1' && s.ev === 'E2') {
+        body2.push('The funded scope is the evidence here. The rule you added belongs to a different request.');
+      } else {
+        body2.push('Choose the record that shows why this status holds.');
+      }
+    }
+    if (out.indexOf('the person') >= 0) {
+      body2.push('Choose whoever authorized the boundary, accepted the work, must answer, or must confirm.');
+    }
+    return { state: 'near', title: 'Close', body: body2 };
+  }
+
+  function build() {
+    var ul = document.getElementById('facts');
+    EVIDENCE.forEach(function (e) {
+      var li = el('li');
+      li.appendChild(el('span', 'tagid', e.tag));
+      li.appendChild(el('span', 'fact-text', e.t));
+      ul.appendChild(li);
+    });
+
+    var list = document.getElementById('rows');
+    ROWS.forEach(function (r) {
+      r.sel = { status: '', ev: '', who: '' };
+      var li = el('li', 'line');
+      li.appendChild(el('p', 'statement', r.text));
+      if (r.gloss) { li.appendChild(el('p', 'gloss', r.gloss)); }
+      var banner = el('p', 'banner', 'Illustration: a recipient has accepted the alerts.');
+      banner.hidden = true;
+      li.appendChild(banner);
+
+      var fs = el('fieldset');
+      fs.appendChild(el('legend', 'vh', 'Status for this request: ' + r.text));
+      var opts = el('div', 'opts five');
+      var radios = STATUSES.map(function (s) {
+        var seg = el('div', 'seg');
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'status-' + r.id;
+        input.id = 'status-' + r.id + '-' + s.v;
+        input.value = s.v;
+        input.addEventListener('change', function () {
+          r.sel.status = s.v;
+          r.fb = null;
+          paintFb(r.fbwrap, null);
+        });
+        var label = el('label', null, s.t);
+        label.setAttribute('for', input.id);
+        seg.appendChild(input);
+        seg.appendChild(label);
+        opts.appendChild(seg);
+        return input;
+      });
+      fs.appendChild(opts);
+      li.appendChild(fs);
+
+      var grid = el('div', 'grid2');
+      function field(key, label, list2, fmtOpt) {
+        var f = el('div', 'fld');
+        var id = key + '-' + r.id;
+        var lab = el('label', null, label);
+        lab.setAttribute('for', id);
+        var sel = document.createElement('select');
+        sel.id = id;
+        var ph = el('option', null, 'Choose…');
+        ph.value = '';
+        sel.appendChild(ph);
+        list2.forEach(function (o) {
+          var op = el('option', null, fmtOpt(o));
+          op.value = o.v;
+          sel.appendChild(op);
+        });
+        sel.addEventListener('change', function () {
+          r.sel[key] = sel.value;
+          r.fb = null;
+          paintFb(r.fbwrap, null);
+        });
+        f.appendChild(lab);
+        f.appendChild(sel);
+        grid.appendChild(f);
+        return sel;
+      }
+      var evSel = field('ev', 'Record that supports it', EVIDENCE, function (o) { return o.tag + ': ' + o.t; });
+      var whoSel = field('who', 'Authority, addressee or confirming party', PEOPLE, function (o) { return o.t; });
+      li.appendChild(grid);
+
+      var fbwrap = el('div');
+      fbwrap.setAttribute('aria-live', 'polite');
+      li.appendChild(fbwrap);
+      list.appendChild(li);
+      r.li = li; r.banner = banner; r.radios = radios; r.selects = { ev: evSel, who: whoSel }; r.fbwrap = fbwrap;
+    });
+  }
+
+  function checkAll() {
+    var correct = 0;
+    ROWS.forEach(function (r) {
+      var res = evaluate(r);
+      r.fb = res;
+      paintFb(r.fbwrap, res);
+      if (res.state === 'correct') { correct += 1; }
+    });
+    document.getElementById('status').textContent = fmt(correct) + ' of ' + fmt(ROWS.length) + ' correct.';
+    if (correct === ROWS.length) {
+      var w = document.getElementById('wrapup');
+      if (w.hidden) {
+        w.hidden = false;
+        document.getElementById('pass2').hidden = false;
+        w.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        document.getElementById('wrapup-h').focus({ preventScroll: true });
+      }
+    }
+  }
+
+  function toggle() {
+    var r = ROWS.filter(function (x) { return x.id === 's4'; })[0];
+    var btn = document.getElementById('toggle');
+    r.supplied = !r.supplied;
+    r.sel = { status: '', ev: '', who: '' };
+    r.radios.forEach(function (x) { x.checked = false; });
+    r.selects.ev.value = '';
+    r.selects.who.value = '';
+    r.fb = null;
+    paintFb(r.fbwrap, null);
+    r.banner.hidden = !r.supplied;
+    btn.setAttribute('aria-pressed', r.supplied ? 'true' : 'false');
+    btn.textContent = r.supplied ? 'No recipient has accepted' : 'A recipient accepts the alerts';
+    document.getElementById('toggle-status').textContent = r.supplied
+      ? 'Recipient accepted. Give the alert request its status again, then check.'
+      : 'Reverted. Give the alert request its status again, then check.';
+    r.li.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+    r.radios[0].focus({ preventScroll: true });
+  }
+
+  build();
+  document.getElementById('check').addEventListener('click', checkAll);
+  document.getElementById('toggle').addEventListener('click', toggle);
+})();
+</script>
+</body>
+</html>

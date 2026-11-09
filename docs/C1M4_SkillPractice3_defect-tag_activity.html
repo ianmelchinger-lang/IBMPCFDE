@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Could someone else decide it?</title>
+<style>
+:root {
+  --purple: #8A40FC;
+  --lavender: #D6CAFE;
+  --gray: #73777D;
+  --ink: #1D1830;
+  --white: #FFFFFF;
+  --lavender-wash: rgba(214, 202, 254, 0.28);
+  --lavender-hover: rgba(214, 202, 254, 0.55);
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 40px 20px 72px;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ink);
+}
+
+h1 { font-size: 2.05rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 20px; }
+h2 { font-size: 1.35rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+
+p { margin: 0 0 14px; max-width: 62ch; }
+
+.task {
+  margin: 22px 0 28px;
+  padding: 14px 18px;
+  border-left: 6px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 0 10px 10px 0;
+  font-weight: 600;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+#page-title:focus { outline: none; }
+.focus-target:focus { outline: none; }
+
+.terms { display: grid; gap: 12px; margin: 0 0 24px; padding: 0; }
+.terms > div { border-left: 4px solid var(--lavender); padding: 2px 0 2px 14px; }
+.terms dt { font-weight: 700; }
+.terms dd { margin: 2px 0 0; max-width: 62ch; }
+
+.onfile {
+  margin: 0 0 26px;
+  padding: 18px 22px 8px;
+  border-radius: 14px;
+  background: var(--lavender-wash);
+}
+.onfile h2 { font-size: 1.15rem; margin-bottom: 6px; }
+.onfile h3 { font-family: var(--sans); font-size: 1rem; margin: 14px 0 2px; }
+.facts { list-style: none; margin: 0 0 10px; padding: 0; }
+.facts li { padding: 9px 0; border-top: 1px solid var(--lavender); }
+.facts li:first-child { border-top: 0; }
+.facts li.withdrawn .fact-text { text-decoration: line-through; text-decoration-color: var(--gray); }
+.fact-note { display: block; font-size: 0.92rem; font-weight: 600; }
+
+.tagid {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 7px;
+  border: 1px solid var(--lavender);
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sheet {
+  border: 2px solid var(--lavender);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--white);
+}
+.sheet-head { background: var(--lavender); padding: 14px 20px; }
+.sheet-head p { margin: 0; max-width: none; }
+.sheet-title { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; }
+.sheet-sub { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+
+.lines { list-style: none; margin: 0; padding: 0; }
+.line { padding: 22px 20px 24px; }
+.line + .line { border-top: 1px solid var(--lavender); }
+
+.statement {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.4;
+  margin: 0 0 4px;
+  max-width: none;
+}
+.named {
+  text-decoration: underline;
+  text-decoration-color: var(--purple);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+}
+.gloss { margin: 0; font-size: 0.97rem; }
+
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.opts { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 0; }
+.seg { position: relative; flex: 1 1 11rem; }
+.opts.stack .seg { flex: 1 1 100%; }
+.opts.six .seg { flex: 1 1 14rem; }
+.opts.five .seg { flex: 1 1 8.5rem; }
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.seg input:disabled { cursor: default; }
+.seg label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 2px solid var(--gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.seg input:disabled + label { cursor: default; }
+.seg label::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray);
+  border-radius: 50%;
+  background: var(--white);
+}
+.seg input:not(:disabled):hover + label { background: var(--lavender-hover); }
+.seg input:checked + label { background: var(--purple); border-color: var(--purple); color: var(--white); }
+.seg input:checked + label::before {
+  border-color: var(--white);
+  background: var(--white);
+  box-shadow: inset 0 0 0 3px var(--purple);
+}
+.seg input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
+.opts.stack .seg label { font-weight: 500; }
+.opts.stack .seg input:checked + label { font-weight: 600; }
+
+.q { padding: 0; margin: 18px 0 0; font-weight: 700; }
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.fld { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.fld label { font-weight: 600; font-size: 0.97rem; line-height: 1.35; }
+select {
+  font: inherit;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 12px;
+  border: 2px solid var(--gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+}
+select:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.banner {
+  margin: 12px 0 0;
+  padding: 8px 14px;
+  border-left: 6px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 0 10px 10px 0;
+  font-weight: 600;
+  font-size: 0.97rem;
+}
+
+.fb { margin-top: 16px; padding: 12px 16px 4px; border-radius: 10px; }
+.fb p { margin: 0 0 10px; max-width: 62ch; }
+.fb .fb-state { display: flex; align-items: center; gap: 9px; font-weight: 700; }
+.fb .fb-state::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+}
+.fb.correct { background: var(--lavender-wash); border-left: 6px solid var(--purple); }
+.fb.correct .fb-state::before {
+  background: var(--purple);
+  border-color: var(--purple);
+  box-shadow: inset 0 0 0 2px var(--white);
+}
+.fb.near { background: var(--lavender); border-left: 6px dashed var(--ink); }
+.fb.near .fb-state::before { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.fb.wrong { background: var(--white); border: 2px solid var(--gray); border-left-width: 6px; }
+.fb.wrong .fb-state::before { border-color: var(--gray); background: var(--white); }
+.fb.info { background: var(--lavender-wash); border-left: 6px solid var(--lavender); }
+.fb.info .fb-state { display: none; }
+.fb:focus { outline: none; }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 18px; }
+.status { margin: 0; font-size: 0.98rem; max-width: none; font-variant-numeric: tabular-nums; }
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 11px 24px;
+  border: 2px solid var(--purple);
+  border-radius: 10px;
+  background: var(--purple);
+  color: var(--white);
+  cursor: pointer;
+}
+.btn:hover { box-shadow: 0 0 0 4px var(--lavender); }
+.btn.quiet { background: var(--white); color: var(--ink); border-color: var(--gray); }
+.btn:disabled { background: var(--gray); border-color: var(--gray); color: var(--white); cursor: default; box-shadow: none; }
+
+.linklike {
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.panel { margin: 28px 0; padding: 22px 24px 10px; border-radius: 14px; }
+.panel h2 { margin-bottom: 12px; }
+.panel.wash { background: var(--lavender-wash); border-left: 6px solid var(--purple); border-radius: 0 14px 14px 0; }
+.panel.plain { border: 2px solid var(--lavender); }
+.panel.tint { background: var(--lavender); }
+.panel h2:focus { outline: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fb.enter { animation: rise 0.28s ease-out both; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 720px) {
+  .grid3 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  main { padding: 28px 16px 56px; }
+  h1 { font-size: 1.7rem; }
+  .line { padding: 20px 16px 22px; }
+  .sheet-head { padding: 14px 16px; }
+  .statement { font-size: 1.2rem; }
+  .opts { flex-direction: column; }
+  .seg, .opts.six .seg, .opts.five .seg { flex: 1 1 auto; }
+  .panel { padding: 20px 18px 8px; }
+  .onfile { padding: 16px 16px 6px; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .btn { width: 100%; }
+}
+
+.rowtext { margin: 0 0 4px; font-family: var(--serif); font-size: 1.15rem; line-height: 1.45; max-width: none; }
+.method-line { font-size: 1rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="page-title" tabindex="-1">Could someone else decide it?</h1>
+
+  <p>A requirement is finished when a reviewer who did not write it can decide whether it was met. When an element is missing, each reviewer supplies their own, and approval records agreement with the wording instead of a result.</p>
+
+  <dl class="terms">
+    <div><dt>Who acts</dt><dd>The system or role that must behave a certain way or show something.</dd></div>
+    <div><dt>What must be true</dt><dd>The behavior or constraint, stated as one claim.</dd></div>
+    <div><dt>The conditions</dt><dd>The circumstances in which it must hold, including the hard cases.</dd></div>
+    <div><dt>The deciding observation</dt><dd>What the reviewer looks at, and the decision rule that turns it into pass or fail. Examining records shows what was recorded. Interviewing shows what someone says is assigned. Testing shows behavior. A method weaker than the claim cannot decide it.</dd></div>
+  </dl>
+
+  <p class="task">Tag each draft row as ready, or with the first element a reviewer could not find. Read each row in this order: who acts, how many claims it makes, what standard decides it, which hard cases it covers, and whether the method can see what the claim says.</p>
+
+  <section class="onfile" aria-labelledby="onfile-h">
+    <h2 id="onfile-h">What is on file</h2>
+    <ul class="facts" id="facts"></ul>
+  </section>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      <p class="sheet-title">Draft rows</p>
+      <p class="sheet-sub"><span id="tagged">0 of 8 tagged.</span> Rows are shown as drafted, with any acceptance wording.</p>
+    </div>
+    <ol class="lines" id="rows" role="list"></ol>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" id="check">Check my tags</button>
+    <p class="status" id="status" role="status" aria-live="polite">0 of 8 correct.</p>
+  </div>
+
+  <section id="wrapup" class="panel wash" aria-labelledby="wrapup-h" hidden>
+    <h2 id="wrapup-h" tabindex="-1" class="focus-target">What the tags showed</h2>
+    <p>Three rows were ready. Five each had one missing element, and each needed a different repair. A template would have given every row the same form and fixed none of the five.</p>
+  </section>
+
+  <section id="pass2" class="panel plain" aria-labelledby="pass2-h" hidden>
+    <h2 id="pass2-h">Move one assumption</h2>
+    <p>Change only the method on the approval row, and leave the claim as it is. This is an illustration of the same claim with a stronger method. Swap it, then tag the row again and check.</p>
+    <div class="actions">
+      <button type="button" class="btn quiet" id="toggle" aria-pressed="false">Replace the interview with a test</button>
+      <p class="status" id="toggle-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <noscript><p>This activity needs JavaScript to run.</p></noscript>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var FACTS = [
+    { tag: 'CLM-05, CLM-06', text: 'Cycle time, from receipt of a claim to its determination, stands at 9.4 calendar days. The promised figure is 5.0.' },
+    { tag: 'CLM-08', text: 'Forty-one percent of claims have a field inspection report attached.' },
+    { tag: 'CLM-12', text: 'Eleven percent of claims cannot be joined to their unit’s service history without the mapping table.' },
+    { tag: 'REG-03', text: 'A determination letter must cite the policy provision relied upon.' }
+  ];
+
+  var TAGS = [
+    { v: 'ready', t: 'Ready' },
+    { v: 'actor', t: 'No actor or system' },
+    { v: 'rule', t: 'No decision rule' },
+    { v: 'condition', t: 'Missing material condition' },
+    { v: 'compound', t: 'Compound claim' },
+    { v: 'method', t: 'Method cannot decide the claim' }
+  ];
+
+  var CRIT = {
+    actor: 'A row has an actor when it names the system or role that must do or show something.',
+    rule: 'A row has a decision rule when it says what turns the observation into pass or fail.',
+    condition: 'A row has its material conditions when it says the circumstances the behavior must hold in, including the hard cases.',
+    compound: 'A row is compound when it joins claims that need different evidence or different owners.',
+    method: 'A method decides a claim when it shows the same kind of thing the claim asserts. Records show what was recorded, interviews show what someone says, and tests show behavior.',
+    ready: 'A row is ready when a reviewer who did not write it can find every element and decide pass or fail.'
+  };
+
+  var ROWS = [
+    {
+      id: 'r1', key: 'rule', also: ['condition', 'method'],
+      text: 'The assistant shall return accurate coverage drafts.',
+      why: 'No decision rule. The row names a system and a behavior, but “accurate” leaves the standard unstated. Two reviewers can apply different standards to the same draft and reach opposite verdicts.'
+    },
+    {
+      id: 'r2', key: 'ready',
+      text: 'For every claim in the acceptance set named by the model risk and AI governance lead, the draft cites a provision whose effective period includes the loss date. Accepted when examination against the coverage rules repository finds no cited provision out of force (REG-03).',
+      why: 'Ready. A reviewer can find who acts (the draft), what must be true (it cites a provision in force on the loss date), the conditions (every claim in the named acceptance set), and the deciding observation (examination finds no cited provision out of force). Records show what was cited, so the method fits the claim.'
+    },
+    {
+      id: 'r3', key: 'compound', also: ['rule'],
+      text: 'The assistant shall be secure, compliant and auditable.',
+      why: 'Compound. Security, compliance and auditability need different evidence and different owners, so no single check can settle the row. A repair would split it and keep any dependencies between the parts.'
+    },
+    {
+      id: 'r4', key: 'method', also: ['rule'],
+      text: 'No determination is issued from a draft without the adjuster of record’s approval. Accepted on interview with the claims desk supervisor.',
+      textAlt: 'No determination is issued from a draft without the adjuster of record’s approval. Accepted by test: on seeded claims, attempt to issue a determination with approval withheld. The row passes if none is issued.',
+      why: 'Method cannot decide the claim. The row claims behavior: nothing issues without approval. An interview shows what someone says is assigned. It cannot show that the behavior holds.',
+      whyAlt: 'Ready. The claim did not change. The method now shows behavior: a test with approval withheld either issues a determination or does not, and the pass rule says which.'
+    },
+    {
+      id: 'r5', key: 'actor', also: ['method'],
+      text: 'Cycle time falls from 9.4 to 5.0 calendar days (CLM-05, CLM-06), measured over one quarter.',
+      why: 'No actor or system. The row states a business result. It names nothing the assistant does that a reviewer could watch for and accept, and a quarter’s figure cannot show what the assistant contributed.'
+    },
+    {
+      id: 'r6', key: 'ready',
+      text: 'When the policy master returns no endorsement data for a claim, the draft is marked “incomplete inputs” and names the missing input. Accepted by test on seeded claims with endorsement data withheld.',
+      why: 'Ready. The actor is the draft, the behavior is the marking and naming, the condition is missing endorsement data, and a test on seeded claims shows behavior directly. Pass or fail follows from what appears on the draft.'
+    },
+    {
+      id: 'r7', key: 'condition', also: ['rule'],
+      text: 'The draft includes the unit’s service history. Accepted by test on a sample of pilot-line claims.',
+      why: 'Missing material condition. Eleven percent of claims cannot be joined to their unit’s service history. A sample of pilot-line claims need not include them, so the test can pass while the hard case goes unseen.'
+    },
+    {
+      id: 'r8', key: 'ready',
+      text: 'Each draft states which of its four inputs were unavailable for the claim (CLM-08). Accepted by test with each input withheld in turn.',
+      why: 'Ready. The actor is the draft, the behavior is stating which inputs were unavailable, and withholding each input in turn covers every way the claim can fail. A test shows the behavior.'
+    }
+  ];
+
+  var FIRST = 'Read the row in this order: who acts, how many claims it makes, what standard decides it, which hard cases it covers, and whether the method can see what the claim says.';
+
+  var refs = {};
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+  function fmt(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+
+  function effKey(r) { return r.supplied && r.keyAlt ? r.keyAlt : r.key; }
+  function effText(r) { return r.supplied && r.textAlt ? r.textAlt : r.text; }
+  function effWhy(r) { return r.supplied && r.whyAlt ? r.whyAlt : r.why; }
+
+  function paintFb(wrap, fb) {
+    wrap.textContent = '';
+    if (!fb) { return; }
+    var box = el('div', 'fb ' + fb.state + ' enter');
+    if (fb.title) { box.appendChild(el('p', 'fb-state', fb.title)); }
+    fb.body.forEach(function (b) { box.appendChild(el('p', null, b)); });
+    wrap.appendChild(box);
+  }
+
+  function evaluate(r) {
+    var key = r.id === 'r4' && r.supplied ? 'ready' : r.key;
+    var tag = r.tag;
+    if (!tag) { return { state: 'info', title: '', body: ['Choose a tag first.'] }; }
+    if (tag === key) { return { state: 'correct', title: 'Correct', body: [effWhy(r)] }; }
+    if (r.also && r.also.indexOf(tag) >= 0 && !(r.id === 'r4' && r.supplied)) {
+      return { state: 'near', title: 'Close', body: ['That gap is real, but a reviewer meets another gap first. Read the row again in order and find the first one.', FIRST] };
+    }
+    if (key === 'ready') {
+      return { state: 'wrong', title: 'Not yet', body: [CRIT[tag] + ' If you can point to the words in the row that supply it, that element is not missing.', FIRST] };
+    }
+    if (tag === 'ready') {
+      return { state: 'wrong', title: 'Not yet', body: [CRIT.ready + ' Find the element you could not find.', FIRST] };
+    }
+    return { state: 'wrong', title: 'Not yet', body: [CRIT[tag], FIRST] };
+  }
+
+  function updateTagged() {
+    var n = ROWS.filter(function (r) { return r.tag; }).length;
+    document.getElementById('tagged').textContent = fmt(n) + ' of ' + fmt(ROWS.length) + ' tagged.';
+  }
+
+  function build() {
+    var ul = document.getElementById('facts');
+    FACTS.forEach(function (f) {
+      var li = el('li');
+      li.appendChild(el('span', 'tagid', f.tag));
+      li.appendChild(el('span', 'fact-text', f.text));
+      ul.appendChild(li);
+    });
+
+    var list = document.getElementById('rows');
+    ROWS.forEach(function (r) {
+      r.tag = '';
+      var li = el('li', 'line');
+      var text = el('p', 'rowtext', effText(r));
+      li.appendChild(text);
+      var banner = el('p', 'banner', 'Illustration: the method on this row has been swapped. The claim is unchanged.');
+      banner.hidden = true;
+      li.appendChild(banner);
+
+      var fs = el('fieldset');
+      fs.appendChild(el('legend', 'vh', 'Tag for this row: ' + r.text));
+      var opts = el('div', 'opts six');
+      var radios = TAGS.map(function (t) {
+        var seg = el('div', 'seg');
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'tag-' + r.id;
+        input.id = 'tag-' + r.id + '-' + t.v;
+        input.value = t.v;
+        input.addEventListener('change', function () {
+          r.tag = t.v;
+          r.fb = null;
+          paintFb(r.fbwrap, null);
+          updateTagged();
+        });
+        var label = el('label', null, t.t);
+        label.setAttribute('for', input.id);
+        seg.appendChild(input);
+        seg.appendChild(label);
+        opts.appendChild(seg);
+        return input;
+      });
+      fs.appendChild(opts);
+      li.appendChild(fs);
+
+      var fbwrap = el('div');
+      fbwrap.setAttribute('aria-live', 'polite');
+      li.appendChild(fbwrap);
+      list.appendChild(li);
+      r.li = li; r.textEl = text; r.banner = banner; r.radios = radios; r.fbwrap = fbwrap;
+    });
+  }
+
+  function checkAll() {
+    var correct = 0;
+    ROWS.forEach(function (r) {
+      var res = evaluate(r);
+      r.fb = res;
+      r.state = res.state;
+      paintFb(r.fbwrap, res);
+      if (res.state === 'correct') { correct += 1; }
+    });
+    document.getElementById('status').textContent = fmt(correct) + ' of ' + fmt(ROWS.length) + ' correct.';
+    if (correct === ROWS.length) {
+      var w = document.getElementById('wrapup');
+      if (w.hidden) {
+        w.hidden = false;
+        document.getElementById('pass2').hidden = false;
+        w.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+        document.getElementById('wrapup-h').focus({ preventScroll: true });
+      }
+    }
+  }
+
+  function toggle() {
+    var r = ROWS.filter(function (x) { return x.id === 'r4'; })[0];
+    var btn = document.getElementById('toggle');
+    r.supplied = !r.supplied;
+    r.tag = '';
+    r.radios.forEach(function (x) { x.checked = false; });
+    r.fb = null;
+    paintFb(r.fbwrap, null);
+    r.textEl.textContent = effText(r);
+    r.banner.hidden = !r.supplied;
+    btn.setAttribute('aria-pressed', r.supplied ? 'true' : 'false');
+    btn.textContent = r.supplied ? 'Put the interview back' : 'Replace the interview with a test';
+    document.getElementById('toggle-status').textContent = r.supplied
+      ? 'Method swapped. Tag the approval row again, then check.'
+      : 'Interview restored. Tag the approval row again, then check.';
+    updateTagged();
+    r.li.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+    r.radios[0].focus({ preventScroll: true });
+  }
+
+  build();
+  updateTagged();
+  document.getElementById('check').addEventListener('click', checkAll);
+  document.getElementById('toggle').addEventListener('click', toggle);
+})();
+</script>
+</body>
+</html>

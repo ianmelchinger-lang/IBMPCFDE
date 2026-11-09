@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete the name: what is left?</title>
+<style>
+:root {
+  --purple: #8A40FC;
+  --lavender: #D6CAFE;
+  --gray: #73777D;
+  --ink: #1D1830;
+  --white: #FFFFFF;
+  --lavender-wash: rgba(214, 202, 254, 0.28);
+  --lavender-hover: rgba(214, 202, 254, 0.55);
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 40px 20px 72px;
+}
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  line-height: 1.2;
+  margin: 0;
+  color: var(--ink);
+}
+
+h1 { font-size: 2.05rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 20px; }
+h2 { font-size: 1.35rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 700; }
+
+p { margin: 0 0 14px; max-width: 62ch; }
+
+.task {
+  margin: 22px 0 28px;
+  padding: 14px 18px;
+  border-left: 6px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 0 10px 10px 0;
+  font-weight: 600;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+#page-title:focus { outline: none; }
+.focus-target:focus { outline: none; }
+
+.terms { display: grid; gap: 12px; margin: 0 0 24px; padding: 0; }
+.terms > div { border-left: 4px solid var(--lavender); padding: 2px 0 2px 14px; }
+.terms dt { font-weight: 700; }
+.terms dd { margin: 2px 0 0; max-width: 62ch; }
+
+.onfile {
+  margin: 0 0 26px;
+  padding: 18px 22px 8px;
+  border-radius: 14px;
+  background: var(--lavender-wash);
+}
+.onfile h2 { font-size: 1.15rem; margin-bottom: 6px; }
+.onfile h3 { font-family: var(--sans); font-size: 1rem; margin: 14px 0 2px; }
+.facts { list-style: none; margin: 0 0 10px; padding: 0; }
+.facts li { padding: 9px 0; border-top: 1px solid var(--lavender); }
+.facts li:first-child { border-top: 0; }
+.facts li.withdrawn .fact-text { text-decoration: line-through; text-decoration-color: var(--gray); }
+.fact-note { display: block; font-size: 0.92rem; font-weight: 600; }
+
+.tagid {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 7px;
+  border: 1px solid var(--lavender);
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sheet {
+  border: 2px solid var(--lavender);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--white);
+}
+.sheet-head { background: var(--lavender); padding: 14px 20px; }
+.sheet-head p { margin: 0; max-width: none; }
+.sheet-title { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; }
+.sheet-sub { font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+
+.lines { list-style: none; margin: 0; padding: 0; }
+.line { padding: 22px 20px 24px; }
+.line + .line { border-top: 1px solid var(--lavender); }
+
+.statement {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.4;
+  margin: 0 0 4px;
+  max-width: none;
+}
+.named {
+  text-decoration: underline;
+  text-decoration-color: var(--purple);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 5px;
+}
+.gloss { margin: 0; font-size: 0.97rem; }
+
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.opts { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 0; }
+.seg { position: relative; flex: 1 1 11rem; }
+.opts.stack .seg { flex: 1 1 100%; }
+.opts.six .seg { flex: 1 1 14rem; }
+.opts.five .seg { flex: 1 1 8.5rem; }
+
+.seg input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.seg input:disabled { cursor: default; }
+.seg label {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 2px solid var(--gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.seg input:disabled + label { cursor: default; }
+.seg label::before {
+  content: "";
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray);
+  border-radius: 50%;
+  background: var(--white);
+}
+.seg input:not(:disabled):hover + label { background: var(--lavender-hover); }
+.seg input:checked + label { background: var(--purple); border-color: var(--purple); color: var(--white); }
+.seg input:checked + label::before {
+  border-color: var(--white);
+  background: var(--white);
+  box-shadow: inset 0 0 0 3px var(--purple);
+}
+.seg input:focus-visible + label { outline: 3px solid var(--ink); outline-offset: 2px; }
+.opts.stack .seg label { font-weight: 500; }
+.opts.stack .seg input:checked + label { font-weight: 600; }
+
+.q { padding: 0; margin: 18px 0 0; font-weight: 700; }
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.fld { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.fld label { font-weight: 600; font-size: 0.97rem; line-height: 1.35; }
+select {
+  font: inherit;
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 12px;
+  border: 2px solid var(--gray);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+}
+select:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.banner {
+  margin: 12px 0 0;
+  padding: 8px 14px;
+  border-left: 6px solid var(--lavender);
+  background: var(--lavender-wash);
+  border-radius: 0 10px 10px 0;
+  font-weight: 600;
+  font-size: 0.97rem;
+}
+
+.fb { margin-top: 16px; padding: 12px 16px 4px; border-radius: 10px; }
+.fb p { margin: 0 0 10px; max-width: 62ch; }
+.fb .fb-state { display: flex; align-items: center; gap: 9px; font-weight: 700; }
+.fb .fb-state::before {
+  content: "";
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+}
+.fb.correct { background: var(--lavender-wash); border-left: 6px solid var(--purple); }
+.fb.correct .fb-state::before {
+  background: var(--purple);
+  border-color: var(--purple);
+  box-shadow: inset 0 0 0 2px var(--white);
+}
+.fb.near { background: var(--lavender); border-left: 6px dashed var(--ink); }
+.fb.near .fb-state::before { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.fb.wrong { background: var(--white); border: 2px solid var(--gray); border-left-width: 6px; }
+.fb.wrong .fb-state::before { border-color: var(--gray); background: var(--white); }
+.fb.info { background: var(--lavender-wash); border-left: 6px solid var(--lavender); }
+.fb.info .fb-state { display: none; }
+.fb:focus { outline: none; }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 18px; }
+.status { margin: 0; font-size: 0.98rem; max-width: none; font-variant-numeric: tabular-nums; }
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  min-height: 48px;
+  padding: 11px 24px;
+  border: 2px solid var(--purple);
+  border-radius: 10px;
+  background: var(--purple);
+  color: var(--white);
+  cursor: pointer;
+}
+.btn:hover { box-shadow: 0 0 0 4px var(--lavender); }
+.btn.quiet { background: var(--white); color: var(--ink); border-color: var(--gray); }
+.btn:disabled { background: var(--gray); border-color: var(--gray); color: var(--white); cursor: default; box-shadow: none; }
+
+.linklike {
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 8px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.panel { margin: 28px 0; padding: 22px 24px 10px; border-radius: 14px; }
+.panel h2 { margin-bottom: 12px; }
+.panel.wash { background: var(--lavender-wash); border-left: 6px solid var(--purple); border-radius: 0 14px 14px 0; }
+.panel.plain { border: 2px solid var(--lavender); }
+.panel.tint { background: var(--lavender); }
+.panel h2:focus { outline: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fb.enter { animation: rise 0.28s ease-out both; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 720px) {
+  .grid3 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  main { padding: 28px 16px 56px; }
+  h1 { font-size: 1.7rem; }
+  .line { padding: 20px 16px 22px; }
+  .sheet-head { padding: 14px 16px; }
+  .statement { font-size: 1.2rem; }
+  .opts { flex-direction: column; }
+  .seg, .opts.six .seg, .opts.five .seg { flex: 1 1 auto; }
+  .panel { padding: 20px 18px 8px; }
+  .onfile { padding: 16px 16px 6px; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .btn { width: 100%; }
+}
+
+</style>
+</head>
+<body>
+<main>
+  <h1 id="page-title" tabindex="-1">Delete the name: what is left?</h1>
+
+  <p>A requirement that names a product can pass review the day the product is installed, whether or not the need is met. The removal test separates the need from the name. Delete the underlined name, then ask whether the statement still says what the system must achieve, or whether it becomes false or impossible because something on file fixed that condition.</p>
+
+  <p>The test has three possible results.</p>
+
+  <dl class="terms">
+    <div><dt>Unchosen mechanism</dt><dd>A product, component or technique offered as one way to meet a need. Other ways are still open.</dd></div>
+    <div><dt>Fixed constraint</dt><dd>A condition that a documented authority has made non-negotiable. Delete it and the statement becomes false or impossible.</dd></div>
+    <div><dt>Preference</dt><dd>A wish about how the result should look or sit, with no documented authority behind it.</dd></div>
+    <div><dt>Documented authority</dt><dd>A recorded fact or decision, from someone entitled to make it, that fixes a condition.</dd></div>
+  </dl>
+
+  <p class="task">Six statements from the signed workshop list are below. Place each one, then check it. For a mechanism, choose the need it stands for. For a fixed constraint, choose the documented authority behind it.</p>
+
+  <section class="onfile" aria-labelledby="onfile-h">
+    <h2 id="onfile-h">What the discovery brief records</h2>
+    <ul class="facts" id="facts"></ul>
+  </section>
+
+  <div class="sheet">
+    <div class="sheet-head">
+      <p class="sheet-title">Statements from the signed workshop list</p>
+      <p class="sheet-sub"><span id="progress">0 of 6 complete.</span> The underlined words are the names to delete.</p>
+    </div>
+    <ol class="lines" id="cards" role="list"></ol>
+  </div>
+
+  <section id="wrapup" class="panel wash" aria-labelledby="wrapup-h" hidden>
+    <h2 id="wrapup-h" tabindex="-1" class="focus-target">What the removal test decided</h2>
+    <p>Three statements named a mechanism, and each stands for a need that can be written without the name. Two named a fixed constraint, and each keeps the record that fixes it. One was a preference.</p>
+    <p>In the register, the needs go in without the names. The names go to option comparison, where the alternatives are weighed. The constraints stay, with their authority.</p>
+  </section>
+
+  <section id="pass2" class="panel plain" aria-labelledby="pass2-h" hidden>
+    <h2 id="pass2-h">Move one assumption</h2>
+    <p>The records on file decide what a statement is. Withdraw the record behind one fixed constraint, then place that statement again in its card. This is an illustration: nothing has changed in the case.</p>
+    <fieldset>
+      <legend class="q">Which record do you withdraw?</legend>
+      <div class="opts stack" id="withdraw-opts"></div>
+    </fieldset>
+    <div class="actions">
+      <button type="button" class="btn" id="withdraw">Withdraw the record</button>
+      <p class="status" id="withdraw-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <noscript><p>This activity needs JavaScript to run.</p></noscript>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var FACTS = [
+    { id: 'letter', text: 'A determination letter must cite the policy provision relied upon.' },
+    { id: 'directory', text: 'The subsidiary signs in through its own directory. Joining it to the corporate sign-on needs an entitlement review that nobody has scheduled.' },
+    { id: 'unmatched', text: 'Eleven percent of claims cannot be joined to their unit’s service history without the mapping table.' },
+    { id: 'adjuster', text: 'The assistant drafts only. The adjuster of record decides.' },
+    { id: 'master', text: 'The claims master accepts changes only through its existing transactions.' },
+    { id: 'forms', text: 'Superseded coverage forms stay retrievable, because retention requires it.' },
+    { id: 'view', text: 'A request is on record to show the draft inside the existing claim view. Nobody has recorded it as a condition.' }
+  ];
+
+  var PLACEMENTS = [
+    { v: 'mechanism', t: 'Unchosen mechanism' },
+    { v: 'constraint', t: 'Fixed constraint' },
+    { v: 'preference', t: 'Preference' }
+  ];
+
+  var KIND_MSG = {
+    generic: 'The placement is right. This rewrite still names the mechanism, only more generally. A need says what the result must be or do.',
+    threshold: 'The placement is right. This rewrite adds a figure that nothing on file supports. A need can be stated and tested without inventing a threshold.',
+    preference: 'The placement is right. A stated preference is not a documented authority. Look for the record that fixes the condition.',
+    practice: 'The placement is right. General good practice is not a documented authority for this system. Look for the record that fixes the condition.'
+  };
+
+  var ITEMS = [
+    {
+      id: 'gen', key: 'mechanism',
+      segs: [{ t: 'Generate the drafts with ' }, { t: 'watsonx.ai', n: true }, { t: '.' }],
+      need: [
+        { id: 'b', kind: 'generic', t: 'Drafts are produced by a generative language model.' },
+        { id: 'a', kind: 'need', t: 'Each draft summarizes the claim, cites the provision relied on, and proposes a disposition for the adjuster to approve.' },
+        { id: 'c', kind: 'threshold', t: 'At least 95 percent of drafts are approved without edits.' }
+      ],
+      done: 'A mechanism. Delete “watsonx.ai” and a result still stands: a draft that summarizes the claim, cites the provision relied on, and proposes a disposition for the adjuster. Nothing on file fixes the product, so it stays a candidate for option comparison.'
+    },
+    {
+      id: 'map', key: 'mechanism',
+      segs: [{ t: 'Fix ' }, { t: 'the mapping table', n: true }, { t: '.' }],
+      need: [
+        { id: 'a', kind: 'need', t: 'Each claim’s unit-match result is known, and unmatched claims are marked.' },
+        { id: 'c', kind: 'threshold', t: 'At least 99 percent of claims match to a unit.' },
+        { id: 'b', kind: 'generic', t: 'The table that links claims to units is corrected and kept current.' }
+      ],
+      done: 'A mechanism. “Fix the mapping table” names a piece of work. The result it is for is that every claim’s unit-match is known and unmatched claims are marked. Eleven percent of claims cannot be joined today, so the need matters, and the table is one way to meet it.'
+    },
+    {
+      id: 'idx', key: 'mechanism',
+      segs: [{ t: 'Index', n: true }, { t: ' the coverage rules repository ' }, { t: 'for retrieval', n: true }, { t: '.' }],
+      need: [
+        { id: 'c', kind: 'threshold', t: 'The right provision appears among the top five results at least 90 percent of the time.' },
+        { id: 'b', kind: 'generic', t: 'The coverage rules are held in a searchable store that the assistant queries.' },
+        { id: 'a', kind: 'need', t: 'Every cited provision is in force on the loss date.' }
+      ],
+      done: 'A mechanism. Delete the index and the retrieval, and the result left is that every cited provision is in force on the loss date. Retrieval is one way to get there, and nothing on file chooses it.'
+    },
+    {
+      id: 'master', key: 'constraint', fact: 'master',
+      segs: [{ t: 'Write approved determinations only through ' }, { t: 'the claims master’s existing transactions', n: true }, { t: '.' }],
+      auth: [
+        { id: 'c', kind: 'practice', t: 'General good practice for systems of record.' },
+        { id: 'a', kind: 'authority', t: 'The discovery brief records that the claims master accepts changes only through its existing transactions.' },
+        { id: 'b', kind: 'preference', t: 'The AI platform owner’s stated preference.' }
+      ],
+      done: 'A fixed constraint. Delete the claims master’s transactions and the statement becomes impossible, because the discovery brief records that changes go only through them. Keep the constraint, and keep the record that fixes it.',
+      doneWithdrawn: 'A preference again. The statement did not change. The record behind it did. With nothing on file fixing the condition, it is a wish about how to write approved determinations, and it waits for option comparison. If someone documents the condition again, it becomes a fixed constraint again.'
+    },
+    {
+      id: 'dir', key: 'constraint', fact: 'directory',
+      segs: [{ t: 'Adjusters sign on through ' }, { t: 'the subsidiary directory', n: true }, { t: '.' }],
+      auth: [
+        { id: 'b', kind: 'preference', t: 'The AI platform owner’s stated preference.' },
+        { id: 'a', kind: 'authority', t: 'The discovery brief records that the subsidiary signs in through its own directory, and that joining the corporate sign-on needs an entitlement review.' },
+        { id: 'c', kind: 'practice', t: 'General good practice for sign-on.' }
+      ],
+      done: 'A fixed constraint. Delete the directory and adjusters have nowhere to sign on: the subsidiary signs in through its own directory, and changing that needs an entitlement review nobody has scheduled. Keep the constraint with its record.',
+      doneWithdrawn: 'A preference again. The statement did not change. The record behind it did. With nothing on file fixing the condition, it is a wish about how adjusters sign on, and it waits for option comparison. If someone documents the condition again, it becomes a fixed constraint again.'
+    },
+    {
+      id: 'view', key: 'preference',
+      segs: [{ t: 'Put the draft inside ' }, { t: 'the existing claim view', n: true }, { t: '.' }],
+      done: 'A preference. Delete “the existing claim view” and the statement still says what is wanted: the adjuster sees the draft where they work. A request is on record, but nobody has recorded it as a condition, so it waits for option comparison.'
+    }
+  ];
+
+  var refs = {};
+  var factEls = {};
+  var wd = { radios: [] };
+
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) { node.className = cls; }
+    if (text !== undefined) { node.textContent = text; }
+    return node;
+  }
+
+  function fmt(n) { return n.toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+
+  function effKey(it) { return it.withdrawn ? 'preference' : it.key; }
+
+  function setFb(it, state, title, body) {
+    it.fb = { state: state, title: title, body: body };
+  }
+
+  function judgePlacement(it) {
+    var key = effKey(it);
+    var p = it.placement;
+    if (p === key) {
+      if (key === 'mechanism') {
+        return ['correct', 'Correct placement', 'The underlined name is one way to meet a need, and nothing on file fixes it. Now choose the need it stands for.'];
+      }
+      if (key === 'constraint') {
+        return ['correct', 'Correct placement', 'Something on file fixes this condition, so deleting the name makes the statement impossible. Now choose the documented authority behind it.'];
+      }
+      return ['correct', 'Correct', it.withdrawn ? it.doneWithdrawn : it.done];
+    }
+    if (it.withdrawn) {
+      return ['wrong', 'Not yet', 'The record that fixed this condition has been withdrawn. Ask what documented authority fixes it now. If none does, what is the statement?'];
+    }
+    if (key === 'preference' && p === 'mechanism') {
+      return ['near', 'Close', 'The structure is right: nothing on file fixes it. What is out of place is the kind of thing it is. It states where the result should sit, not a technique for producing it.'];
+    }
+    if (key === 'constraint') {
+      return ['wrong', 'Not yet', 'Delete the underlined name and ask whether the statement becomes false or impossible because something on file fixes that condition. Check what the discovery brief records about this system.'];
+    }
+    if (key === 'mechanism' && p === 'constraint') {
+      return ['wrong', 'Not yet', 'A fixed constraint needs a documented authority. Ask where the discovery brief records that this name is non-negotiable.'];
+    }
+    if (key === 'mechanism' && p === 'preference') {
+      return ['wrong', 'Not yet', 'A preference is a wish about how the result should look or sit. Ask whether the underlined name is a way of producing a result: a product, a component or a technique.'];
+    }
+    return ['wrong', 'Not yet', 'A fixed constraint needs a documented authority. Ask where it is recorded that nobody may choose otherwise.'];
+  }
+
+  function paintFb(wrap, fb) {
+    wrap.textContent = '';
+    if (!fb) { return; }
+    var box = el('div', 'fb ' + fb.state + ' enter');
+    if (fb.title) { box.appendChild(el('p', 'fb-state', fb.title)); }
+    box.appendChild(el('p', null, fb.body));
+    wrap.appendChild(box);
+  }
+
+  function doneCount() {
+    return ITEMS.filter(function (i) { return i.stage === 'done'; }).length;
+  }
+
+  function updateProgress() {
+    document.getElementById('progress').textContent = fmt(doneCount()) + ' of ' + fmt(ITEMS.length) + ' complete.';
+    if (doneCount() === ITEMS.length) {
+      var w = document.getElementById('wrapup');
+      if (w.hidden) {
+        w.hidden = false;
+        document.getElementById('pass2').hidden = false;
+      }
+    }
+  }
+
+  function render(it) {
+    var r = refs[it.id];
+    var key = effKey(it);
+    r.banner.hidden = !it.withdrawn;
+    r.placeRadios.forEach(function (x) {
+      x.checked = it.placement === x.value;
+      x.disabled = it.stage !== 'place';
+    });
+    var showFollow = key !== 'preference' && (it.stage === 'follow' || it.stage === 'done');
+    if (r.follow) { r.follow.hidden = !showFollow; }
+    r.followRadios.forEach(function (x) {
+      x.checked = it.answer === x.value;
+      x.disabled = it.stage !== 'follow';
+    });
+    r.btn.hidden = it.stage === 'done';
+    r.btn.textContent = it.stage === 'follow' ? 'Check answer' : 'Check placement';
+    paintFb(r.fbwrap, it.fb);
+  }
+
+  function check(it) {
+    var r = refs[it.id];
+    if (it.stage === 'place') {
+      if (!it.placement) {
+        setFb(it, 'info', '', 'Choose a placement first.');
+        render(it);
+        return;
+      }
+      var j = judgePlacement(it);
+      setFb(it, j[0], j[1], j[2]);
+      if (j[0] === 'correct') {
+        it.stage = effKey(it) === 'preference' ? 'done' : 'follow';
+      }
+      render(it);
+      updateProgress();
+      if (it.stage === 'follow' && r.followRadios.length) { r.followRadios[0].focus(); }
+      if (it.stage === 'done') { r.fbwrap.firstChild.setAttribute('tabindex', '-1'); r.fbwrap.firstChild.focus(); }
+      return;
+    }
+    if (it.stage === 'follow') {
+      if (!it.answer) {
+        setFb(it, 'info', '', 'Choose an answer first.');
+        render(it);
+        return;
+      }
+      var set = it.key === 'mechanism' ? it.need : it.auth;
+      var opt = set.filter(function (o) { return o.id === it.answer; })[0];
+      if (opt.kind === 'need' || opt.kind === 'authority') {
+        setFb(it, 'correct', 'Correct', it.done);
+        it.stage = 'done';
+      } else {
+        setFb(it, 'near', 'Close', KIND_MSG[opt.kind]);
+      }
+      render(it);
+      updateProgress();
+      if (it.stage === 'done') { r.fbwrap.firstChild.setAttribute('tabindex', '-1'); r.fbwrap.firstChild.focus(); }
+    }
+  }
+
+  function buildCard(it) {
+    var li = el('li', 'line');
+    var statement = el('p', 'statement');
+    statement.id = 'st-' + it.id;
+    it.segs.forEach(function (s) {
+      statement.appendChild(s.n ? el('span', 'named', s.t) : document.createTextNode(s.t));
+    });
+    li.appendChild(statement);
+
+    var banner = el('p', 'banner', 'Illustration: the record behind this statement has been withdrawn.');
+    banner.hidden = true;
+    li.appendChild(banner);
+
+    var place = el('fieldset');
+    place.appendChild(el('legend', 'vh', 'Where does this statement belong? ' + statement.textContent));
+    var opts = el('div', 'opts');
+    var placeRadios = PLACEMENTS.map(function (p) {
+      var seg = el('div', 'seg');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'place-' + it.id;
+      input.id = 'place-' + it.id + '-' + p.v;
+      input.value = p.v;
+      input.addEventListener('change', function () {
+        it.placement = p.v;
+        it.fb = null;
+        paintFb(refs[it.id].fbwrap, null);
+      });
+      var label = el('label', null, p.t);
+      label.setAttribute('for', input.id);
+      seg.appendChild(input);
+      seg.appendChild(label);
+      opts.appendChild(seg);
+      return input;
+    });
+    place.appendChild(opts);
+    li.appendChild(place);
+
+    var follow = null;
+    var followRadios = [];
+    if (it.key !== 'preference') {
+      var set = it.key === 'mechanism' ? it.need : it.auth;
+      follow = el('fieldset');
+      follow.hidden = true;
+      follow.appendChild(el('legend', 'q', it.key === 'mechanism' ? 'Which need does it stand for?' : 'Which documented authority fixes it?'));
+      var fopts = el('div', 'opts stack');
+      set.forEach(function (o) {
+        var seg = el('div', 'seg');
+        var input = document.createElement('input');
+        input.type = 'radio';
+        input.name = 'ans-' + it.id;
+        input.id = 'ans-' + it.id + '-' + o.id;
+        input.value = o.id;
+        input.addEventListener('change', function () {
+          it.answer = o.id;
+          it.fb = null;
+          paintFb(refs[it.id].fbwrap, null);
+        });
+        var label = el('label', null, o.t);
+        label.setAttribute('for', input.id);
+        seg.appendChild(input);
+        seg.appendChild(label);
+        fopts.appendChild(seg);
+        followRadios.push(input);
+      });
+      follow.appendChild(fopts);
+      li.appendChild(follow);
+    }
+
+    var actions = el('div', 'actions');
+    var btn = el('button', 'btn', 'Check placement');
+    btn.type = 'button';
+    btn.addEventListener('click', function () { check(it); });
+    actions.appendChild(btn);
+    li.appendChild(actions);
+
+    var fbwrap = el('div');
+    fbwrap.setAttribute('aria-live', 'polite');
+    li.appendChild(fbwrap);
+
+    document.getElementById('cards').appendChild(li);
+    refs[it.id] = { li: li, banner: banner, placeRadios: placeRadios, follow: follow, followRadios: followRadios, btn: btn, fbwrap: fbwrap };
+  }
+
+  function buildFacts() {
+    var ul = document.getElementById('facts');
+    FACTS.forEach(function (f) {
+      var li = el('li');
+      li.appendChild(el('span', 'fact-text', f.text));
+      var note = el('span', 'fact-note', 'Withdrawn for this illustration.');
+      note.hidden = true;
+      li.appendChild(note);
+      ul.appendChild(li);
+      factEls[f.id] = { li: li, note: note };
+    });
+  }
+
+  function buildWithdraw() {
+    var box = document.getElementById('withdraw-opts');
+    ITEMS.filter(function (i) { return i.fact; }).forEach(function (it) {
+      var seg = el('div', 'seg');
+      var input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'withdraw';
+      input.id = 'wd-' + it.id;
+      input.value = it.id;
+      var label = el('label', null, it.fact === 'master'
+        ? 'The record on the claims master’s transactions'
+        : 'The record on the subsidiary directory');
+      label.setAttribute('for', input.id);
+      seg.appendChild(input);
+      seg.appendChild(label);
+      box.appendChild(seg);
+      wd.radios.push(input);
+    });
+    document.getElementById('withdraw').addEventListener('click', function () {
+      var status = document.getElementById('withdraw-status');
+      var chosen = wd.radios.filter(function (x) { return x.checked; })[0];
+      if (!chosen) { status.textContent = 'Choose a record first.'; return; }
+      var it = ITEMS.filter(function (i) { return i.id === chosen.value; })[0];
+      if (it.withdrawn) { status.textContent = 'That record is already withdrawn. Place the statement again in its card.'; return; }
+      it.withdrawn = true;
+      it.stage = 'place';
+      it.placement = null;
+      it.answer = null;
+      it.fb = null;
+      factEls[it.fact].li.className = 'withdrawn';
+      factEls[it.fact].note.hidden = false;
+      render(it);
+      updateProgress();
+      status.textContent = 'Record withdrawn. Place the statement again in its card above.';
+      refs[it.id].li.scrollIntoView({ behavior: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      refs[it.id].placeRadios[0].focus({ preventScroll: true });
+    });
+  }
+
+  ITEMS.forEach(function (it) {
+    it.stage = 'place';
+    it.placement = null;
+    it.answer = null;
+    it.fb = null;
+    it.withdrawn = false;
+  });
+  buildFacts();
+  ITEMS.forEach(buildCard);
+  buildWithdraw();
+  ITEMS.forEach(render);
+  updateProgress();
+})();
+</script>
+</body>
+</html>
