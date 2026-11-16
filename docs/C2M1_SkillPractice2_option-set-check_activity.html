@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check that the options really differ</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--rule:#73777D;--soft:#f3effe;--accent:#8A40FC;--accent-deep:#5a24b5;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5a24b5}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:920px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.ohead{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.15rem}
+.oid{font-size:.8rem;font-weight:700;color:var(--accent-deep);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.otitle{font-size:1.02rem;font-weight:600}
+.odesc{margin:.1rem 0 .6rem;font-size:.95rem}
+.trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 14px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.93rem;padding:.45rem .5rem;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.6rem;align-items:flex-start;padding:.4rem .25rem;font-size:1rem;cursor:pointer}
+.opt input{margin-top:.35rem;width:1.05rem;height:1.05rem;flex:0 0 auto;accent-color:var(--accent)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--rule)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.trio{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Check that the options really differ</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">What makes an option different</h2>
+<dl id="defs"></dl>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">The candidate list</h2>
+<p class="hint" id="workNote"></p>
+<div id="cards"></div>
+<fieldset id="gap"><legend id="gapLegend"></legend></fieldset>
+<div class="fb" id="fb-gap" role="status" aria-live="polite"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check the option set</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the original candidate</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vcard" class="card" hidden>
+<div class="ohead"><span class="oid">OPT-04</span><span class="otitle">The same model setting, one change</span></div>
+<p class="odesc" id="vdesc"></p>
+<div class="field"><label for="vtr">Treatment in the set</label><select id="vtr"></select></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check this candidate</button></div>
+<div class="fb" id="vfb" role="status" aria-live="polite"></div>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A comparison can only reveal differences that are in the set. Five candidates have been proposed for the Sample Enterprise's coverage-determination work. Describe each by how it would do the work and what it would commit the client to, merge any that only vary another, and name the kind of option the set still lacks.`,
+ defs:[
+  ['Operating concept','How the approach does the work: more people in the current process, an assistant that drafts, a rules-based aid, and so on.'],
+  ['Principal commitment','What the client would have to provide, operate, pay for or answer for. Two options that share both concept and commitment are versions of one option.'],
+  ['Status quo','Continuing the current approach. It is the baseline for every claimed benefit.'],
+  ['Non-AI approach','An option with no model. It tests whether a model is needed to meet the requirements at all.']
+ ],
+ workNote:'Choose all three selections for every candidate, answer the question below the list, then check. A candidate that might fail a requirement later still belongs in the set now. Nothing is timed.',
+ concepts:[['people','More people in the current process'],['draft','Assistant drafts; adjuster decides'],['write','Assistant decides and writes the result'],['rules','Rules-based lookup aid, no model']],
+ commits:[['hire','More adjuster hours, with hiring and training lead time'],['prov','Provider operates the platform; client holds identities, regions and governance'],['client','Client installs, runs, patches and restores the platform'],['write','Assistant holds write access to the claims master'],['same','Nothing beyond what another candidate already commits']],
+ gapLegend:'Which kind of option does the set still lack?',
+ gap:[
+  {id:'sq',text:'The status quo',why:'OPT-01 is the status quo: the current process with more adjusters.'},
+  {id:'nonai',ok:true,text:'An approach with no model',okMsg:'Every candidate except the status quo uses a model. Without a non-AI approach, the set cannot test whether a model is needed at all. A rules-based lookup aid would fill the gap.'},
+  {id:'prov',text:'An assistant on a provider-managed platform',why:'OPT-02 already is one.'},
+  {id:'vendor',text:`A second vendor's assistant`,why:`A second vendor's assistant with the same commitments is another version of a drafting assistant. A new name is not a new commitment.`}
+ ],
+ gapFirst:'First move: sort the candidates by operating concept and see which kinds of approach appear. Then check the two kinds every set needs wherever they are viable.',
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose an operating concept, a commitment and a treatment.',
+  remove:'Generating options and judging them are separate tasks. This candidate may fail a requirement when it is tested, and that test comes later, against the requirements. Keep it in the set for now.',
+  keepVariant:'Ask which commitment this candidate changes that another does not. A model setting changes neither how the work is done nor what the client must operate, pay for or answer for.',
+  mergeDistinct:'Ask which commitment differs from the candidate you would merge it into. If one does, the candidate tests a different approach and stays distinct.',
+  wrongTarget:'Merging is right: this candidate varies another. The target is out of place. Find the candidate with the same operating concept and the same principal commitment.',
+  nearLine:'The treatment is right. The commitment line is out of place: name how the candidate would do the work, then the main thing it would ask of the client.'
+ },
+ summary:{
+  idle:'Choose every selection and answer the question, then check again.',
+  some:'Part of the set needs another look. Read the notes on the marked candidates and check again.',
+  all:'The set holds. Four distinct candidates remain, OPT-04 merges into OPT-02, and the set needs a non-AI approach before anything is compared.'
+ },
+ second:{
+  intro:'Keep the faster model setting that defines OPT-04. Change only who runs it. Then decide how it belongs in the set.',
+  swap:`Have the client's own team run the faster setting`,
+  restoreNote:'Restored. Run by the provider, OPT-04 is a version of OPT-02 again.',
+  text:`OPT-02's assistant with one model setting changed to return drafts faster, installed, run, patched and restored by the client's own platform operations team.`,
+  mark:`installed, run, patched and restored by the client's own platform operations team`,
+  idle:'Choose a treatment for the changed candidate.',
+  ok:'The model setting has not changed, but the commitment has. The client now operates the platform, which is what OPT-03 commits it to. The candidate is no longer a version of OPT-02; it is a version of OPT-03. Whether two candidates differ depends on their commitments, not on the product or the setting.',
+  to02:'Ask who operates the platform now. That is the commitment that decides which candidate this one varies.',
+  keep:'Ask which commitment separates this candidate from OPT-03. If none does, it is a version of OPT-03.',
+  remove:'Removing is a judgment for later. Here the only question is whether the candidate differs from another.'
+ }
+};
+
+/* The candidate list. Keys: concept, commits (accepted set), tr (treatment). */
+const O=[
+ {id:'OPT-01',title:'Add adjusters',desc:`Hire more adjusters into the current claims process. ${fmt(186)} adjusters carry the work today.`,
+  concept:'people',commits:['hire'],tr:'keep',
+  why:'The status quo. It changes nothing in how the work is done and commits the client to more adjuster hours. It is the baseline every claimed benefit is measured against.'},
+ {id:'OPT-02',title:'Assistant, provider-managed',desc:'The drafting assistant on a provider-managed form of the platform. The provider operates the platform; the client configures and governs it.',
+  concept:'draft',commits:['prov'],tr:'keep',
+  why:'A drafting assistant whose platform the provider operates. Its commitment differs from OPT-03 in who runs the platform.'},
+ {id:'OPT-03',title:'Assistant, client-managed',desc:`The drafting assistant on a client-managed form of the platform. The client's platform operations team installs, runs, patches and restores it.`,
+  concept:'draft',commits:['client'],tr:'keep',
+  why:'The same operating concept as OPT-02 with a different commitment: the client runs the platform. That difference in control and cost makes it a distinct option.'},
+ {id:'OPT-04',title:'Assistant, faster setting',desc:'OPT-02 with one model setting changed to return drafts faster.',
+  concept:'draft',commits:['prov','same'],tr:'m-OPT-02',
+  why:'Same operating concept and same commitment as OPT-02. Comparing them would rank two versions of one answer, so it merges into OPT-02.'},
+ {id:'OPT-05',title:'Assistant writes the determination',desc:'The assistant writes determinations directly to the claims master, with no adjuster approval.',
+  concept:'write',commits:['write'],tr:'keep',
+  why:'A different operating concept with its own commitment: the assistant decides and holds write access. It stays in the set, to be tested against the requirements later.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function treatSelect(id,self){
+  const s=h('select',{id:id});
+  s.appendChild(option('','Choose a treatment'));
+  s.appendChild(option('keep','Keep as a distinct option'));
+  O.forEach(function(o){if(o.id!==self)s.appendChild(option('m-'+o.id,'Merge into '+o.id));});
+  s.appendChild(option('remove','Remove from the set'));
+  return s;
+}
+function listSelect(id,items,ph){
+  const s=h('select',{id:id});
+  s.appendChild(option('',ph));
+  items.forEach(function(x){s.appendChild(option(x[0],x[1]));});
+  return s;
+}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#workNote').textContent=COPY.workNote;
+$('#gapLegend').textContent=COPY.gapLegend;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+O.forEach(function(o){
+  const card=h('article',{class:'card',id:'card-'+o.id});
+  card.appendChild(h('div',{class:'ohead'},[h('span',{class:'oid',text:o.id}),h('span',{class:'otitle',text:o.title})]));
+  card.appendChild(h('p',{class:'odesc',text:o.desc}));
+  card.appendChild(h('div',{class:'trio'},[
+    h('div',{class:'field'},[h('label',{for:'co-'+o.id,text:'Operating concept'}),listSelect('co-'+o.id,COPY.concepts,'Choose a concept')]),
+    h('div',{class:'field'},[h('label',{for:'cm-'+o.id,text:'Principal commitment'}),listSelect('cm-'+o.id,COPY.commits,'Choose a commitment')]),
+    h('div',{class:'field'},[h('label',{for:'tr-'+o.id,text:'Treatment in the set'}),treatSelect('tr-'+o.id,o.id)])
+  ]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+o.id,role:'status','aria-live':'polite'}));
+  $('#cards').appendChild(card);
+});
+COPY.gap.forEach(function(g){
+  const inp=h('input',{type:'radio',name:'gap',value:g.id});
+  $('#gap').appendChild(h('label',{class:'opt'},[inp,h('span',{text:g.text})]));
+});
+(function(){
+  const s=$('#vtr');
+  s.appendChild(option('','Choose a treatment'));
+  s.appendChild(option('keep','Keep as a distinct option'));
+  ['OPT-01','OPT-02','OPT-03','OPT-05'].forEach(function(id){s.appendChild(option('m-'+id,'Merge into '+id));});
+  s.appendChild(option('remove','Remove from the set'));
+})();
+
+/* Keys */
+function optState(co,cm,tr,o){
+  if(!co||!cm||!tr)return {s:'idle',m:COPY.msg.idle};
+  const lineOk=(co===o.concept)&&o.commits.indexOf(cm)>-1;
+  const trOk=tr===o.tr;
+  if(lineOk&&trOk)return {s:'ok',m:o.why};
+  if(trOk)return {s:'near',m:COPY.msg.nearLine};
+  if(tr==='remove')return {s:'bad',m:COPY.msg.remove};
+  if(o.tr==='keep')return {s:'bad',m:COPY.msg.mergeDistinct};
+  if(tr==='keep')return {s:'bad',m:COPY.msg.keepVariant};
+  return {s:'near',m:COPY.msg.wrongTarget};
+}
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+function gapState(){
+  const sel=document.querySelector('input[name=gap]:checked');
+  if(!sel)return {s:'idle',m:'Choose one.'};
+  const g=COPY.gap.filter(function(x){return x.id===sel.value;})[0];
+  return g.ok?{s:'ok',m:g.okMsg}:{s:'bad',m:g.why+' '+COPY.gapFirst};
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  O.forEach(function(o){
+    const r=optState($('#co-'+o.id).value,$('#cm-'+o.id).value,$('#tr-'+o.id).value,o);
+    showFb($('#fb-'+o.id),$('#card-'+o.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  const g=gapState();
+  showFb($('#fb-gap'),null,g);
+  if(g.s==='idle')anyIdle=true;
+  if(g.s!=='ok')all=false;
+  if(all){
+    O.forEach(function(o){['co-','cm-','tr-'].forEach(function(p){$('#'+p+o.id).disabled=true;});});
+    document.querySelectorAll('input[name=gap]').forEach(function(i){i.disabled=true;});
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: OPT-04 with one commitment changed */
+function setVariantText(){
+  const p=$('#vdesc');
+  p.textContent='';
+  const t=COPY.second.text, m=COPY.second.mark, i=t.indexOf(m);
+  p.appendChild(document.createTextNode(t.slice(0,i)));
+  p.appendChild(h('mark',{text:m}));
+  p.appendChild(document.createTextNode(t.slice(i+m.length)));
+}
+$('#swap').addEventListener('click',function(){
+  setVariantText();
+  $('#restoreNote').textContent='';
+  $('#vtr').value='';
+  $('#vtr').disabled=false;
+  $('#vcheck').disabled=false;
+  $('#vfb').className='fb';
+  $('#vfb').textContent='';
+  $('#vcard').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#vtr').focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  const sel=$('#vtr').value;
+  let r;
+  if(!sel)r={s:'idle',m:COPY.second.idle};
+  else if(sel==='m-OPT-03')r={s:'ok',m:COPY.second.ok};
+  else if(sel==='m-OPT-02')r={s:'near',m:COPY.second.to02};
+  else if(sel==='keep')r={s:'bad',m:COPY.second.keep};
+  else if(sel==='remove')r={s:'bad',m:COPY.second.remove};
+  else r={s:'bad',m:COPY.second.to02};
+  showFb($('#vfb'),null,r);
+  if(r.s==='ok'){$('#vtr').disabled=true;$('#vcheck').disabled=true;}
+});
+$('#restore').addEventListener('click',function(){
+  $('#vcard').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

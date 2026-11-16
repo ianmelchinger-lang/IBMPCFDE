@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A platform to confirm by the steering meeting</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--rule:#73777D;--soft:#f3effe;--accent:#8A40FC;--accent-deep:#5a24b5;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5a24b5}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:880px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.35rem 0}
+.hint{color:var(--muted);font-size:.92rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.mine{border:2px solid var(--accent);background:var(--panel)}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.55rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+.opt .d{color:var(--muted);font-size:.92rem}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.chip.open{background:var(--soft);color:var(--ink);border-color:var(--rule)}
+.chip.partly{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.qrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:.6rem}
+.q{font-size:.9rem}
+.q .qname{display:block;color:var(--muted);margin-bottom:.15rem}
+.gives,.leaves{margin:.25rem 0}
+.gives strong,.leaves strong{font-weight:600}
+.tag{display:inline-block;font-size:.78rem;font-weight:700;color:var(--accent-deep);margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.05em}
+#reveal:focus{outline:none}
+.close{margin-top:1.2rem;padding:14px 16px;border-left:4px solid var(--accent);background:var(--panel)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.qrow{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker" id="kicker"></p>
+<h1>A platform to confirm by the steering meeting</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-sit">
+<h2 id="h-sit">What you know</h2>
+<ul id="facts"></ul>
+</section>
+
+<section aria-labelledby="h-read">
+<h2 id="h-read">Commit to a reading</h2>
+<p>Choose the move you would make first. Then say which of the three open questions it will settle. Your answer locks before anything is shown.</p>
+<form id="form" novalidate>
+<fieldset id="moves"><legend>Your first move</legend></fieldset>
+<fieldset id="expect"><legend>The three open questions: which do you expect your move to settle?</legend>
+<p class="hint">Tick any. Leave all unticked if you expect it to settle none.</p></fieldset>
+<button type="submit" class="btn" id="lock" disabled>Lock my reading</button>
+</form>
+</section>
+
+<section id="reveal" hidden aria-labelledby="h-rev" tabindex="-1">
+<h2 id="h-rev">What each move settles</h2>
+<div id="revealBody"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy lives in this block. */
+const COPY={
+ kicker:'A fictional case: the Sample Enterprise',
+ lead:`You are the forward deployed engineer, embedded with the Sample Enterprise's insurance subsidiary. The requirements for the drafting assistant are written. This is what is in front of you now.`,
+ facts:[
+  `The funded initiative is an assistant that drafts coverage determinations. A determination is the insurer's decision on a claim. The assistant proposes one, and the adjuster of record decides.`,
+  `A pilot on one North American product line ran for one quarter. Adjuster touch time per claim, the minutes an adjuster spends handling it, fell from ${fmt(68)} to ${fmt(51)}. Reviewers in the pilot worked at half their capacity.`,
+  `Cycle time, the calendar days from receipt of a claim to its determination, stands at ${fmt(9.4,1)}. The claims operations director, who sponsors the work, has promised ${fmt(5,1)}.`,
+  `Claims arrive from North America, Europe and Asia-Pacific. The requirements include three you will recognize: each determination letter cites the provision relied on; the assistant drafts and the adjuster decides; and European policyholder data is processed in the European region.`,
+  `The sponsor wants the platform confirmed before the next steering meeting. The steering pack ranks three candidates by a weighted score of their features, out of ${fmt(5)}. These scores are illustrative.`,
+  `A lower-cost hosted assistant scores ${fmt(4.4,1)}. It runs in one North American region. The pilot's platform as configured scores ${fmt(3.9,1)}. The same platform with a faster model setting scores ${fmt(3.8,1)}.`,
+  `Before the pilot, the proposed fix was more adjusters. ${fmt(186)} adjusters carry the work today. Nobody has scored that option.`
+ ],
+ questions:[
+  {id:'mandatory',short:'whether an option breaks a fixed requirement',text:'Does any option break a requirement the client cannot trade away?'},
+  {id:'weighed',short:'whether anything else was weighed',text:`Has anything other than the pilot's approach been weighed?`},
+  {id:'holds',short:'whether the ranking holds at scale',text:`Would the ranking hold if the pilot's savings shrink at full volume?`}
+ ],
+ moves:[
+  {id:'m1',name:'Recommend the highest total',desc:'Take the lower-cost hosted assistant to the steering meeting.',
+   gives:'A clear answer, and the one the steering pack already points to.',
+   leaves:`A total lets a strength on cost make up for anything else. The lower-cost assistant processes every claim in North America, and the requirements keep European policyholder data in Europe. The total does not show that, and it ranks only versions of one approach.`,
+   st:['open','open','open']},
+  {id:'m2',name:`Recommend the pilot's platform as configured`,desc:'Back the option that has already worked.',
+   gives:'The only option with any evidence behind it.',
+   leaves:`The evidence is one line, one quarter, with reviewers at half capacity. It shows the approach worked there. It does not show whether the platform meets the European requirement, whether a simpler approach would do, or whether the saving survives full volume.`,
+   st:['open','open','open']},
+  {id:'m3',name:'Ask the sponsor to set the weights',desc:`Let the decision's owner decide what matters most, then rescore.`,
+   gives:`Weights that reflect the sponsor's priorities.`,
+   leaves:`Weights decide how strengths trade against each other. They cannot stop a strength elsewhere from buying back a broken requirement, and they change nothing about which options are on the table or how firm the pilot's figures are.`,
+   st:['open','open','open']},
+  {id:'m4',name:'Ask the AI platform owner to confirm each capability',desc:'Check every feature score against the product documentation.',
+   gives:'The documented behavior of each product.',
+   leaves:`Documentation describes what a product does under a given plan, in a given region, on a given date. It may show where the lower-cost assistant runs, which answers part of the first question. Whether each capability holds in this client's regions and plan, and what else could meet the target, stays open.`,
+   st:['partly','open','open']},
+  {id:'m5',name:'Pilot a second product line first',desc:'Gather more evidence before anything is confirmed.',
+   gives:'More evidence for the approach the pilot used.',
+   leaves:`A second line costs another quarter and tests the same approach again. It says whether the result travels to another line, which is part of the third question, but not whether it holds when reviewers are fully loaded. No alternative is weighed.`,
+   st:['open','open','partly']},
+  {id:'m6',name:'Add two more platforms to the table',desc:'Widen the comparison before choosing.',
+   gives:'A longer table and more names to compare.',
+   leaves:`More products widen the table without changing what any option asks of the client. They are further versions of the same approach. More adjusters, or a process change with no model at all, still never get weighed.`,
+   st:['open','open','open']}
+ ],
+ stateLabel:{open:'Open',partly:'Settled in part'},
+ close1:'Each of these is a reasonable response to a table and a deadline, and each leaves the same three questions open. Each one works inside the table rather than on the rules behind it.',
+ close2:`What has to be in place first is a comparison built from the requirements: rules fixed before anything is scored, options that differ in what they would commit the client to, evidence that fits the client's own setting, and a recorded reason for every option that loses. That is the capability that makes any recommendation here defensible.`
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let committed=null;   /* recorded at lock, before anything is revealed */
+
+/* Build the page from the copy block. */
+$('#kicker').textContent=COPY.kicker;
+$('#lead').textContent=COPY.lead;
+COPY.facts.forEach(function(t){$('#facts').appendChild(h('li',{text:t}));});
+
+COPY.moves.forEach(function(m){
+  const inp=h('input',{type:'radio',name:'move',value:m.id});
+  const lab=h('label',{class:'opt'},[inp,h('span',null,[h('strong',{text:m.name}),h('br'),h('span',{class:'d',text:m.desc})])]);
+  $('#moves').appendChild(lab);
+});
+COPY.questions.forEach(function(q){
+  const inp=h('input',{type:'checkbox',name:'expect',value:q.id});
+  $('#expect').appendChild(h('label',{class:'opt'},[inp,h('span',{text:q.text})]));
+});
+
+const form=$('#form');
+const lockBtn=$('#lock');
+form.addEventListener('change',function(){
+  if(committed)return;
+  lockBtn.disabled=!document.querySelector('input[name=move]:checked');
+});
+
+function setLocked(state){
+  document.querySelectorAll('#form input').forEach(function(i){i.disabled=state;});
+  lockBtn.disabled=true;
+}
+
+function expectationText(m,expects){
+  const out=[];
+  const picked=COPY.questions.filter(function(q){return expects.indexOf(q.id)>-1;});
+  if(!picked.length){
+    out.push('You expected it to settle none of the three questions.');
+  }else{
+    picked.forEach(function(q){
+      const i=COPY.questions.indexOf(q);
+      out.push(m.st[i]==='open'
+        ? `You expected it to settle ${q.short}. It leaves that question open.`
+        : `You expected it to settle ${q.short}. It settles that question only in part.`);
+    });
+  }
+  const partlyIdx=m.st.indexOf('partly');
+  if(partlyIdx===-1){out.push('In fact it leaves all three open.');}
+  else{out.push(`In fact it settles ${COPY.questions[partlyIdx].short} in part and leaves the other two open.`);}
+  return out.join(' ');
+}
+
+function moveCard(m,mine){
+  const card=h('article',{class:'card'+(mine?' mine':'')});
+  if(mine)card.appendChild(h('span',{class:'tag',text:'Your move'}));
+  card.appendChild(h('h3',{text:m.name}));
+  card.appendChild(h('p',{class:'gives'},[h('strong',{text:'What it gives you: '}),m.gives]));
+  card.appendChild(h('p',{class:'leaves'},[h('strong',{text:'What it leaves open: '}),m.leaves]));
+  const row=h('div',{class:'qrow'});
+  COPY.questions.forEach(function(q,i){
+    row.appendChild(h('div',{class:'q'},[
+      h('span',{class:'qname',text:q.text}),
+      h('span',{class:'chip '+m.st[i],text:COPY.stateLabel[m.st[i]]})
+    ]));
+  });
+  card.appendChild(row);
+  return card;
+}
+
+function renderReveal(){
+  const body=$('#revealBody');
+  body.textContent='';
+  const mine=COPY.moves.filter(function(m){return m.id===committed.move;})[0];
+  body.appendChild(h('p',null,[h('strong',{text:'You chose: '}),mine.name+'.']));
+  body.appendChild(h('p',{text:expectationText(mine,committed.expects)}));
+  body.appendChild(moveCard(mine,true));
+  body.appendChild(h('p',{class:'hint',text:'The other five moves, against the same three questions.'}));
+  COPY.moves.forEach(function(m){if(m!==mine)body.appendChild(moveCard(m,false));});
+  body.appendChild(h('div',{class:'close'},[h('p',{text:COPY.close1}),h('p',{text:COPY.close2})]));
+  const again=h('button',{type:'button',class:'btn secondary',id:'again',text:'Start again'});
+  again.addEventListener('click',reset);
+  body.appendChild(h('p',null,[again]));
+}
+
+form.addEventListener('submit',function(e){
+  e.preventDefault();
+  if(committed)return;
+  const mv=document.querySelector('input[name=move]:checked');
+  if(!mv)return;
+  committed={
+    move:mv.value,
+    expects:Array.prototype.map.call(document.querySelectorAll('input[name=expect]:checked'),function(x){return x.value;})
+  };
+  setLocked(true);
+  renderReveal();
+  const box=$('#reveal');
+  box.hidden=false;
+  box.focus();
+});
+
+function reset(){
+  committed=null;
+  document.querySelectorAll('#form input').forEach(function(i){i.checked=false;i.disabled=false;});
+  lockBtn.disabled=true;
+  $('#revealBody').textContent='';
+  $('#reveal').hidden=true;
+  const first=document.querySelector('input[name=move]');
+  if(first)first.focus();
+}
+})();
+</script>
+</body>
+</html>

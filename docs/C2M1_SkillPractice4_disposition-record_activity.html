@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Record why each option stays or goes</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--rule:#73777D;--soft:#f3effe;--accent:#8A40FC;--accent-deep:#5a24b5;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5a24b5}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:940px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.ohead{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.4rem}
+.oid{font-size:.8rem;font-weight:700;color:var(--accent-deep);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.otitle{font-size:1.02rem;font-weight:600}
+.trio{display:grid;grid-template-columns:.8fr 1.2fr 1.2fr;gap:10px 14px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.93rem;padding:.45rem .5rem;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:8px 14px 10px}
+legend{padding:0 .4rem;font-weight:600}
+.radios{display:flex;flex-wrap:wrap;gap:.3rem 1.2rem}
+.radios label{display:flex;gap:.45rem;align-items:center;padding:.25rem 0;cursor:pointer}
+.radios input{width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:.93rem;margin:.4rem 0}
+caption{text-align:left;font-weight:600;padding:.2rem 0 .4rem}
+th,td{border-bottom:1px solid var(--line);padding:.45rem .5rem;text-align:right;vertical-align:top}
+th:first-child,td:first-child{text-align:left}
+thead th{color:var(--ink);font-weight:600;border-bottom:2px solid var(--accent)}
+td.total{font-weight:700}
+tr.out td{color:var(--muted)}
+.rank{display:inline-block;min-width:1.6rem;padding:0 .35rem;border-radius:6px;background:var(--accent-soft);color:var(--accent-deep);font-weight:700;text-align:center}
+.order{font-weight:600;margin:.5rem 0}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--rule)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.trio{grid-template-columns:1fr}th,td{padding:.4rem .3rem}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Record why each option stays or goes</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Four dispositions</h2>
+<dl id="defs"></dl>
+</section>
+
+<section aria-labelledby="h-cmp">
+<h2 id="h-cmp">The comparison and one uncertain input</h2>
+<p id="cmpNote"></p>
+<fieldset><legend id="allowLegend"></legend><div class="radios" id="allow"></div></fieldset>
+<div class="tablewrap"><table id="cmp"><caption id="cmpCap"></caption><thead><tr><th scope="col">Option</th><th scope="col">Cycle time (40%)</th><th scope="col">Net touch-time saving (30%)</th><th scope="col">Operating burden (30%)</th><th scope="col">Total</th><th scope="col">Rank</th></tr></thead><tbody></tbody></table></div>
+<p class="order" id="order" role="status" aria-live="polite"></p>
+<p class="hint" id="scale"></p>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Record each disposition</h2>
+<p class="hint" id="workNote"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my record</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Remove the observation</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" hidden>
+<span class="lab">Illustrative observation: not part of the case record</span>
+<p id="vfact"></p>
+<div id="vcards"></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check these two records</button></div>
+<p id="vsummary" class="summary" role="status" aria-live="polite"></p>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* Scoring data. Weights and scores are supplied by the comparison, not set here. */
+const W={cyc:0.40,sav:0.30,bur:0.30};
+const GROSS=68-51;                     /* minutes saved in the pilot, before any allowance */
+const ALLOW=[{id:'high',min:0,label:'0 minutes (high-saving bound)'},{id:'base',min:5,label:'5 minutes (base case)'},{id:'low',min:11,label:'11 minutes (low-saving bound)'}];
+function savScore(min){if(min>=15)return 5;if(min>=11)return 4;if(min>=8)return 3;if(min>=5)return 2;return 1;}
+const OPTS=[
+ {id:'OPT-01',name:'Add adjusters (status quo)',cyc:2,bur:5,sav:function(){return 1;},savNote:'No saving'},
+ {id:'OPT-02',name:'Assistant, provider-managed',cyc:4,bur:3,sav:function(a){return savScore(GROSS-a);},savNote:null},
+ {id:'OPT-03',name:'Assistant, client-managed',cyc:4,bur:1,sav:function(a){return savScore(GROSS-a);},savNote:null},
+ {id:'OPT-06',name:'Rules-based lookup aid, no model',cyc:3,bur:4,sav:function(){return savScore(9);},savNote:'Saving fixed at 9 minutes'},
+ {id:'OPT-05',name:'Assistant writes the determination',gated:true}
+];
+function total(o,a){return W.cyc*o.cyc+W.sav*o.sav(a)+W.bur*o.bur;}
+function round2(x){return Math.round(x*100)/100;}
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`The comparison of solution options for the Sample Enterprise is complete. A ranking is an argument, and its strength depends on whether it survives the inputs nobody is sure of. Give each option a disposition, the one reason that decided it, and the change that would reopen it.`,
+ defs:[
+  ['Viable','Stays in contention as recorded.'],
+  ['Conditional','Held open until a named observation or assumption is settled. The honest label when the order flips inside a credible range.'],
+  ['Deferred','Set aside for a stated period or event.'],
+  ['Rejected','Removed, on one decisive criterion that a reviewer can check.']
+ ],
+ cmpNote:`Every option except one passed the gates; regional feasibility for both assistant options is still conditional. The uncertain input is the review and rework allowance: the adjuster minutes per claim that checking and fixing drafts will cost. The pilot saved ${fmt(GROSS)} minutes gross. Move the allowance and watch the order.`,
+ allowLegend:'Review and rework allowance per claim',
+ cap:function(a){return 'Weighted scores, out of 5, with an allowance of '+fmt(a)+' minutes (net saving '+fmt(GROSS-a)+' minutes for the assistant options)';},
+ scale:`Net saving scores: 15 minutes or more, 5; 11 to 14, 4; 8 to 10, 3; 5 to 7, 2; under 5, 1. Less operating burden scores higher. The decision authority supplied the weights.`,
+ gatedRow:'Fails REQ-02 and REQ-03: not scored',
+ workNote:'Choose all three selections for every option, then check. Use the allowance above as often as you like. Nothing is timed.',
+ dispositions:[['viable','Viable'],['conditional','Conditional'],['deferred','Deferred'],['rejected','Rejected']],
+ reasons:[
+  ['gate2','Fails REQ-02: the assistant would decide rather than draft'],
+  ['dominated','Dominated by OPT-02 on operating burden at every tested allowance'],
+  ['flip','Its order against another option reverses at the low-saving bound'],
+  ['baseline','Passes every gate and is the baseline every benefit is measured against'],
+  ['prefer','The team prefers another option'],
+  ['second','Ranks second at the base case']
+ ],
+ reopens:[
+  ['rule','An authorized change to the rule of use'],
+  ['region','The provider-managed form proves unavailable in the European region'],
+  ['measure','The review and rework allowance is measured, settling which bound holds'],
+  ['open','None needed: it stays open as the baseline'],
+  ['vendor','A new vendor enters the market']
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a disposition, a reason and a reopen condition.',
+  prefer:'A preference cannot be checked. Name the requirement, criterion or evidence that decided the outcome.',
+  second:'A rank at one value of an uncertain input is not a reason. Move the allowance to each bound and compare the order.',
+  vendor:'A new name changes no commitment and answers nothing in the record. A reopen condition names the specific change that would undo the reason.',
+  scored:'A total at the base case is one reading. Move the allowance to the low-saving bound and look at the order before you settle this one.',
+  gated:'This option was never scored. Look at why, in the comparison.',
+  nearReason:'The disposition is right. The reason is out of place. Name the one criterion or result that decided it.',
+  nearReopen:'The disposition and reason are right. The reopen condition is out of place. Ask what would have to change to undo that reason.',
+  observed:'First move: test the observation against the gates before anything is scored. Then move the allowance across both bounds for whatever remains, and read the order again.',
+  first:'First move: check whether the option passed the gates. If it did, move the allowance across both bounds and see whether its position holds.'
+ },
+ summary:{
+  idle:'Choose every selection, then check again.',
+  some:'Some records need another look. Read the notes on the marked options and check again.',
+  all:'The record holds. Each option carries one checkable reason and the change that would reopen it, and the two options whose order flips are held conditional rather than ranked.'
+ },
+ second:{
+  intro:'Suppose the regional check for the provider-managed form now comes back. One reopen condition in your record has fired. Record the two options it touches.',
+  swap:'Add the result of the regional check',
+  restoreNote:'Removed. Without the observation, the record stands as you checked it.',
+  fact:'A written statement from the provider says the provider-managed deployment form is not offered in the European region, eue-01. European policyholder data must be processed there.',
+  extraReasons:[['gate4','Fails REQ-04: European data would be processed outside the European region'],['fliphigh','Its order against OPT-06 reverses at the high-saving bound']],
+  extraReopen:['offered','The provider-managed form is offered in the European region'],
+  idle:'Choose all three selections for both options, then check again.',
+  some:'One or both records need another look. Read the notes and check again.',
+  all:'Both records hold. OPT-02 now fails a gate, and OPT-03 reopens exactly as its record said it would. With OPT-02 out, OPT-03 and OPT-06 swap places at the high-saving bound, so OPT-03 returns as conditional, not as the winner. The record made the change mechanical.'
+ }
+};
+
+/* Keys for the first pass. */
+const KEY={
+ 'OPT-01':{d:'viable',r:'baseline',o:'open',why:'The status quo passes every gate. Its total is low, which is beside the point: it is the baseline every claimed benefit is measured against, so it stays open.'},
+ 'OPT-02':{d:'conditional',r:'flip',o:'measure',why:'OPT-02 leads at the base case, but at the low-saving bound OPT-06 overtakes it. The order flips inside the credible range, so OPT-02 is conditional, reopened when the allowance is measured.'},
+ 'OPT-06':{d:'conditional',r:'flip',o:'measure',why:'The aid with no model overtakes OPT-02 at the low-saving bound. It is conditional on the same assumption, and the same measurement settles both.'},
+ 'OPT-03':{d:'rejected',r:'dominated',o:'region',why:'OPT-03 matches OPT-02 on cycle time and saving and carries more operating burden, so it trails OPT-02 at every tested allowance. That single criterion decides it. It reopens if the provider-managed form proves unavailable in the European region.'},
+ 'OPT-05':{d:'rejected',r:'gate2',o:'rule',why:'The assistant would decide and write the determination, which breaks the rule that it drafts and the adjuster decides. It reopens only on an authorized change to that rule.'}
+};
+/* Keys for the second pass: the regional observation fires OPT-03's reopen condition. */
+const VKEY={
+ 'OPT-02':{d:'rejected',r:'gate4',o:'offered',why:'The observation shows the provider-managed form cannot process European data in Europe, so OPT-02 fails a gate. It reopens if that form is offered in the European region.'},
+ 'OPT-03':{d:'conditional',r:'fliphigh',o:'measure',why:'Its reopen condition has fired. Without OPT-02, OPT-03 leads OPT-06 only at the high-saving bound, so it returns as conditional on the allowance. Its own European region is still unconfirmed.'}
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function listSelect(id,items,ph){
+  const s=h('select',{id:id});
+  s.appendChild(option('',ph));
+  items.forEach(function(x){s.appendChild(option(x[0],x[1]));});
+  return s;
+}
+
+let allowance=5;
+let excluded=[];   /* options removed from scoring by an observation */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#cmpNote').textContent=COPY.cmpNote;
+$('#allowLegend').textContent=COPY.allowLegend;
+$('#scale').textContent=COPY.scale;
+$('#workNote').textContent=COPY.workNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+$('#vfact').textContent=COPY.second.fact;
+ALLOW.forEach(function(a){
+  const inp=h('input',{type:'radio',name:'allow',value:String(a.min)});
+  if(a.min===allowance)inp.checked=true;
+  inp.addEventListener('change',function(){allowance=Number(inp.value);renderTable();});
+  $('#allow').appendChild(h('label',null,[inp,h('span',{text:a.label})]));
+});
+
+function scored(a){
+  return OPTS.filter(function(o){return !o.gated&&excluded.indexOf(o.id)===-1;})
+    .map(function(o){return {o:o,t:round2(total(o,a))};})
+    .sort(function(x,y){return y.t-x.t;});
+}
+function renderTable(){
+  $('#cmpCap').textContent=COPY.cap(allowance);
+  const tb=$('#cmp tbody');
+  tb.textContent='';
+  const ranked=scored(allowance);
+  const rankOf={};ranked.forEach(function(x,i){rankOf[x.o.id]=i+1;});
+  OPTS.forEach(function(o){
+    if(o.gated){
+      const tr=h('tr',{class:'out'},[h('td',{text:o.id+' '+o.name}),h('td',{colspan:'5',text:COPY.gatedRow})]);
+      tr.lastChild.style.textAlign='left';
+      tb.appendChild(tr);return;
+    }
+    if(excluded.indexOf(o.id)>-1){
+      const tr=h('tr',{class:'out'},[h('td',{text:o.id+' '+o.name}),h('td',{colspan:'5',text:COPY.second.extraReasons[0][1]})]);
+      tr.lastChild.style.textAlign='left';
+      tb.appendChild(tr);return;
+    }
+    const s=o.sav(allowance);
+    tb.appendChild(h('tr',null,[
+      h('td',{text:o.id+' '+o.name}),
+      h('td',{text:fmt(o.cyc)}),
+      h('td',{text:fmt(s)+(o.savNote?' ('+o.savNote.toLowerCase()+')':'')}),
+      h('td',{text:fmt(o.bur)}),
+      h('td',{class:'total',text:fmt(total(o,allowance),2)}),
+      h('td',null,[h('span',{class:'rank',text:fmt(rankOf[o.id])})])
+    ]));
+  });
+  $('#order').textContent='Order at '+fmt(allowance)+' minutes: '+ranked.map(function(x){return x.o.id+' '+fmt(x.t,2);}).join(', then ')+'.';
+}
+renderTable();
+
+/* Record cards */
+function buildCard(host,prefix,id,extra){
+  const o=OPTS.filter(function(x){return x.id===id;})[0];
+  const card=h('article',{class:'card',id:prefix+'card-'+id});
+  card.appendChild(h('div',{class:'ohead'},[h('span',{class:'oid',text:id}),h('span',{class:'otitle',text:o.name})]));
+  const reasons=COPY.reasons.concat(extra?COPY.second.extraReasons:[]);
+  const reopens=COPY.reopens.concat(extra?[COPY.second.extraReopen]:[]);
+  card.appendChild(h('div',{class:'trio'},[
+    h('div',{class:'field'},[h('label',{for:prefix+'d-'+id,text:'Disposition'}),listSelect(prefix+'d-'+id,COPY.dispositions,'Choose one')]),
+    h('div',{class:'field'},[h('label',{for:prefix+'r-'+id,text:'Decisive reason'}),listSelect(prefix+'r-'+id,reasons,'Choose a reason')]),
+    h('div',{class:'field'},[h('label',{for:prefix+'o-'+id,text:'Reopen condition'}),listSelect(prefix+'o-'+id,reopens,'Choose a condition')])
+  ]));
+  card.appendChild(h('div',{class:'fb',id:prefix+'fb-'+id,role:'status','aria-live':'polite'}));
+  host.appendChild(card);
+}
+['OPT-01','OPT-02','OPT-03','OPT-06','OPT-05'].forEach(function(id){buildCard($('#cards'),'',id,false);});
+['OPT-02','OPT-03'].forEach(function(id){buildCard($('#vcards'),'v-',id,true);});
+
+/* Keys */
+function recState(d,r,o,k,id,second){
+  if(!d||!r||!o)return {s:'idle',m:COPY.msg.idle};
+  if(d===k.d&&r===k.r&&o===k.o)return {s:'ok',m:k.why};
+  if(second&&d!==k.d)return {s:'bad',m:COPY.msg.observed};
+  if(r==='prefer')return {s:'bad',m:COPY.msg.prefer};
+  if(r==='second')return {s:'bad',m:COPY.msg.second};
+  if(d===k.d&&r!==k.r)return {s:'near',m:COPY.msg.nearReason};
+  if(d===k.d&&o===k.o)return {s:'near',m:COPY.msg.nearReopen};
+  if(d===k.d)return {s:'near',m:(o==='vendor'?COPY.msg.vendor:COPY.msg.nearReopen)};
+  if(id==='OPT-05')return {s:'bad',m:COPY.msg.gated};
+  if((id==='OPT-02'||id==='OPT-06')&&(d==='viable'||d==='rejected'))return {s:'bad',m:COPY.msg.scored};
+  return {s:'bad',m:COPY.msg.first};
+}
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+function runCheck(ids,prefix,keys,summaryEl,sc){
+  let all=true,anyIdle=false;
+  ids.forEach(function(id){
+    const res=recState($('#'+prefix+'d-'+id).value,$('#'+prefix+'r-'+id).value,$('#'+prefix+'o-'+id).value,keys[id],id,prefix==='v-');
+    showFb($('#'+prefix+'fb-'+id),$('#'+prefix+'card-'+id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    ids.forEach(function(id){['d-','r-','o-'].forEach(function(p){$('#'+prefix+p+id).disabled=true;});});
+    summaryEl.textContent=sc.all;
+  }else{
+    summaryEl.textContent=anyIdle?sc.idle:sc.some;
+  }
+  return all;
+}
+
+$('#check').addEventListener('click',function(){
+  const ok=runCheck(Object.keys(KEY),'',KEY,$('#summary'),COPY.summary);
+  if(ok){$('#check').hidden=true;$('#second').hidden=false;}
+});
+
+/* Second pass: an observation fires one reopen condition */
+$('#swap').addEventListener('click',function(){
+  excluded=['OPT-02'];
+  renderTable();
+  $('#restoreNote').textContent='';
+  ['OPT-02','OPT-03'].forEach(function(id){
+    ['d-','r-','o-'].forEach(function(p){const s=$('#v-'+p+id);s.value='';s.disabled=false;});
+    $('#v-fb-'+id).className='fb';$('#v-fb-'+id).textContent='';$('#v-card-'+id).className='card';
+  });
+  $('#vsummary').textContent='';
+  $('#vcheck').hidden=false;
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#v-d-OPT-02').focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  const ok=runCheck(['OPT-02','OPT-03'],'v-',VKEY,$('#vsummary'),{idle:COPY.second.idle,some:COPY.second.some,all:COPY.second.all});
+  if(ok)$('#vcheck').hidden=true;
+});
+$('#restore').addEventListener('click',function(){
+  excluded=[];
+  renderTable();
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

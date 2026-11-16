@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Follow one European claim through every path and copy</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1d2024;--muted:#73777D;--line:#d3d5d8;--soft:#f0f1f2;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--focus:#4b1aa8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:920px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.card.unscored{background:var(--panel);border-style:dashed}
+.dhead{display:flex;flex-wrap:wrap;gap:.3rem .6rem;align-items:baseline;margin-bottom:.2rem}
+.did{font-size:.8rem;font-weight:700;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.dtitle{font-size:1.02rem;font-weight:600}
+.kind{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+.ddesc{margin:.1rem 0 .6rem;font-size:.95rem}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.93rem;padding:.45rem .5rem;border:1px solid #8d9196;border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--ink);opacity:.8}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:#8d9196}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.nocall{font-size:.93rem;margin:.2rem 0 0}
+.radios label{display:flex;gap:.55rem;align-items:flex-start;padding:.3rem 0;font-weight:400;font-size:1rem}
+.radios input{margin-top:.35rem;width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+fieldset.radios{border:1px solid var(--line);border-radius:10px;background:#fff;margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.live{border-left:4px solid var(--accent);background:var(--accent-soft);color:var(--ink);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.live p{margin:.25rem 0}
+.lab{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+table{border-collapse:collapse;width:100%;margin:.5rem 0;font-size:.93rem}
+th,td{border:1px solid #9a8fc4;padding:.35rem .5rem;text-align:left;vertical-align:top}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Follow one European claim through every path and copy</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Six terms and four statuses</h2>
+<dl id="terms"></dl>
+<dl id="statuses"></dl>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Classify the seven items</h2>
+<p class="hint" id="workNote"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my statuses</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<fieldset class="radios">
+<legend id="evLegend"></legend>
+<label><input type="radio" name="idx" value="forms" checked><span id="formsLabel"></span></label>
+<label><input type="radio" name="idx" value="claims"><span id="claimsLabel"></span></label>
+</fieldset>
+<div class="live" id="liveBox" role="status" aria-live="polite"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`An integration moves more than its main payload. Logs, metadata, backups and recovery each create a copy, and each copy has a route and a resting place. The residency rule says EU policyholder data is processed in the EU region. Follow one European claim through seven items and give each a status.`,
+ terms:[
+  ['Edge','One connection between two systems, and the route it takes.'],
+  ['Copy','Any place the claim\'s data rests, including logs, metadata, backups and recovery copies.'],
+  ['Region','A named location where a service runs. This estate uses eue-01 for Europe and use-01 for North America.'],
+  ['Default-deny','A network permits only the routes someone with authority has approved. A private link supplies a route. The allowlist says which traffic may use it.'],
+  ['Allowlist ticket','The request to approve a new route. The network and connectivity engineer maintains the list.'],
+  ['Product card','A product\'s own dated documentation. It says what the product does by default. Only the instance itself shows what it does here.']
+ ],
+ statuses:[
+  ['permitted','Permitted','The route is approved and the copy rests where the rule allows.'],
+  ['ticket','Permitted after an allowlist ticket','The route is not yet on the allowlist. An authority can approve it.'],
+  ['conditional','Conditional on a dated product behavior','The answer depends on what a product does by default, and nobody has observed the instance.'],
+  ['prohibited','Prohibited','A copy rests outside the permitted region, or a route is forbidden.']
+ ],
+ workNote:'Choose a status for each of the first six items. A follow-up question appears when your status needs one. The seventh item is pre-filled and is not checked. Nothing is timed.',
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ idle:'Choose a status, and the follow-up if one appears.',
+ nearHead:'The structure is right. ',
+ fuHead:'The status is right. The follow-up is out of place. ',
+ fuLabel:{owner:'Who owns the ticket?',obs:'What would settle it?',adj:'Which adjustment?'},
+ fu:{
+  owner:[['net','Network and connectivity engineer'],['int','Integration engineer, systems of record'],['iam','Identity and access lead'],['plat','AI platform owner']],
+  obs:[['config','Inspect the instance\'s metadata, replication and backup configuration'],['primary','Confirm the primary tables sit in eue-01'],['card','Read the product card again'],['assume','Assume the default is acceptable']],
+  adj:[['strip','Strip claim content before the logs are forwarded'],['region','Forward the logs to a collector in the European region'],['notproc','Record that logs are not processing'],['disable','Disable the logging']]
+ },
+ fuKey:{
+  owner:{net:{s:'ok',m:'The network and connectivity engineer maintains the allowlist, and a change needs a ticket.'},
+   int:{s:'bad',m:'The integration engineer owns the API layer, not the list that admits traffic to it. First move: ask who maintains the allowlist.'},
+   iam:{s:'bad',m:'The identity lead holds identity registries, not the list of permitted routes. First move: ask who maintains the allowlist.'},
+   plat:{s:'bad',m:'The platform owner answers for what runs on the platform, not for which routes the network admits. First move: ask who maintains the allowlist.'}},
+  obs:{config:{s:'ok',m:'Only the instance shows where metadata and backups sit. Until someone inspects its configuration, residency approval covers no secondary copy.'},
+   primary:{s:'bad',m:'The primary tables are already known to be in region. The open question is the secondary copies, so judging residency by the primary store alone misses it.'},
+   card:{s:'near',m:'The card says what may happen by default. It cannot say what this instance does. Only an observation of the instance settles it.'},
+   assume:{s:'bad',m:'An assumption is not an observation. The row stays conditional until the configured location is seen.'}},
+  adj:{strip:{s:'ok',m:'Removing claim content leaves the operational evidence and removes the regulated item from the copy.'},
+   region:{s:'ok',m:'Forwarding to an in-region collector keeps the full evidence and keeps the copy in the permitted region.'},
+   notproc:{s:'bad',m:'Logs that hold claim text are a copy of the regulated item. Calling them not processing misreads the rule. First move: ask what the log carries.'},
+   disable:{s:'bad',m:'Switching logging off destroys the evidence that later governance needs. Correct the route or the content instead.'}}
+ },
+ summary:{
+  idle:'Choose a status for every item, then check again.',
+  some:'Some items need another look. Read the notes on the marked items, change your choices and check again.',
+  all:'All six items hold. One is prohibited, two wait on an observation, one waits on a ticket, and the index that looked risky is permitted.'
+ },
+ second:{
+  intro:'Hold the other items fixed and move one fact: what the wordings index holds. Nothing here is checked. The rule below is the one you applied.',
+  legend:'The wordings index holds',
+  forms:'policy forms only, as recorded',
+  claims:'policy forms and excerpts of European claim text',
+  label:'Illustrative variant, not part of the register'
+ }
+};
+
+/* Items. key is the keyed status; fu names a follow-up and its accepted answers; wrong holds the note for each other status. */
+const R=[
+ {id:'PLC-01',kind:'Copy',title:'European drafts are produced',scored:true,
+  desc:'The deployment that produces European drafts runs in eue-01.',
+  key:'permitted',
+  why:'Processing in the European region is what the rule requires. Region availability and private connectivity are reconfirmed when the deployment is provisioned.',
+  wrong:{ticket:{s:'bad',m:'No new route is involved. The draft is produced in the region the rule names.'},
+   conditional:{s:'near',m:'Something is out of place: the location is already the permitted one. Reconfirming the region at provisioning is a check, not a condition on this copy.'},
+   prohibited:{s:'bad',m:'Processing in the European region is what the rule requires. First move: ask where the copy rests before asking whether it is allowed.'}}},
+ {id:'PLC-02',kind:'Edge',title:'The platform reaches the API layer',scored:true,
+  desc:'The path from the eue-01 deployment to the API layer runs over the private link. It is not on the egress allowlist.',
+  key:'ticket',fu:{type:'owner',ok:['net']},
+  why:'The link exists, and the path is closed until an authority approves it. A ticket to the network and connectivity engineer opens it.',
+  wrong:{permitted:{s:'bad',m:'A link that exists is not a path that is open. The allowlist decides which traffic may use the link, and this path is not on it.'},
+   conditional:{s:'near',m:'The path is closed until someone approves it. That is an allowlist decision, not a dated product behavior.'},
+   prohibited:{s:'near',m:'The path is closed today, but nothing forbids it. An authority can open it.'}}},
+ {id:'PLC-03',kind:'Copy',title:'Platform logs go to the collector',scored:true,
+  desc:'Platform request and error logs include the draft text. They go to the observability collector on use-lnx-obs-01, which runs in use-01.',
+  key:'prohibited',fu:{type:'adj',ok:['strip','region']},
+  why:'The logs carry claim text to a collector in North America. The primary store being in region does not make this copy permitted.',
+  wrong:{permitted:{s:'bad',m:'The primary store being in region does not make the logs permitted. These logs carry claim text to use-01. First move: judge each copy by where it rests.'},
+   ticket:{s:'bad',m:'A ticket opens a route, and this route is already open. The trouble is where the copy rests.'},
+   conditional:{s:'near',m:'Nothing awaits observation. The register states that the logs go to use-01, so the copy is out of region today.'}}},
+ {id:'PLC-04',kind:'Copy',title:'Lakehouse metadata',scored:true,
+  desc:'The lakehouse tables for European claims sit in eue-01. The product card says metadata may be stored across regions by default.',
+  key:'conditional',fu:{type:'obs',ok:['config']},
+  why:'The card says may, and nobody has observed the instance. The row stays conditional until the configuration is inspected.',
+  wrong:{permitted:{s:'bad',m:'A row that rests on a dated product card is never marked permitted. Where the metadata sits is unobserved.'},
+   ticket:{s:'bad',m:'No route is closed here. The question is where a copy rests, and a ticket does not settle that.'},
+   prohibited:{s:'near',m:'A cross-region copy may exist, but the card says may and nobody has looked. Until it is observed the row is conditional.'}}},
+ {id:'PLC-05',kind:'Copy',title:'Lakehouse backups',scored:true,
+  desc:'Backups of the client-supplied storage are the client\'s duty. The backup location has not been set.',
+  key:'conditional',fu:{type:'obs',ok:['config']},
+  why:'A location that has not been set cannot be approved. The row stays conditional until the configured location is observed.',
+  wrong:{permitted:{s:'bad',m:'The backup location has not been set. A copy with no location cannot be permitted.'},
+   ticket:{s:'bad',m:'No route is closed here. The open point is where the backup will rest.'},
+   prohibited:{s:'near',m:'No backup location exists yet, so nothing rests outside the region. The row stays conditional until a location is observed.'}}},
+ {id:'PLC-06',kind:'Copy',title:'The wordings index',scored:true,
+  desc:'The index of policy wordings sits in use-01. It holds policy forms only, and no policyholder data.',
+  key:'permitted',
+  why:'The rule covers EU policyholder data. This copy holds none, so where it sits does not breach the rule.',
+  wrong:{ticket:{s:'bad',m:'No route needs approval here. The index holds no policyholder data, so the rule does not reach it.'},
+   conditional:{s:'near',m:'Nothing depends on a product default. The register states what the index holds.'},
+   prohibited:{s:'bad',m:'The index sits in use-01, but the rule covers EU policyholder data and this index holds none. First move: ask what the copy holds before asking where it sits.'}}},
+ {id:'PLC-07',kind:'Copy',title:'The system of record',scored:false,
+  desc:'Where the mainframe system holding the policy and claims masters processes European policyholder data is unconfirmed.',
+  prefilled:'Open register row. The map makes no residency claim about the system of record. It covers the copies the design creates. The written confirmation is due from the integration engineer and is assessed by the data protection officer for the EU entity.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+COPY.statuses.forEach(function(t){$('#statuses').appendChild(h('dt',{text:t[1]}));$('#statuses').appendChild(h('dd',{text:t[2]}));});
+$('#workNote').textContent=COPY.workNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#evLegend').textContent=COPY.second.legend;
+$('#formsLabel').textContent=COPY.second.forms;
+$('#claimsLabel').textContent=COPY.second.claims;
+
+R.forEach(function(r){
+  const card=h('article',{class:'card'+(r.scored?'':' unscored'),id:'card-'+r.id});
+  card.appendChild(h('div',{class:'dhead'},[h('span',{class:'did',text:r.id}),h('span',{class:'dtitle',text:r.title}),h('span',{class:'kind',text:r.kind})]));
+  card.appendChild(h('p',{class:'ddesc',text:r.desc}));
+  if(r.scored){
+    const st=h('select',{id:'st-'+r.id});
+    st.appendChild(option('','Choose a status'));
+    COPY.statuses.forEach(function(s){st.appendChild(option(s[0],s[1]));});
+    const fuBox=h('div',{class:'field',id:'fubox-'+r.id});
+    fuBox.hidden=true;
+    card.appendChild(h('div',{class:'pair'},[h('div',{class:'field'},[h('label',{for:'st-'+r.id,text:'Status'}),st]),fuBox]));
+    card.appendChild(h('div',{class:'fb',id:'fb-'+r.id,role:'status','aria-live':'polite'}));
+    st.addEventListener('change',function(){syncFu(r.id);});
+  }else{
+    card.appendChild(h('p',{class:'nocall',text:r.prefilled}));
+  }
+  $('#cards').appendChild(card);
+});
+
+/* The follow-up question appears from the learner's chosen status, so its presence reveals nothing about the key. */
+const FU_FOR={ticket:'owner',conditional:'obs',prohibited:'adj'};
+function syncFu(id){
+  const v=$('#st-'+id).value;
+  const box=$('#fubox-'+id);
+  box.textContent='';
+  const type=FU_FOR[v];
+  if(!type){box.hidden=true;return;}
+  box.hidden=false;
+  const s=h('select',{id:'fu-'+id});
+  s.appendChild(option('','Choose'));
+  COPY.fu[type].forEach(function(o){s.appendChild(option(o[0],o[1]));});
+  box.appendChild(h('label',{for:'fu-'+id,text:COPY.fuLabel[type]}));
+  box.appendChild(s);
+}
+
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+function rowState(r,status,fuVal){
+  if(!status)return {s:'idle',m:COPY.idle};
+  if(status!==r.key){
+    const w=r.wrong[status];
+    return {s:w.s,m:(w.s==='near'?COPY.nearHead:'')+w.m};
+  }
+  if(!r.fu)return {s:'ok',m:r.why};
+  if(!fuVal)return {s:'idle',m:COPY.idle};
+  if(r.fu.ok.indexOf(fuVal)>-1)return {s:'ok',m:r.why+' '+COPY.fuKey[r.fu.type][fuVal].m};
+  return {s:'near',m:COPY.fuHead+COPY.fuKey[r.fu.type][fuVal].m};
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  R.filter(function(r){return r.scored;}).forEach(function(r){
+    const fuEl=$('#fu-'+r.id);
+    const res=rowState(r,$('#st-'+r.id).value,fuEl?fuEl.value:'');
+    showFb($('#fb-'+r.id),$('#card-'+r.id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    R.filter(function(r){return r.scored;}).forEach(function(r){
+      $('#st-'+r.id).disabled=true;
+      const f=$('#fu-'+r.id);if(f)f.disabled=true;
+    });
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    renderLive();
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: one rule applied to three items. A copy of EU policyholder data resting outside eue-01 is prohibited. */
+function ruleStatus(item){return (item.holdsEu&&item.region!=='eue-01')?'Prohibited':'Permitted';}
+function renderLive(){
+  const claims=document.querySelector('input[name=idx]:checked').value==='claims';
+  const items=[
+   {name:'PLC-01 European drafts',region:'eue-01',holds:'Claim data',holdsEu:true},
+   {name:'PLC-03 Platform logs',region:'use-01',holds:'Draft text',holdsEu:true},
+   {name:'PLC-06 Wordings index',region:'use-01',holds:claims?'Policy forms and claim excerpts':'Policy forms only',holdsEu:claims}
+  ];
+  const box=$('#liveBox');
+  box.textContent='';
+  box.appendChild(h('span',{class:'lab',text:COPY.second.label}));
+  const tbl=h('table');
+  tbl.appendChild(h('tr',null,[h('th',{text:'Copy'}),h('th',{text:'Rests in'}),h('th',{text:'Holds'}),h('th',{text:'Status under the rule'})]));
+  let n=0;
+  items.forEach(function(it){
+    const st=ruleStatus(it);
+    if(st==='Prohibited')n++;
+    tbl.appendChild(h('tr',null,[h('td',{text:it.name}),h('td',{text:it.region}),h('td',{text:it.holds}),h('td',{text:st})]));
+  });
+  box.appendChild(tbl);
+  box.appendChild(h('p',null,[h('strong',{text:'Prohibited copies among these three: '}),fmt(n)+'.']));
+  box.appendChild(h('p',{text:claims
+   ? 'The index has not moved. What it holds has. A copy of European claim text resting in use-01 breaches the rule, so the same adjustments as for the logs now apply to it.'
+   : 'The status follows what the copy holds, not only where it sits. The index sits outside the region and is permitted because it holds no policyholder data.'}));
+}
+document.querySelectorAll('input[name=idx]').forEach(function(r){r.addEventListener('change',renderLive);});
+})();
+</script>
+</body>
+</html>

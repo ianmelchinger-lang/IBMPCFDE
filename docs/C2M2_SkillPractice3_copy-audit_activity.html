@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit two copies before anyone relies on them</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.scope{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.scope p{margin:.2rem 0}
+.rec{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.rec h3{font:600 1.05rem/1.3 Georgia,"Times New Roman",serif}
+.fields{display:grid;grid-template-columns:11rem 1fr;gap:.35rem 1rem;margin:.5rem 0 .8rem;font-size:.95rem}
+.fields .k{font-weight:600;color:var(--muted)}
+.gap{display:inline-block;padding:.05rem .55rem;border:2px dashed var(--ctl);border-radius:6px;font-weight:600;color:var(--ink);background:var(--soft)}
+.sent{border-left:4px solid var(--ctl);background:var(--bg);padding:8px 12px;margin:.6rem 0;border-radius:0 8px 8px 0;font-size:.95rem}
+.sent p{margin:.2rem 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+.card.ok{border-left:5px solid var(--accent)}
+.card.near{border-left:5px double var(--accent)}
+.card.bad{border-left:5px solid var(--ctl)}
+.field label{display:block;font-weight:600;font-size:.92rem;margin-bottom:.2rem}
+.field .d{display:block;font-weight:400;color:var(--muted);font-size:.9rem;margin-bottom:.35rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:2px solid var(--ctl);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent-text);margin:.3rem 0}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+table.tie{width:100%;border-collapse:collapse;margin:.5rem 0 .8rem;font-size:.95rem}
+table.tie th,table.tie td{text-align:left;vertical-align:top;padding:.5rem .6rem;border-bottom:1px solid var(--line)}
+table.tie th{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.num{font-weight:600}
+.slider{margin:.6rem 0}
+.slider label{font-weight:600;font-size:.92rem;display:block}
+output{display:block;margin:.1rem 0 .3rem;font-weight:600}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.fields{grid-template-columns:1fr}table.tie,table.tie thead,table.tie tbody,table.tie tr,table.tie th,table.tie td{display:block}table.tie thead{position:absolute;left:-9999px}table.tie tr{border-bottom:1px solid var(--line);padding:.4rem 0}table.tie td{border:0;padding:.2rem 0}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>Audit two copies before anyone relies on them</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">What a usable copy has</h2>
+<dl id="terms"></dl>
+<div class="scope" id="rule"></div>
+</section>
+
+<section aria-labelledby="h-audit">
+<h2 id="h-audit">The two records</h2>
+<p class="hint" id="auditNote"></p>
+<div id="records"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check the audit</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<table class="tie"><tbody>
+<tr><td>Records the source held at the cutoff, from the manifest count</td><td class="num" id="mf"></td></tr>
+<tr><td>What the job report says on its own</td><td class="num" id="jr"></td></tr>
+</tbody></table>
+<div class="slider"><label for="arr">Records that landed in the copy</label><input type="range" id="arr" min="9900" max="10060" step="1" value="9940"><output id="arrOut" for="arr"></output></div>
+<div class="slider"><label for="rtd">Records rejected and sent to a named owner</label><input type="range" id="rtd" min="0" max="100" step="1" value="0"><output id="rtdOut" for="rtd"></output></div>
+<div class="scope" role="status" aria-live="polite"><p id="tieText"></p></div>
+<p><button type="button" class="btn secondary" id="restore">Restore the starting figures</button></p>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A copy is not the source. A nightly transfer and a retrieval index both serve a copy, and a copy has states the source never has: partly transferred, rejected, not yet indexed, replaced but still present. Without a few controls, an empty or partial answer cannot be told apart from a stale one. Audit two records, find what each leaves blank, and name the failure each blank permits.`,
+ terms:[
+  ['Authoritative source','The place the organization treats as the reference for the records or documents.'],
+  ['Cutoff','The source moment a transfer covers. Anything that changed after it is not in the copy.'],
+  ['Watermark','The latest source point an index reflects.'],
+  ['Manifest count','The number of records the source held at the cutoff, written down before the transfer ends, so what arrived can be compared with what was expected.'],
+  ['Effective date','The date a wording came into force. A replaced wording carries the date it stopped applying.']
+ ],
+ rule:`A copy is usable when its record can finish one sentence: "Current to this source point, proven complete by this check, and an empty result means this." Wherever the record cannot finish it, the blank permits a failure. This practice names controls. It does not assert how any product provides them.`,
+ auditNote:'Each record shows what is filled in and what is blank. For each blank, choose the failure its absence permits. The list is shared, so each failure fits one blank. Then check. Nothing is timed.',
+ recs:[
+  {id:'r1',title:'Record one: the nightly policy snapshot',
+   filled:[
+    ['Authoritative source','The policy tables POLMAST and ENDMAST in the policy master on IBM Z.'],
+    ['Copy','The policy snapshot tables in the lakehouse.'],
+    ['Schedule','Nightly, inside the batch window, 22:00 to 02:00 US Central.']
+   ],
+   sentence:[
+    ['Current to','the cutoff','not recorded'],
+    ['Proven complete by','the manifest count','not recorded'],
+    ['A record the copy refuses goes to','the rejected-record route','not recorded'],
+    ['A rerun after a partial failure starts from','the restart point','not recorded']
+   ]},
+  {id:'r2',title:'Record two: the search over coverage wordings',
+   filled:[
+    ['Authoritative source','The coverage rules repository: policy forms, endorsements and state wordings, kept by version.'],
+    ['Copy','A retrieval index over the repository\'s documents. Each match returns a citation.'],
+    ['Retention','Superseded forms stay retrievable, as retention requires.']
+   ],
+   sentence:[
+    ['Current to','the watermark','not recorded'],
+    ['The wording in force on the loss date is found by','the effective-date field','not recorded'],
+    ['When two versions of a form match, the one used is chosen by','the supersession rule','not recorded'],
+    ['An empty result means','the empty-result rule','not recorded']
+   ]}
+ ],
+ fails:{
+  f1:'The transfer finishes with records missing or duplicated, and nobody can tell finished from complete.',
+  f2:'Nobody can say which moment in the source the copy reflects.',
+  f3:'Records the target refuses vanish, with no owner to put them right.',
+  f4:'A rerun after a partial failure starts over or from a guess, so records are loaded twice or skipped.',
+  f5:'Nobody can say how far the index trails the repository.',
+  f6:'A form that was not in force on the loss date can come back as a match.',
+  f7:'When two versions of a form match, an older one can outrank the newer.',
+  f8:'An empty search is read as proof that no wording exists.'
+ },
+ order:['f6','f3','f1','f7','f5','f8','f4','f2'],
+ blanks:[
+  {id:'b1',rec:'r1',name:'Manifest count',desc:'The number of records the source held at the cutoff.',fail:'f1',
+   ok:'Correct. Without a manifest count, nothing says how many records should have arrived. A transfer can finish while records are missing or duplicated, and finished looks the same as complete.'},
+  {id:'b2',rec:'r1',name:'Cutoff',desc:'The source moment the transfer covers.',fail:'f2',
+   ok:'Correct. Without a cutoff, nobody can say which moment in the source the copy reflects, so a reader cannot tell how old it is.'},
+  {id:'b3',rec:'r1',name:'Rejected-record route',desc:'Where records the target refuses are sent, and who owns them.',fail:'f3',
+   ok:'Correct. Without a route, a refused record vanishes. Nobody is told, and nobody owns putting it right.'},
+  {id:'b4',rec:'r1',name:'Restart point',desc:'The place a transfer resumes from after a partial failure.',fail:'f4',
+   ok:'Correct. Without a restart point, a rerun after a partial failure starts over or starts from a guess, so records are loaded twice or skipped.'},
+  {id:'b5',rec:'r2',name:'Watermark',desc:'The latest repository point the index reflects.',fail:'f5',
+   ok:'Correct. Without a watermark, nobody can say how far the index trails the repository, so a new or revised wording may be missing and no one can see it.'},
+  {id:'b6',rec:'r2',name:'Effective-date field',desc:'A field recording the date each wording came into force and the date it was replaced.',fail:'f6',
+   ok:'Correct. Without an effective-date field, the index cannot narrow to the wording in force on the loss date. Retention keeps superseded forms retrievable, so a form that was not in force can come back as a match.'},
+  {id:'b7',rec:'r2',name:'Supersession rule',desc:'A rule for which version counts when more than one version of a form matches.',fail:'f7',
+   ok:'Correct. Without a supersession rule, nothing says which version wins when two versions of a form both match, so an older form can outrank the newer one.'},
+  {id:'b8',rec:'r2',name:'Empty-result rule',desc:'What the caller is told to conclude when the search returns nothing.',fail:'f8',
+   ok:'Correct. Without an empty-result rule, "no match" is read as "no such wording exists." The index may simply not have it yet.'}
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ idle:'Choose a failure for this blank, then check.',
+ nearSame:'That failure is real for this copy, but it belongs to a different blank. Ask what exactly goes wrong when this one field is missing.',
+ badOther:'That failure belongs to the other copy. A transfer and an index fail in different ways. First move: ask whether this record describes a batch transfer or a retrieval index.',
+ nearTwice:'You chose this failure for another blank too. Each blank permits its own failure. Ask what goes wrong when this one field is missing.',
+ summary:{
+  idle:'Choose a failure for every blank, then check again.',
+  some:'Some pairings need another look. Read the notes on the marked blanks, change your choices and check again.',
+  all:'Every pairing holds. Each blank permits a different failure. Finished is not complete, and empty is not absent. A copy is usable only when its record can finish the sentence: current to this source point, proven complete by this check, and an empty result means this.'
+ },
+ second:{
+  intro:'The first record is missing its manifest count, its cutoff, its route and its restart point. Supply the manifest count and the route, and see what changes. The figures below are illustrative. They are not facts about the case.',
+  manifest:10000,
+  jobSays:'Finished',
+  start:{arrived:9940,routed:0}
+ }
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#rule').appendChild(h('p',{text:COPY.rule}));
+$('#auditNote').textContent=COPY.auditNote;
+$('#secondIntro').textContent=COPY.second.intro;
+
+/* Records */
+COPY.recs.forEach(function(r){
+  const box=h('section',{class:'rec','aria-labelledby':'h-'+r.id});
+  box.appendChild(h('h3',{id:'h-'+r.id,text:r.title}));
+  const f=h('div',{class:'fields'});
+  r.filled.forEach(function(x){f.appendChild(h('div',{class:'k',text:x[0]}));f.appendChild(h('div',{text:x[1]}));});
+  box.appendChild(f);
+  const sent=h('div',{class:'sent'});
+  sent.appendChild(h('p',{class:'hint',text:'Can the record finish these clauses?'}));
+  r.sentence.forEach(function(s){
+    sent.appendChild(h('p',null,[s[0]+': ',h('span',{class:'gap',text:s[2]+' ('+s[1]+')'})]));
+  });
+  box.appendChild(sent);
+  COPY.blanks.filter(function(b){return b.rec===r.id;}).forEach(function(b){
+    const card=h('article',{class:'card',id:'card-'+b.id});
+    const s=h('select',{id:b.id});
+    s.appendChild(option('','Choose a failure'));
+    COPY.order.forEach(function(k){s.appendChild(option(k,COPY.fails[k]));});
+    card.appendChild(h('div',{class:'field'},[
+      h('label',{for:b.id},['Blank: '+b.name,h('span',{class:'d',text:b.desc})]),
+      s
+    ]));
+    card.appendChild(h('div',{class:'fb',id:'fb-'+b.id,role:'status','aria-live':'polite'}));
+    box.appendChild(card);
+  });
+  $('#records').appendChild(box);
+});
+
+function showFb(b,res){
+  const box=$('#fb-'+b.id);
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  $('#card-'+b.id).className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Key: each blank has one failure. A failure from the same record is close; one from the other record is not. */
+function recOfFail(k){
+  const b=COPY.blanks.filter(function(x){return x.fail===k;})[0];
+  return b.rec;
+}
+function blankState(b){
+  const v=$('#'+b.id).value;
+  if(!v)return {s:'idle',m:COPY.idle};
+  if(v===b.fail)return {s:'ok',m:b.ok};
+  if(recOfFail(v)!==b.rec)return {s:'bad',m:COPY.badOther};
+  const twice=COPY.blanks.some(function(o){return o.id!==b.id&&$('#'+o.id).value===v;});
+  return {s:'near',m:twice?COPY.nearTwice:COPY.nearSame};
+}
+function lockAll(state){COPY.blanks.forEach(function(b){$('#'+b.id).disabled=state;});}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  COPY.blanks.forEach(function(b){
+    const r=blankState(b);
+    showFb(b,r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    lockAll(true);
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    $('#summary').textContent=COPY.summary.all;
+    initSecond();
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: supply the manifest count and the route, then account for every record. */
+function account(manifest,arrived,routed){
+  const accounted=arrived+routed;
+  const gap=manifest-accounted;
+  return {gap:gap,pct:Math.abs(gap)/manifest*100};
+}
+function tieText(manifest,arrived,routed){
+  const a=account(manifest,arrived,routed);
+  if(a.gap>0){
+    return `The job report says ${COPY.second.jobSays.toLowerCase()}, but ${fmt(a.gap)} records (${fmt(a.pct,1)} percent of ${fmt(manifest)}) are unaccounted for. They neither landed nor reached an owner. Without the manifest count, nobody would have seen the gap.`;
+  }
+  if(a.gap===0){
+    return routed===0
+      ?`Every record is accounted for: all ${fmt(arrived)} landed. The manifest count is what lets anyone say so.`
+      :`Every record is accounted for: ${fmt(arrived)} landed and ${fmt(routed)} were rejected and sent to a named owner. The route turns a silent loss into a task with an owner.`;
+  }
+  return `${fmt(-a.gap)} more records are accounted for than the manifest expected (${fmt(a.pct,1)} percent of ${fmt(manifest)}). Some were loaded twice, or the manifest count is wrong. Either way the job report would still say finished.`;
+}
+function renderSecond(){
+  const manifest=COPY.second.manifest;
+  const arrived=Number($('#arr').value),routed=Number($('#rtd').value);
+  $('#arrOut').textContent=fmt(arrived)+' records';
+  $('#rtdOut').textContent=fmt(routed)+' records';
+  $('#tieText').textContent=tieText(manifest,arrived,routed);
+}
+function initSecond(){
+  $('#mf').textContent=fmt(COPY.second.manifest)+' (illustrative)';
+  $('#jr').textContent=COPY.second.jobSays;
+  renderSecond();
+}
+$('#arr').addEventListener('input',renderSecond);
+$('#rtd').addEventListener('input',renderSecond);
+$('#restore').addEventListener('click',function(){
+  $('#arr').value=COPY.second.start.arrived;
+  $('#rtd').value=COPY.second.start.routed;
+  renderSecond();
+  $('#arr').focus();
+});
+})();
+</script>
+</body>
+</html>

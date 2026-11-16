@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Record why each alternative lost</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.scope{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.scope p{margin:.2rem 0}
+.flow{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+.flow h3{font:600 1.05rem/1.3 Georgia,"Times New Roman",serif}
+.chosen{display:inline-block;font-size:.8rem;font-weight:700;color:var(--accent-text);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem;margin-bottom:.4rem}
+.facts p{margin:.25rem 0;font-size:.95rem}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+.card.ok{border-left:5px solid var(--accent)}
+.card.near{border-left:5px double var(--accent)}
+.card.bad{border-left:5px solid var(--ctl)}
+.rejhead{font-weight:600;margin-bottom:.4rem}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:2px solid var(--ctl);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+table.tie{width:100%;border-collapse:collapse;margin:.5rem 0 .8rem;font-size:.95rem}
+table.tie th,table.tie td{text-align:left;vertical-align:top;padding:.5rem .6rem;border-bottom:1px solid var(--line)}
+table.tie th{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.num{font-weight:600}
+td.reopen{font-weight:600;color:var(--accent-text)}
+#second .field{max-width:100%}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}table.tie,table.tie thead,table.tie tbody,table.tie tr,table.tie th,table.tie td{display:block}table.tie thead{position:absolute;left:-9999px}table.tie tr{border-bottom:1px solid var(--line);padding:.4rem 0}table.tie td{border:0;padding:.2rem 0}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>Record why each alternative lost</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Two things every rejection records</h2>
+<dl id="terms"></dl>
+<h3>The constraints to choose from</h3>
+<dl id="cons"></dl>
+<div class="scope" id="rule"></div>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Three flows, six rejected alternatives</h2>
+<p class="hint" id="workNote"></p>
+<div id="flows"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check the record</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="tie" class="panel" hidden aria-labelledby="h-tie">
+<h2 id="h-tie" style="margin-top:0">What the batch rejection rests on</h2>
+<p id="tieIntro"></p>
+<table class="tie"><thead><tr><th scope="col">Figure</th><th scope="col">Value</th></tr></thead><tbody id="tieBody"></tbody></table>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<div class="field"><label for="wi">What changes</label><select id="wi"></select></div>
+<table class="tie"><thead><tr><th scope="col">Rejected alternative</th><th scope="col">Decisive constraint</th><th scope="col">Status</th></tr></thead><tbody id="wiBody"></tbody></table>
+<div class="scope" role="status" aria-live="polite"><p id="wiNote"></p></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* Fixtures the activity draws on: cycle time and target from the claims baselines. */
+const CYCLE=9.4, TARGET=5.0;
+const GAP=CYCLE-TARGET;            /* 4.4 days */
+const ONE_DAY_SHARE=1/GAP*100;     /* 22.7 percent of the gap */
+const ONE_HOUR_SHARE=(1/24)/GAP*100; /* 0.9 percent of the gap */
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`Every integration pattern moves a cost somewhere. A synchronous call puts the provider's availability on the caller's path. Messaging adds queued work and a gap between accepting work and finishing it. A batch transfer adds a cutoff and a delay. A retrieval index adds the question of whether its contents are current. A choice can be reviewed only if each credible alternative that lost records why. Otherwise the next reviewer reopens every choice, or keeps a rejection long after its reason has gone.`,
+ terms:[
+  ['Decisive constraint','The one fact that disqualified an alternative for a flow. "Too complex" is a preference, not a constraint.'],
+  ['Viable cost','What the team would have to accept or build to make the rejected alternative work. It tells a reviewer when to look again.']
+ ],
+ cons:[
+  ['(a)','No published contract covers the operation.'],
+  ['(b)','The caller waits for the answer.'],
+  ['(c)','The producer cannot wait.'],
+  ['(d)','The result is held until the batch window.'],
+  ['(e)','The copy is current only to its cutoff.'],
+  ['(f)','Not credible: the pattern cannot do the job at all.']
+ ],
+ rule:`For each rejected alternative, choose the one constraint that decided it, then the cost that would make it viable. Mark an alternative not credible when it cannot do the job at any cost. Cycle time, the calendar days from receipt of a claim to its determination, is ${fmt(CYCLE,1)} days, and the sponsor's target is ${fmt(TARGET,1)}.`,
+ workNote:'The patterns are chosen. Each card shows the choice and what is known about the flow. Record each rejection, then check. Nothing is timed.',
+ consOpts:[['','Choose a constraint'],['a','(a) No published contract covers the operation'],['b','(b) The caller waits for the answer'],['c','(c) The producer cannot wait'],['d','(d) The result is held until the batch window'],['e','(e) The copy is current only to its cutoff'],['f','(f) Not credible: it cannot do the job at all']],
+ costs:{
+  c1:'Coupling and release time: a new write API over the claims master, which rides the monthly mainframe release train.',
+  c2:'Latency: up to a day added to cycle time, because the determination waits for the next batch window.',
+  c3:'Coupling: a later reply has to be matched to the original request, with no gain, because the caller waits anyway.',
+  c4:'Consistency: the provisions are current only to the last nightly copy, so up to a day old at draft time.',
+  c5:'Coupling: a new published operation over the repository, which nobody has published.',
+  x1:'Idempotency: a key checked before every write.',
+  x2:'Failure: a dead-letter queue with a named owner.'
+ },
+ costOrder:['c4','x1','c2','c5','c3','x2','c1'],
+ flows:[
+  {id:'g1',title:'FLW-01: provisions and endorsements in force on the loss date',chosen:'Chosen: a synchronous call to the published read-only APIs',
+   facts:['The assistant reads the provisions at draft time, and the adjuster is at the draft.','The same policy tables are also copied to the lakehouse each night.'],
+   rows:[
+    {id:'r4',alt:'Messaging (a queue)',cons:'b',cost:'c3',
+     first:'First move: ask who waits for the read, and what a queue adds for a caller that waits anyway.',
+     ok:'Correct. Rejected on (b): the caller waits for the answer, so a queue only adds the work of matching a later reply to the request, with no benefit.'},
+    {id:'r5',alt:'The lakehouse snapshot (a batch copy)',cons:'e',cost:'c4',
+     first:'First move: ask how old a nightly copy can be when the adjuster is at the draft.',
+     ok:'Correct. Rejected on (e): a nightly copy is current only to its cutoff, so the provisions could be up to a day old at draft time.'}
+   ]},
+  {id:'g2',title:'FLW-04: the adjuster-approved determination',chosen:'Chosen: messaging, over the CLAIMS.EVENT.IN queue',
+   facts:['The claims master accepts writes only through its existing transactions. None of the published APIs writes.','Anything touching the claims master rides the monthly mainframe release train.','The batch window runs 22:00 to 02:00 US Central.'],
+   rows:[
+    {id:'r1',alt:'A synchronous API call',cons:'a',cost:'c1',
+     first:'First move: ask whether a published operation exists that writes to the claims master.',
+     ok:'Correct. Rejected on (a): no published contract covers a write to the claims master. It would be viable at the cost of a new API, which rides the monthly mainframe release train.'},
+    {id:'r2',alt:'A batch transfer',cons:'d',cost:'c2',
+     first:'First move: ask when a batch result reaches the claims master, and what that does to the cycle-time gap.',
+     ok:null},
+    {id:'r3',alt:'A retrieval index',cons:'f',cost:null,
+     first:'First move: ask what job this flow needs done, and whether this pattern can do that job at any cost.',
+     ok:'Correct. Not credible: a retrieval index finds documents, and it cannot carry a write to the claims master.'}
+   ]},
+  {id:'g3',title:'FLW-06: coverage wordings for citation',chosen:'Chosen: a retrieval index over the rules repository',
+   facts:['The draft cannot cite a provision without the wording.','The repository is a collection of documents. No operation over it has been published.'],
+   rows:[
+    {id:'r6',alt:'A synchronous API call',cons:'a',cost:'c5',
+     first:'First move: ask whether any published operation covers the repository.',
+     ok:'Correct. Rejected on (a): the repository is a collection of documents, and no published contract covers it. It would be viable at the cost of a new published operation over it.'}
+   ]}
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a constraint, and a cost unless you mark it not credible, then check.',
+  badF:'This alternative can do the job, at a cost. Not credible is for a pattern that cannot do the job at any cost. First move: ask what it would take to make it work.',
+  nearCostOther:'The constraint is right. That cost is real, but it belongs to a different rejection. Ask what would have to be built or accepted for this alternative to work here.',
+  nearCostDecoy:'The constraint is right. That cost is real for some patterns, but it is not what made this alternative unviable here. Ask what would have to be built or accepted for it to work here.'
+ },
+ summary:{
+  idle:'Choose a constraint for every rejection, and a cost for every credible one, then check again.',
+  some:'Some rejections need another look. Read the notes on the marked cards, change your choices and check again.',
+  all:'Every rejection holds. Five alternatives each lost on one constraint, and each records the cost that would have made it viable. One is not credible at any cost. A reviewer can now tell when each reason would lapse.'
+ },
+ tieIntro:`The batch rejection rests on a comparison the activity can reproduce. The delay is stated against what the sponsor wants removed.`,
+ second:{
+  intro:'A recorded reason lapses when the thing that caused it changes. Pick one change and see which rejections reopen. The change is illustrative. It is not a fact about the case.',
+  opts:[['','Choose a change'],['w1','A write API over the claims master is published'],['w2','A published operation over the rules repository appears'],['w3','The batch window opens every hour']],
+  none:'Choose a change to see which rejections stand.',
+  note:{
+   w1:'Only the synchronous rejection of the determination reopens, because its reason was the missing write contract. Nothing else moved. Reopening is not reversing: the choice may well stay, but the record now says why it is open.',
+   w2:'Only the synchronous rejection of the coverage wordings reopens, because its reason was the missing operation over the repository. The write contract for the claims master is a separate matter, and it still stands.',
+   w3:`Only the batch rejection changes. Constraint (d) still applies, but the delay shrinks from up to a day to up to an hour. An hour is ${fmt(ONE_HOUR_SHARE,1)} percent of the ${fmt(GAP,1)}-day gap, where a day was ${fmt(ONE_DAY_SHARE,1)} percent. A rejection that cites "too slow" would have missed this. One that records the constraint and its cost shows what to re-test.`
+  },
+  reopen:{w1:'r1',w2:'r6',w3:'r2'},
+  statusReopen:{w1:'Reopen: the reason has lapsed',w2:'Reopen: the reason has lapsed',w3:'Reopen: the cost has shrunk'},
+  statusStands:'Stands'
+ }
+};
+/* The batch rejection's confirmation text is built from the fixtures. */
+COPY.flows[1].rows[1].ok=`Correct. Rejected on (d): the determination would be held until the batch window, up to a day added against the ${fmt(GAP,1)}-day gap between ${fmt(CYCLE,1)} and ${fmt(TARGET,1)} days. It would be viable only if the team accepted that delay.`;
+
+const ROWS=[];COPY.flows.forEach(function(f){f.rows.forEach(function(r){ROWS.push(r);});});
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+COPY.cons.forEach(function(t){$('#cons').appendChild(h('dt',{text:t[0]}));$('#cons').appendChild(h('dd',{text:t[1]}));});
+$('#rule').appendChild(h('p',{text:COPY.rule}));
+$('#workNote').textContent=COPY.workNote;
+$('#tieIntro').textContent=COPY.tieIntro;
+$('#secondIntro').textContent=COPY.second.intro;
+
+/* Flow cards with their rejection rows */
+COPY.flows.forEach(function(f){
+  const box=h('section',{class:'flow','aria-labelledby':'h-'+f.id});
+  box.appendChild(h('h3',{id:'h-'+f.id,text:f.title}));
+  box.appendChild(h('span',{class:'chosen',text:f.chosen}));
+  const fx=h('div',{class:'facts'});
+  f.facts.forEach(function(t){fx.appendChild(h('p',{text:t}));});
+  box.appendChild(fx);
+  f.rows.forEach(function(r){
+    const card=h('article',{class:'card',id:'card-'+r.id});
+    card.appendChild(h('p',{class:'rejhead',text:'Rejected: '+r.alt}));
+    const grid=h('div',{class:'pair'});
+    const cs=h('select',{id:'c-'+r.id});
+    COPY.consOpts.forEach(function(o){cs.appendChild(option(o[0],o[1]));});
+    const ks=h('select',{id:'k-'+r.id});
+    ks.appendChild(option('','Choose a cost'));
+    COPY.costOrder.forEach(function(k){ks.appendChild(option(k,COPY.costs[k]));});
+    grid.appendChild(h('div',{class:'field'},[h('label',{for:'c-'+r.id,text:'Rejected because'}),cs]));
+    grid.appendChild(h('div',{class:'field'},[h('label',{for:'k-'+r.id,text:'Viable if we accepted'}),ks]));
+    card.appendChild(grid);
+    card.appendChild(h('div',{class:'fb',id:'fb-'+r.id,role:'status','aria-live':'polite'}));
+    box.appendChild(card);
+    cs.addEventListener('change',function(){
+      const f6=(cs.value==='f');
+      ks.disabled=f6;
+      if(f6)ks.value='';
+      clearFb(r.id);
+    });
+    ks.addEventListener('change',function(){clearFb(r.id);});
+  });
+  $('#flows').appendChild(box);
+});
+function clearFb(id){const b=$('#fb-'+id);b.className='fb';b.textContent='';$('#card-'+id).className='card';}
+function showFb(r,res){
+  const box=$('#fb-'+r.id);
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  $('#card-'+r.id).className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Key: the decisive constraint, then the cost. Not credible takes no cost. */
+function rowState(r){
+  const c=$('#c-'+r.id).value,k=$('#k-'+r.id).value;
+  if(!c)return {s:'idle',m:COPY.msg.idle};
+  if(c==='f'&&r.cons!=='f')return {s:'bad',m:COPY.msg.badF};
+  if(c!==r.cons)return {s:'bad',m:r.first};
+  if(r.cons==='f')return {s:'ok',m:r.ok};
+  if(!k)return {s:'idle',m:COPY.msg.idle};
+  if(k===r.cost)return {s:'ok',m:r.ok};
+  const otherRow=ROWS.some(function(o){return o.id!==r.id&&o.cost===k;});
+  return {s:'near',m:otherRow?COPY.msg.nearCostOther:COPY.msg.nearCostDecoy};
+}
+function lockAll(state){ROWS.forEach(function(r){$('#c-'+r.id).disabled=state;$('#k-'+r.id).disabled=state;});}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  ROWS.forEach(function(r){
+    const res=rowState(r);
+    showFb(r,res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    lockAll(true);
+    $('#check').hidden=true;
+    $('#summary').textContent=COPY.summary.all;
+    buildTie();
+    $('#tie').hidden=false;
+    buildSecond();
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Arithmetic tie-out from the claims baselines, reproduced in code. */
+function buildTie(){
+  const body=$('#tieBody');body.textContent='';
+  [
+   ['Cycle time, receipt to determination, today',fmt(CYCLE,1)+' days'],
+   ['Cycle-time target set by the sponsor',fmt(TARGET,1)+' days'],
+   ['Gap the sponsor wants removed',fmt(GAP,1)+' days'],
+   ['Up to one day of waiting for the batch window, as a share of that gap',fmt(ONE_DAY_SHARE,1)+' percent']
+  ].forEach(function(x){body.appendChild(h('tr',null,[h('td',{text:x[0]}),h('td',{class:'num',text:x[1]})]));});
+}
+
+/* Second pass: one change, and the rows whose reason it touches. */
+function consLabel(k){return {a:'(a) No published contract',b:'(b) The caller waits',d:'(d) Held until the batch window',e:'(e) Current only to its cutoff',f:'(f) Not credible'}[k];}
+function buildSecond(){
+  const wi=$('#wi');
+  if(wi.options.length)return;
+  COPY.second.opts.forEach(function(o){wi.appendChild(option(o[0],o[1]));});
+  renderSecond();
+}
+function renderSecond(){
+  const v=$('#wi').value;
+  const body=$('#wiBody');body.textContent='';
+  ROWS.forEach(function(r){
+    const reopen=(v&&COPY.second.reopen[v]===r.id);
+    body.appendChild(h('tr',null,[
+      h('td',{text:altName(r)}),
+      h('td',{text:consLabel(r.cons)}),
+      h('td',{class:reopen?'reopen':'',text:reopen?COPY.second.statusReopen[v]:COPY.second.statusStands})
+    ]));
+  });
+  $('#wiNote').textContent=v?COPY.second.note[v]:COPY.second.none;
+}
+function altName(r){
+  const f=COPY.flows.filter(function(x){return x.rows.indexOf(r)>-1;})[0];
+  return f.title.split(':')[0]+', '+r.alt.toLowerCase();
+}
+$('#wi').addEventListener('change',renderSecond);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gate or weight each requirement</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--rule:#73777D;--soft:#f3effe;--accent:#8A40FC;--accent-deep:#5a24b5;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5a24b5}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.rhead{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.2rem}
+.rid{font-size:.8rem;font-weight:700;color:var(--accent-deep);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.rtext{font-size:1.02rem;font-weight:600}
+.rsrc{margin:.1rem 0 .6rem;color:var(--muted);font-size:.9rem}
+.pair{display:grid;grid-template-columns:1fr 1.6fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--rule)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Gate or weight each requirement</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Three ways a requirement enters a comparison</h2>
+<dl id="defs"></dl>
+<p id="note"></p>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Classify the nine requirements</h2>
+<p class="hint" id="workNote"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my rules</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the original wording</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vcard" class="card" hidden>
+<div class="rhead"><span class="rid">REQ-07</span><span class="rtext" id="vtext"></span></div>
+<div class="field"><label for="vcls">How it enters the comparison</label><select id="vcls"></select></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check this row</button></div>
+<div class="fb" id="vfb" role="status" aria-live="polite"></div>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`Before anyone scores a solution option, each requirement needs a fixed rule for how reviewers will judge it. Otherwise each reviewer supplies one, and the totals disagree. Classify each row of the Sample Enterprise's requirements register, and attach the measure and threshold reviewers will use.`,
+ defs:[
+  ['Gate','A pass/fail test for a requirement the client cannot trade away. Applied before scoring. No strength elsewhere can make up for failing it.'],
+  ['Weighted criterion','A preference that options may trade against each other, such as faster processing against lower operating burden. Scored only for options that pass every gate.'],
+  ['Return to owner','A requirement with no threshold. The engineer does not invent one; the row goes back to whoever owns it.'],
+  ['Measure and threshold','What reviewers observe, in what unit, and the limit or target that decides the result.']
+ ],
+ note:'The decision authority supplies the weights. This practice sets none.',
+ workNote:'Choose both selections for every row, then check. Nothing is timed.',
+ classes:[['gate','Gate'],['weighted','Weighted criterion'],['return','Return to owner']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose how the row enters the comparison and its measure.',
+  toGate:'First move: ask whether a strength elsewhere could make up for missing this requirement. If the client could accept that trade, the requirement is a preference that options trade against each other.',
+  toWeighted:'First move: ask whether the requirement states a limit the client will not cross. If it does, no score elsewhere may offset a miss, and the test runs before any scoring.',
+  toReturn:'First move: ask whether the requirement gives a threshold at all. Only a row with a stated limit or target can be gated or weighted.',
+  fromReturn:'This row states its own limit or target, so it can be judged as written. A row goes back to its owner only when no threshold exists.',
+  nearMeasure:'The classification is right. The measure is out of place: '
+ },
+ summary:{
+  idle:'Choose both selections for every row, then check again.',
+  some:'Some rows need another look. Read the notes on the marked rows, change your choices and check again.',
+  all:'Every rule holds: six gates, two weighted criteria, and one row returned to its owner. Every criterion traces to a requirement, and no threshold was invented.'
+ },
+ second:{
+  intro:'Change only the wording of the cycle-time requirement. Its subject and unit stay the same. Then decide how it enters the comparison.',
+  swap:'Reword the cycle-time requirement as a limit',
+  restoreNote:'Restored. Read as a target to move toward, cycle time is a weighted criterion again.',
+  mark:'must reach',
+  idle:'Choose how the reworded row enters the comparison.',
+  ok:`The subject and unit are unchanged. The wording now sets a limit the client will not trade: an option that misses ${fmt(5,1)} days fails, however well it scores on everything else. So the row is a gate. How a requirement enters the comparison follows its wording, not how important it feels.`,
+  weighted:'The wording has changed from a direction to a limit. Ask whether a strength elsewhere could still make up for missing it.',
+  ret:'The reworded row states its threshold, so nothing goes back to the owner.'
+ }
+};
+
+/* The register. cls is the keyed class; m lists measure options, ok marks the keyed one, why explains a wrong one. */
+const R=[
+ {id:'REQ-01',text:'Each determination letter cites the policy provision relied on.',src:'Source: the determination requirement.',cls:'gate',
+  m:[{t:'Letters citing the provision relied on, as a share of letters issued: every letter',ok:true},
+     {t:'Reviewers rate citation quality from 1 to 5',why:'it has no unit and no threshold, so each reviewer would supply one.'},
+     {t:`Letters citing the provision relied on: at least ${fmt(95)}%`,why:'the requirement says every letter. A lower threshold invents a tolerance nobody approved.'}],
+  why:'A letter without its provision breaks the determination requirement, and no saving elsewhere makes that acceptable. The requirement sets its own threshold: every letter.'},
+ {id:'REQ-02',text:'The assistant drafts; the adjuster of record decides.',src:'Source: the documented rule of use.',cls:'gate',
+  m:[{t:`Determinations issued without an adjuster of record's approval: none`,ok:true},
+     {t:'Drafts accepted unchanged, as a share of drafts: higher is better',why:'that rewards adjusters for not changing drafts. It measures a preference, not the rule of use.'},
+     {t:`Adjuster approval rate: above ${fmt(90)}%`,why:'the rule allows no determination without approval. A rate below every determination is a tolerance nobody approved.'}],
+  why:'The rule of use is fixed. An option that lets the assistant decide breaks it, however fast it is.'},
+ {id:'REQ-03',text:'The claims master is written only through its existing transactions.',src:'Source: the claims master system of record.',cls:'gate',
+  m:[{t:'Writes to the claims master outside the existing transactions: none',ok:true},
+     {t:'Integration effort in days: fewer is better',why:'it turns a fixed limit on how the system may be written into an effort preference.'},
+     {t:`Writes outside the existing transactions: under ${fmt(1)}%`,why:'the requirement allows none. Any share above zero invents a tolerance.'}],
+  why:'The system of record accepts writes only through its existing transactions. That is a limit, not a preference.'},
+ {id:'REQ-04',text:'European policyholder data is processed in the European region.',src:'Source: the data residency rule.',cls:'gate',
+  m:[{t:'European policyholder records processed outside the European region: none',ok:true},
+     {t:'Share of European claims processed in Europe: higher is better',why:'a share that is better when higher lets a cheap option make up for a breach. The rule allows no breach.'},
+     {t:'Processing region decided case by case by reviewers',why:'it leaves each reviewer to supply a rule the requirement already fixes.'}],
+  why:'A lower price cannot compensate for processing European data elsewhere. The client would still break the rule.'},
+ {id:'REQ-05',text:'Claim records are retained for seven years.',src:'Source: the record retention rule.',cls:'gate',
+  m:[{t:`Claim records retrievable after ${fmt(7)} years: every record`,ok:true},
+     {t:'Retention period in years: longer scores higher',why:'longer retention earns nothing once the requirement is met, and shorter retention breaks it.'},
+     {t:`Claim records retained for at least ${fmt(5)} years`,why:'the requirement says seven. A different threshold is invented.'}],
+  why:'Retention is a fixed period. Either the records are retrievable for seven years or the requirement fails.'},
+ {id:'REQ-06',text:`The determination reversal rate does not rise above ${fmt(3.1,1)}%.`,src:'Source: the reversal-rate guardrail and its current measure.',cls:'gate',
+  m:[{t:`Reversal rate in the quarterly quality sample, in percent: not above ${fmt(3.1,1)}`,ok:true},
+     {t:'Reversal rate: lower scores higher',why:'scoring it as a preference would let a cheaper option buy back a rise in reversals. The guardrail is a limit.'},
+     {t:`Reversal rate: not above ${fmt(5)}%`,why:'the guardrail is the current rate. A higher ceiling is invented.'}],
+  why:`The guardrail says the rate must not rise. Today it stands at ${fmt(3.1,1)}%, so the gate is set there.`},
+ {id:'REQ-07',text:`Cycle time falls from ${fmt(9.4,1)} calendar days toward ${fmt(5,1)}.`,src:`Source: the sponsor's cycle-time target.`,cls:'weighted',
+  m:[{t:`Cycle time, receipt to determination, in calendar days: from ${fmt(9.4,1)} toward ${fmt(5,1)}`,ok:true},
+     {t:`Cycle time: must reach ${fmt(5,1)} days`,why:'the requirement names a direction to move, not a limit that must be met. Turning it into a limit changes the requirement.'},
+     {t:'Speed, as reviewers judge it',why:'it has no unit and no threshold, so each reviewer would supply one.'}],
+  why:'The row names a direction and a target. Options can trade some cycle time against other strengths, so it is weighted.'},
+ {id:'REQ-08',text:`Adjuster touch time falls from ${fmt(68)} minutes per claim. Any benefit is netted against review time, rework, and claims that cannot be joined to the service-contract registry.`,src:'Source: the touch-time measure and its netting rule.',cls:'weighted',
+  m:[{t:`Minutes saved per claim against ${fmt(68)}, net of review time, rework and records that cannot be joined`,ok:true},
+     {t:`Minutes saved per claim against ${fmt(68)}, as the pilot measured them`,why:'the pilot figure is gross. The requirement says any benefit is netted first.'},
+     {t:`Touch time must fall to ${fmt(51)} minutes`,why:'that turns one quarter of pilot evidence into a limit the requirement never set.'}],
+  why:'A saving is a preference options trade against each other, and the requirement marks it for netting before it is scored.'},
+ {id:'REQ-09',text:'Cited provisions are valid: in force on the date of the loss.',src:'Source: the citation-validity measure, which has no pre-deployment baseline and no threshold.',cls:'return',
+  m:[{t:'Cited provisions in force on the loss date, as a share of citations: no threshold exists, so the row returns to its owner',ok:true},
+     {t:`Cited provisions in force on the loss date: at least ${fmt(95)}%`,why:'no threshold exists for this row. Supplying one invents a rule nobody approved.'},
+     {t:'Citation validity, as reviewers judge it',why:'it has no unit, and it hides the missing threshold instead of raising it.'}],
+  why:'The row has a subject but no threshold. The engineer flags it and returns it to its owner rather than inventing a number.'}
+];
+
+const VARIANT={cls:'gate',text:`Cycle time must reach ${fmt(5,1)} calendar days before rollout beyond the pilot line.`};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#note').textContent=COPY.note;
+$('#workNote').textContent=COPY.workNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+function clsSelect(id){
+  const s=h('select',{id:id});
+  s.appendChild(option('','Choose one'));
+  COPY.classes.forEach(function(c){s.appendChild(option(c[0],c[1]));});
+  return s;
+}
+R.forEach(function(r,idx){
+  const card=h('article',{class:'card',id:'card-'+r.id});
+  card.appendChild(h('div',{class:'rhead'},[h('span',{class:'rid',text:r.id}),h('span',{class:'rtext',text:r.text})]));
+  card.appendChild(h('p',{class:'rsrc',text:r.src}));
+  const ms=h('select',{id:'ms-'+r.id});
+  ms.appendChild(option('','Choose a measure and threshold'));
+  /* Rotate the display order by row so the keyed measure does not always sit first. */
+  r.m.map(function(_,k){return (k+idx*2)%r.m.length;}).forEach(function(i){ms.appendChild(option(String(i),r.m[i].t));});
+  card.appendChild(h('div',{class:'pair'},[
+    h('div',{class:'field'},[h('label',{for:'cls-'+r.id,text:'How it enters the comparison'}),clsSelect('cls-'+r.id)]),
+    h('div',{class:'field'},[h('label',{for:'ms-'+r.id,text:'Measure and threshold'}),ms])
+  ]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+r.id,role:'status','aria-live':'polite'}));
+  $('#cards').appendChild(card);
+});
+$('#vcls').appendChild(option('','Choose one'));
+COPY.classes.forEach(function(c){$('#vcls').appendChild(option(c[0],c[1]));});
+
+/* Keys */
+function wrongClassMsg(sel,key){
+  if(sel==='return')return COPY.msg.fromReturn;
+  if(key==='gate')return COPY.msg.toWeighted;
+  if(key==='weighted')return COPY.msg.toGate;
+  return COPY.msg.toReturn;
+}
+function rowState(selCls,selM,r){
+  if(!selCls||selM==='')return {s:'idle',m:COPY.msg.idle};
+  const m=r.m[Number(selM)];
+  if(selCls===r.cls&&m.ok)return {s:'ok',m:r.why};
+  if(selCls===r.cls)return {s:'near',m:COPY.msg.nearMeasure+m.why};
+  return {s:'bad',m:wrongClassMsg(selCls,r.cls)};
+}
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  R.forEach(function(r){
+    const res=rowState($('#cls-'+r.id).value,$('#ms-'+r.id).value,r);
+    showFb($('#fb-'+r.id),$('#card-'+r.id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    R.forEach(function(r){$('#cls-'+r.id).disabled=true;$('#ms-'+r.id).disabled=true;});
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the same row, one change of wording */
+function setVariantText(){
+  const p=$('#vtext');
+  p.textContent='';
+  const i=VARIANT.text.indexOf(COPY.second.mark);
+  p.appendChild(document.createTextNode(VARIANT.text.slice(0,i)));
+  p.appendChild(h('mark',{text:COPY.second.mark}));
+  p.appendChild(document.createTextNode(VARIANT.text.slice(i+COPY.second.mark.length)));
+}
+$('#swap').addEventListener('click',function(){
+  setVariantText();
+  $('#restoreNote').textContent='';
+  $('#vcls').value='';
+  $('#vcls').disabled=false;
+  $('#vcheck').disabled=false;
+  $('#vfb').className='fb';
+  $('#vfb').textContent='';
+  $('#vcard').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#vcls').focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  const sel=$('#vcls').value;
+  let r;
+  if(!sel)r={s:'idle',m:COPY.second.idle};
+  else if(sel===VARIANT.cls)r={s:'ok',m:COPY.second.ok};
+  else if(sel==='weighted')r={s:'bad',m:COPY.second.weighted};
+  else r={s:'bad',m:COPY.second.ret};
+  showFb($('#vfb'),null,r);
+  if(r.s==='ok'){$('#vcls').disabled=true;$('#vcheck').disabled=true;}
+});
+$('#restore').addEventListener('click',function(){
+  $('#vcard').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

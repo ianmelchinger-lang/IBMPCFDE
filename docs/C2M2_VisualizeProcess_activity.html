@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the path from flows to a recorded choice</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent-text)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.pcard.ok{border-left:5px solid var(--accent)}
+.pcard.near{border-left:5px double var(--accent)}
+.pcard.bad{border-left:5px solid var(--ctl)}
+.pcard .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.pcard .ptitle{font-weight:600}
+.pcard .pdesc{color:var(--muted);font-size:.93rem}
+.pcard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.pcard .fb{grid-column:1 / -1;margin-top:.2rem}
+li.divider{margin:14px 0;padding:6px 0;text-align:center;font-weight:700;color:var(--accent-text);border-top:3px solid var(--accent);border-bottom:1px dashed var(--accent);letter-spacing:.04em;text-transform:uppercase;font-size:.85rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pcard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Process assembly &middot; a fictional case: the Sample Enterprise</p>
+<h1>Assemble the path from flows to a recorded choice</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-problem">
+<h2 id="h-problem">The problem</h2>
+<fieldset id="problem"><legend id="problemLegend"></legend></fieldset>
+<div class="fb" id="fb-problem" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-path">
+<h2 id="h-path">The path</h2>
+<p id="pathNote"></p>
+<ol class="path" id="path"></ol>
+<div class="fb" id="fb-path" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-signal">
+<h2 id="h-signal">The signal</h2>
+<fieldset id="signal"><legend id="signalLegend"></legend></fieldset>
+<div class="fb" id="fb-signal" role="status" aria-live="polite"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my assembly</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the order</button>
+<p id="swapNote" class="hint" role="status" aria-live="polite"></p>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`Choosing integration patterns ends in a record that says, for each flow, which pattern fits, what failure it brings and what each rejected alternative would have cost. The forward deployed engineer reaches it through seven moves, and some of the moves must wait for others. Assemble the path: choose the sentence that states the problem, put the seven moves in the order they depend on one another, keep the work that follows the choosing below the line, and choose the signal that shows the choosing worked.`,
+ terms:[
+  ['Record','The written result of choosing: a pattern for each flow and, for each credible rejection, the one constraint that decided it and the cost that would have made it viable.'],
+  ['Handoff','The point where choosing ends and the rest of design begins.'],
+  ['Completion condition','What must be true for a flow to count as finished. A flow without one cannot be tested.']
+ ],
+ problemLegend:'Which sentence states the problem in operational terms?',
+ problem:[
+  {id:'pa',text:'The enterprise architect proposes one standard, published APIs for everything, and the design should adopt it because it is disciplined.',
+   whyNot:'That is a standard chosen by preference. It does not say what any one flow needs from its connection.'},
+  {id:'pb',ok:true,text:`The sponsor wants cycle time down from ${fmt(9.4,1)} days to ${fmt(5.0,1)}, and the design must now say how the assistant connects to the systems it reads and the one it updates. It names no pattern for each flow, no failure each pattern brings and no cost for each alternative that lost, so the next reviewer will reopen every choice.`,
+   okMsg:'The problem is a gap in the record: a pattern for each flow, the failure it brings, and the cost of each alternative that lost. The seven moves fill it.'},
+  {id:'pc',text:'The systems are listed, so the first step is to confirm each connection with the team that owns the system.',
+   whyNot:'That is another inventory. It records who owns an endpoint, not how work should move between systems or what happens when a step repeats.'},
+  {id:'pd',text:'The queue is the reliable choice, so the design should put every flow on the broker and trust its delivery guarantee.',
+   whyNot:'That is the opposite preference. The broker’s guarantee covers the path it names, and an effect outside that path needs its own control.'}
+ ],
+ problemFirst:'First move: look for the sentence that describes what the design lacks, rather than a standard someone prefers or a list to confirm.',
+ pathNote:`Ten cards, one list. The seven above the line are the work of choosing, in the order it must run. The three below the line follow the handoff. Use the buttons to move a card up or down.`,
+ handoff:'Handoff to the rest of design',
+ signalLegend:'Which signal shows the choosing worked?',
+ signal:[
+  {id:'sa',text:'The enterprise architect approves the integration standard.',
+   whyNot:'Approval shows agreement. It does not show that any flow’s choice can be traced to a constraint.'},
+  {id:'sb',text:'Every flow runs without an error in test.',
+   whyNot:'A clean run shows that the path works when nothing goes wrong. It says nothing about what a repeat, a late reply or a partial copy does, or why an alternative lost.'},
+  {id:'sc',ok:true,text:'Each flow names its pattern, and each synchronous flow carries a rule for a missing response. Each effect beyond a boundary has a key, each copy a watermark and a completeness proof, each incomplete state an owner, and each credible rejection a decisive constraint and a viable cost.',
+   okMsg:'The signal can be checked on the day the record is done: a reviewer can rebuild the pattern column from the record and see what each choice rests on.'},
+  {id:'sd',text:'The pattern column is short, with the same pattern on nearly every flow.',
+   whyNot:'A uniform column is a standard, not a record. It hides the flows where a different constraint decided.'}
+ ],
+ signalFirst:'First move: ask what a reviewer could check on the day the record is done. A signal shows what each choice rests on, not that everyone agreed.',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ moves:[
+  {id:'m1',title:'Name each flow',desc:'Give each flow a kind, an endpoint, a direction and a completion condition.',
+   why:'A pattern belongs to a flow, and a flow without a completion condition cannot be tested.'},
+  {id:'m2',title:'Set the time relationship',desc:'Decide whether both sides must be available together, and state a rule for a missing response wherever they must.',
+   why:'It follows the flows and decides whether the unit is a request, a message or a set.'},
+  {id:'m3',title:'Set the unit',desc:'Name the smallest thing that is accepted, retried or reconciled, with an identifier and a disposition.',
+   why:'The time relationship decides what kind of unit it is, and a key and a copy proof both depend on it.'},
+  {id:'m4',title:'Place the boundary and the key',desc:'Decide what commits together, and what key protects any effect beyond that boundary.',
+   why:'A key identifies a unit, so the unit comes first. It does not depend on the copy proof.'},
+  {id:'m5',title:'Prove the derived copies',desc:'For each batch or retrieval copy, state the watermark, the completeness check and what an empty result means.',
+   why:'A copy is proven complete by counting units, so the unit comes first. It does not depend on the boundary.'},
+  {id:'m6',title:'Assign the failure disposition',desc:'Give every durable or incomplete state a signal, an owner and a terminal route.',
+   why:'A failure state exists only once its boundary or its copy is defined.'},
+  {id:'m7',title:'Record the selection and the costs',desc:'Record the pattern for each flow, and the constraint and viable cost for each credible rejection.',
+   why:'Rejection costs are stated against the constraints the earlier moves surfaced.'}
+ ],
+ distractors:[
+  {id:'d1',title:'Size the rate limits',desc:'Set request limits for each published API against the close window.'},
+  {id:'d2',title:'Decide the identities',desc:'Choose which identity each call runs under.'},
+  {id:'d3',title:'Draw the integration map',desc:'Lay out the systems and the connections between them as one picture.'}
+ ],
+ distractorOk:'This work follows the handoff. It needs the record before it can begin.',
+ premature:'Out of place. This work follows the choosing and needs the record. Placed inside it, it builds on flows that have no pattern yet.',
+ belongsAbove:'Out of place. This move belongs inside the choosing, above the line.',
+ deps:[
+  {before:'m1',after:'m2',why:'The time relationship belongs to a flow, and a flow without a completion condition cannot be tested, so name the flows first.'},
+  {before:'m2',after:'m3',why:'The time relationship decides whether the unit is a request, a message or a set, so set it first.'},
+  {before:'m3',after:'m4',why:'A key identifies a unit, so set the unit first.'},
+  {before:'m3',after:'m5',why:'A copy is proven complete by counting units, so set the unit first.'},
+  {before:'m4',after:'m6',why:'A failure state exists only once its boundary is defined, so place the boundary first.'},
+  {before:'m5',after:'m6',why:'A failure state exists only once its copy is defined, so prove the copy first.'},
+  {before:'m6',after:'m7',why:'Rejection costs are stated against the constraints the earlier moves surfaced, so record them last.'}
+ ],
+ pathSet:'Some cards sit on the wrong side of the handoff. Read the notes on the marked cards.',
+ pathOrder:'The right seven sit above the line and the other work sits below it. The order inside the choosing is out of place on the marked cards.',
+ summary:{
+  idle:'Choose a problem and a signal, then check again.',
+  some:'Part of the assembly needs another look. Read the notes on each part and check again.',
+  all:'The problem, the path and the signal all hold. Each move closes before the one that depends on it opens.'
+ },
+ second:{
+  intro:'Suppose a colleague runs two of the moves in the other order. Swap the boundary and key with the copy proof, and see whether the path still holds.',
+  swap:'Swap the boundary and key with the copy proof',
+  restored:'Restored. The path is back in the order you checked.'
+ },
+ initial:['m5','d1','m1','m7','m3','m6','m2','d2','m4','d3'],
+ aboveCount:7
+};
+
+const MOVES={};COPY.moves.forEach(function(m){MOVES[m.id]=m;});
+COPY.distractors.forEach(function(m){MOVES[m.id]=m;});
+function isDistractor(id){return id.charAt(0)==='d';}
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+/* Count the orders of the seven moves that respect every dependency. */
+function allOrders(items){
+  const out=[];
+  (function build(rest,acc){
+    if(!rest.length){out.push(acc);return;}
+    rest.forEach(function(x,i){build(rest.slice(0,i).concat(rest.slice(i+1)),acc.concat([x]));});
+  })(items,[]);
+  return out;
+}
+const MOVE_IDS=COPY.moves.map(function(m){return m.id;});
+const ALL=allOrders(MOVE_IDS);
+const VALID=ALL.filter(function(o){
+  return COPY.deps.every(function(d){return o.indexOf(d.before)<o.indexOf(d.after);});
+});
+
+let order=COPY.initial.slice();
+let flags={};     /* path feedback keyed by card id, cleared whenever the order changes */
+let swapped=false;
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#problemLegend').textContent=COPY.problemLegend;
+$('#signalLegend').textContent=COPY.signalLegend;
+$('#pathNote').textContent=COPY.pathNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+function radios(host,name,items){
+  items.forEach(function(o){
+    const inp=h('input',{type:'radio',name:name,value:o.id});
+    inp.addEventListener('change',function(){$('#fb-'+name).className='fb';$('#fb-'+name).textContent='';});
+    host.appendChild(h('label',{class:'opt'},[inp,h('span',{text:o.text})]));
+  });
+}
+radios($('#problem'),'problem',COPY.problem);
+radios($('#signal'),'signal',COPY.signal);
+
+/* The path */
+function renderPath(focusSpec){
+  const ol=$('#path');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    if(i===COPY.aboveCount){
+      ol.appendChild(h('li',{class:'divider','aria-hidden':'true',text:COPY.handoff}));
+    }
+    const m=MOVES[id];
+    const f=flags[id];
+    const card=h('li',{class:'pcard'+(f?' '+f.s:''),'data-id':id});
+    const zone=(i<COPY.aboveCount)?('Position '+fmt(i+1)+' in the path'):'After the handoff';
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:zone}),h('br'),
+      h('span',{class:'ptitle',text:m.title}),h('br'),
+      h('span',{class:'pdesc',text:m.desc})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: '+m.title,text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: '+m.title,text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function resetSecond(){
+  swapped=false;
+  $('#second').hidden=true;
+  $('#swap').hidden=false;
+  $('#restore').hidden=true;
+  $('#swapNote').textContent='';
+}
+function move(id,dir){
+  const i=order.indexOf(id),j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  $('#fb-path').className='fb';$('#fb-path').textContent='';
+  $('#summary').textContent='';
+  resetSecond();
+  renderPath(id+':'+(dir<0?'up':'down'));
+  const pos=order.indexOf(id);
+  $('#live').textContent=pos<COPY.aboveCount?(MOVES[id].title+' is now at position '+fmt(pos+1)+' in the path.'):(MOVES[id].title+' is now after the handoff.');
+}
+
+/* Keys */
+function setFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m));
+}
+function checkChoice(name,items,first){
+  const sel=document.querySelector('input[name='+name+']:checked');
+  if(!sel)return {s:'idle',m:'Choose one.'};
+  const o=items.filter(function(x){return x.id===sel.value;})[0];
+  if(o.ok)return {s:'ok',m:o.okMsg};
+  return {s:'bad',m:o.whyNot+' '+first};
+}
+function pathOkText(){
+  return `The path holds, in an order the moves depend on one another. Of the ${fmt(ALL.length)} possible orders of the seven moves, exactly ${fmt(VALID.length)} respect every dependency, and yours is one of them.`;
+}
+function checkPath(){
+  const above=order.slice(0,COPY.aboveCount);
+  const below=order.slice(COPY.aboveCount);
+  const f={};
+  let setErr=false,orderErr=false;
+  above.forEach(function(id){if(isDistractor(id)){f[id]={s:'bad',m:COPY.premature};setErr=true;}});
+  below.forEach(function(id){if(!isDistractor(id)){f[id]={s:'bad',m:COPY.belongsAbove};setErr=true;}});
+  const pos={};above.forEach(function(id,i){pos[id]=i;});
+  COPY.deps.forEach(function(d){
+    if(pos[d.before]!==undefined&&pos[d.after]!==undefined&&pos[d.before]>pos[d.after]){
+      if(!f[d.after])f[d.after]={s:'near',m:'Out of place. '+d.why};
+      orderErr=true;
+    }
+  });
+  let res;
+  if(setErr)res={s:'bad',m:COPY.pathSet};
+  else if(orderErr)res={s:'near',m:COPY.pathOrder};
+  else{
+    res={s:'ok',m:pathOkText()};
+    above.forEach(function(id){f[id]={s:'ok',m:MOVES[id].why};});
+    below.forEach(function(id){f[id]={s:'ok',m:COPY.distractorOk};});
+  }
+  flags=f;
+  renderPath(null);
+  setFb($('#fb-path'),res);
+  return res.s;
+}
+
+$('#check').addEventListener('click',function(){
+  const p=checkChoice('problem',COPY.problem,COPY.problemFirst);
+  setFb($('#fb-problem'),p);
+  const pathState=checkPath();
+  const s=checkChoice('signal',COPY.signal,COPY.signalFirst);
+  setFb($('#fb-signal'),s);
+  const allOk=(p.s==='ok'&&pathState==='ok'&&s.s==='ok');
+  const anyIdle=(p.s==='idle'||s.s==='idle');
+  $('#summary').textContent=allOk?COPY.summary.all:(anyIdle?COPY.summary.idle:COPY.summary.some);
+  if(pathState==='ok'){
+    $('#second').hidden=false;
+  }else{
+    resetSecond();
+  }
+});
+
+/* Second pass: swap the pair of moves that do not depend on each other */
+function swapPair(){
+  const a=order.indexOf('m4'),b=order.indexOf('m5');
+  order[a]='m5';order[b]='m4';
+}
+function swappedText(state){
+  if(state==='ok'){
+    return `Swapped. The path still holds. Placing the boundary and proving the copies each need the unit, but neither needs the other, so either may come first. Of the ${fmt(ALL.length)} possible orders, these ${fmt(VALID.length)} are the only ones that hold. A changed completion condition is different: it reopens the work from the time relationship.`;
+  }
+  return 'Swapped. The path no longer holds. Read the notes on the marked cards.';
+}
+$('#swap').addEventListener('click',function(){
+  swapPair();
+  swapped=true;
+  const st=checkPath();
+  $('#swapNote').textContent=swappedText(st);
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  swapPair();
+  swapped=false;
+  checkPath();
+  $('#swapNote').textContent=COPY.second.restored;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#swap').focus();
+});
+
+renderPath(null);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace one approved determination through a failure</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.scope{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.scope p{margin:.2rem 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--accent)}
+.card.near{border-left:5px double var(--accent)}
+.card.bad{border-left:5px solid var(--ctl)}
+.card.ctx{background:var(--soft)}
+.failcard{border:2px dashed var(--ctl);border-radius:10px;background:var(--panel);padding:12px 16px;margin:12px 0}
+.failcard .tagf{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+.stephead{display:flex;gap:.6rem;align-items:baseline;margin-bottom:.35rem}
+.stepid{font-size:.8rem;font-weight:700;color:var(--accent-text);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem;white-space:nowrap}
+.stepact{font-size:1.02rem;font-weight:600}
+.sys{margin:.1rem 0 .6rem;font-size:.9rem;color:var(--muted)}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.span2{grid-column:1 / -1}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:2px solid var(--ctl);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.flag{display:flex;gap:.6rem;align-items:flex-start;margin:.5rem 0 0;font-size:.95rem;cursor:pointer}
+.flag input{margin-top:.3rem;width:1.05rem;height:1.05rem;flex:0 0 auto;accent-color:var(--accent-text)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+table.tie{width:100%;border-collapse:collapse;margin:.5rem 0 .8rem;font-size:.95rem}
+table.tie th,table.tie td{text-align:left;vertical-align:top;padding:.5rem .6rem;border-bottom:1px solid var(--line)}
+table.tie th{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.num{font-weight:600}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}.stephead{flex-wrap:wrap}table.tie,table.tie thead,table.tie tbody,table.tie tr,table.tie th,table.tie td{display:block}table.tie thead{position:absolute;left:-9999px}table.tie tr{border-bottom:1px solid var(--line);padding:.4rem 0}table.tie td{border:0;padding:.2rem 0}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>Trace one approved determination through a failure</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Four terms</h2>
+<dl id="terms"></dl>
+<div class="scope" id="assume"></div>
+</section>
+
+<section aria-labelledby="h-trace">
+<h2 id="h-trace">The trace</h2>
+<p class="hint" id="traceNote"></p>
+<div id="steps"></div>
+<div class="failcard" id="failure"></div>
+</section>
+
+<section aria-labelledby="h-decide">
+<h2 id="h-decide">After the message comes back</h2>
+<p class="hint" id="decideNote"></p>
+<div id="decisions"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check the trace</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<div class="pair">
+<div class="field span2"><label for="pt">Where the consumer ends abnormally</label><select id="pt"></select></div>
+</div>
+<label class="flag" for="always"><input type="checkbox" id="always"><span id="alwaysLab"></span></label>
+<div class="pair" style="margin-top:.5rem">
+<div class="field"><label for="lim">Backout limit (illustrative)</label><select id="lim"></select></div>
+</div>
+<label class="flag" for="keyon"><input type="checkbox" id="keyon"><span id="keyLab"></span></label>
+<table class="tie" id="tieTable"><thead><tr><th scope="col">What happens</th><th scope="col">Result</th></tr></thead><tbody></tbody></table>
+<p id="secondNote" class="hint" role="status" aria-live="polite"></p>
+<p><button type="button" class="btn secondary" id="restore">Restore the case</button></p>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A message path can commit its work together or roll it back together. That group of changes is a unit of work. A rollback reverses what is inside the unit. It cannot reverse what happened outside it. When a failed message is delivered again, an effect outside the unit can happen a second time. The idempotency boundary is the point past which a repeat changes the outcome. A stable operation key lets each step beyond it recognize a repeat and skip it. Trace one approved determination to find the boundary, the step that repeats, and the protection it needs.`,
+ terms:[
+  ['Unit of work','Changes that commit or roll back together.'],
+  ['Operation key','An identifier that lets a step recognize work it has already done. It stays the same on every delivery of the same operation, and it differs between separate legitimate operations.'],
+  ['Backout count','The number of times a message was received and then rolled back.'],
+  ['Dead-letter queue','Where a message goes when it cannot be delivered. A dead-letter queue nobody reads is a place where failures disappear.']
+ ],
+ assume:`The case sets these assumptions for this trace. Messages are persistent, meaning they survive a restart, and they are handled transactionally. The queue and the claim detail in the claims master take part in the unit of work, because the update shares the sync point of the get. A sync point is the moment the unit commits or rolls back. The document store is a separate system and does not take part. These are assumptions of the case, not claims about any one product. If the shared sync point were unconfirmed, the update would also have to check the key.`,
+ traceNote:'Steps 1 and 2 happen before the consumer starts, and step 6 ends the unit. Mark steps 3, 4 and 5, then answer the four questions below. Nothing is timed.',
+ steps:[
+  {n:1,ctx:true,text:'The adjuster approves the determination.',sys:'Before the consumer starts.'},
+  {n:2,ctx:true,text:'The determination is put on the CLAIMS.EVENT.IN queue as a persistent message, and the put is committed.',sys:'Before the consumer starts.'},
+  {n:3,text:'A consumer takes the message from the queue under a sync point.',sys:'System touched: the queue.'},
+  {n:4,text:'The consumer updates the claim detail (CLMDTL) in the claims master.',sys:'System touched: the claims master.'},
+  {n:5,text:'The consumer writes the determination letter to the document store.',sys:'System touched: the document store.'},
+  {n:6,ctx:true,text:'The consumer commits.',sys:'This ends the unit of work.'}
+ ],
+ failureTag:'The injected failure',
+ failure:'The consumer ends abnormally after step 5 and before step 6. The unit rolls back. The backout count is 1, and the message is delivered again.',
+ unitOpts:[['','Choose'],['in','Inside the unit: a rollback reverses it'],['out','Outside the unit: a rollback cannot reverse it']],
+ decideNote:'The message is back on the queue. Decide what repeats and what protects it.',
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ idle:'Choose an option for this item, then check.',
+ unitKey:{3:'in',4:'in',5:'out'},
+ unit:{
+  3:{ok:'Correct. The get takes part in the unit of work, so a rollback puts the message back on the queue, which is why it is delivered again.',
+     bad:'The queue takes part in the unit of work. A rollback puts the message back, which is why it comes again. First move: read the assumptions and list the systems that take part.'},
+  4:{ok:'Correct. The claim-detail update shares the get\'s sync point, so a rollback reverses it along with the get.',
+     bad:'In this case the claim detail shares the get\'s sync point, so a rollback reverses the update. First move: read the assumptions and list the systems that take part.'},
+  5:{ok:'Correct. The document store does not take part in the unit of work, so a rollback cannot reverse the letter.',
+     bad:'The document store is not among the systems that take part. A rollback reverses only what takes part in the unit. First move: ask which systems the sync point covers, and whether this one is among them.'}
+ },
+ decisions:[
+  {id:'d1',label:'Which step\'s first effect survives the rollback, so the second delivery adds a second one?',
+   opts:[['','Choose'],['3','Step 3: take the message'],['4','Step 4: update the claim detail'],['5','Step 5: write the letter'],['none','None of them']],
+   key:'5',
+   res:{
+    '5':{s:'ok',m:'Correct. The letter was written before the failure and the rollback could not reverse it. The second delivery runs step 5 again, so a second letter follows. Steps 3 and 4 run again too, but the rollback reversed their first run.'},
+    '3':{s:'bad',m:'The rollback reversed that step, so the second run starts from the same state as the first. First move: for each step ask whether the rollback reverses it, then pick the one it cannot.'},
+    '4':{s:'bad',m:'The rollback reversed that step, so the second run starts from the same state as the first. First move: for each step ask whether the rollback reverses it, then pick the one it cannot.'},
+    'none':{s:'bad',m:'Something survives. A rollback reverses only work inside the unit. First move: find the step you marked as outside the unit.'}
+   }},
+  {id:'d2',label:'Which key should the step beyond the boundary check before it acts?',
+   opts:[['','Choose'],['claim','The claim number'],['claimver','The claim number plus the approved determination version'],['recv','The time the consumer received the message'],['attempt','A new number the consumer makes up on each attempt']],
+   key:'claimver',
+   res:{
+    'claimver':{s:'ok',m:'Correct. The claim number and the version do not change between deliveries, so the key is stable. It is unique per approved version, so a later version of the same claim is not mistaken for a repeat.'},
+    'claim':{s:'near',m:'The key is stable across redelivery, which is right, but it is not unique per approved version. A claim can be approved again at a later version, and that letter would be skipped as a repeat. Add what separates one legitimate operation from the next.'},
+    'recv':{s:'bad',m:'The time of receipt changes on every delivery, so a repeat would look new and the letter would be written twice. First move: ask whether the value is the same on every delivery of the same operation.'},
+    'attempt':{s:'bad',m:'A number made up on each attempt differs every time, so the step can never recognize a repeat. First move: ask whether the value is the same on every delivery of the same operation.'}
+   }},
+  {id:'d3',label:'How is the step beyond the boundary protected?',
+   opts:[['','Choose'],['check','The letter step checks the key before it writes'],['after','The letter moves to its own event, sent after the commit'],['widen','The unit of work is widened to include the letter'],['trust','The delivery guarantee is relied on'],['persist','The messages are marked persistent']],
+   key:['check','after'],
+   res:{
+    'check':{s:'ok',m:'Correct. The letter step checks the key before it writes, so a repeat is recognized and skipped.'},
+    'after':{s:'ok',m:'Correct. Writing the letter after the commit, on its own event, means a failed attempt never wrote one. That event can be delivered twice as well, so it still carries the key.'},
+    'widen':{s:'bad',m:'The document store is a separate system and does not take part in the unit of work. First move: ask whether the step can join the unit at all. If not, it needs its own protection.'},
+    'trust':{s:'bad',m:'A delivery guarantee covers the components it names, on the message\'s own path. It stops at the edge of the unit of work, so the letter is not covered. First move: ask what the guarantee names.'},
+    'persist':{s:'bad',m:'Persistent messages survive a restart. They do not stop a step from running twice. This trace already assumes persistent messages, and the letter still repeats.'}
+   }},
+  {id:'d4',label:'Suppose the message fails on every attempt. Where does it go after repeated backouts?',
+   opts:[['','Choose'],['loop','Back to the queue, to try again without limit'],['named','To a dead-letter queue with a named owner, once the backout count passes a limit'],['drop','It is dropped after the limit, with no record'],['unowned','To a dead-letter queue that nobody is assigned to read']],
+   key:'named',
+   res:{
+    'named':{s:'ok',m:'Correct. The count passes a limit, and the message goes to a queue a named owner reads. Nothing cycles without end, and nothing is lost without a person who knows.'},
+    'unowned':{s:'near',m:'A holding queue is the right place, but nobody owns it. A route nobody reads turns a failure into a silent loss. Name the owner.'},
+    'loop':{s:'bad',m:'Without a limit that acts on the count, a message that always fails cycles without end. First move: ask what stops it.'},
+    'drop':{s:'bad',m:'Dropping the message loses an approved determination with no record. First move: ask who would learn that it was lost.'}
+   }}
+ ],
+ summary:{
+  idle:'Choose an option for every marked step and every question, then check again.',
+  some:'Some items need another look. Read the notes on the marked items, change your choices and check again.',
+  all:'Every part holds. The unit of work covers the get and the claim-detail update. The letter sits outside it and is the step that repeats. A key of claim number plus approved version protects it, and repeated backouts go to a named place with an owner. A delivery guarantee depends on the settings of the whole path and covers the components it names. An effect outside the unit needs its own control.'
+ },
+ second:{
+  intro:'The failure does not have to strike after the letter. Move it, and watch what repeats. The unit of work stays as the case sets it. The backout limit is illustrative, and nothing in the case fixes it.',
+  points:[['a3','After step 3, before the update'],['a4','After step 4, before the letter'],['a5','After step 5, before the commit (the case)'],['a6','After step 6, at the commit']],
+  alwaysLab:'The message fails on every attempt',
+  keyLab:'The letter step checks the key before it writes',
+  limits:[['2','2 backouts'],['3','3 backouts'],['5','5 backouts']],
+  restored:'Restored. The failure is back after step 5, the message succeeds on its second delivery, and the letter step does not check a key.'
+ }
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function sel(id,opts){const s=h('select',{id:id});opts.forEach(function(o){s.appendChild(option(o[0],o[1]));});return s;}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#assume').appendChild(h('p',{text:COPY.assume}));
+$('#traceNote').textContent=COPY.traceNote;
+$('#decideNote').textContent=COPY.decideNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#alwaysLab').textContent=COPY.second.alwaysLab;
+$('#keyLab').textContent=COPY.second.keyLab;
+
+/* The trace: steps 3, 4 and 5 take a mark. */
+COPY.steps.forEach(function(s){
+  const card=h('article',{class:'card'+(s.ctx?' ctx':''),id:'card-s'+s.n});
+  card.appendChild(h('div',{class:'stephead'},[h('span',{class:'stepid',text:'Step '+s.n}),h('span',{class:'stepact',text:s.text})]));
+  card.appendChild(h('p',{class:'sys',text:s.sys}));
+  if(!s.ctx){
+    card.appendChild(h('div',{class:'field'},[h('label',{for:'u'+s.n,text:'Where this step sits'}),sel('u'+s.n,COPY.unitOpts)]));
+    card.appendChild(h('div',{class:'fb',id:'fb-u'+s.n,role:'status','aria-live':'polite'}));
+  }
+  $('#steps').appendChild(card);
+});
+$('#failure').appendChild(h('span',{class:'tagf',text:COPY.failureTag}));
+$('#failure').appendChild(h('p',{text:COPY.failure}));
+
+/* The four decisions */
+COPY.decisions.forEach(function(d){
+  const card=h('article',{class:'card',id:'card-'+d.id});
+  card.appendChild(h('div',{class:'field'},[h('label',{for:d.id,text:d.label}),sel(d.id,d.opts)]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+d.id,role:'status','aria-live':'polite'}));
+  $('#decisions').appendChild(card);
+});
+
+function showFb(id,cardId,res){
+  const box=$('#fb-'+id);
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  $('#card-'+cardId).className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Key */
+function unitState(n){
+  const v=$('#u'+n).value;
+  if(!v)return {s:'idle',m:COPY.idle};
+  if(v===COPY.unitKey[n])return {s:'ok',m:COPY.unit[n].ok};
+  return {s:'bad',m:COPY.unit[n].bad};
+}
+function decState(d){
+  const v=$('#'+d.id).value;
+  if(!v)return {s:'idle',m:COPY.idle};
+  return d.res[v];
+}
+function lockAll(state){
+  [3,4,5].forEach(function(n){$('#u'+n).disabled=state;});
+  COPY.decisions.forEach(function(d){$('#'+d.id).disabled=state;});
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  [3,4,5].forEach(function(n){
+    const r=unitState(n);
+    showFb('u'+n,'s'+n,r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  COPY.decisions.forEach(function(d){
+    const r=decState(d);
+    showFb(d.id,d.id,r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  /* A step marked inside the unit cannot also be the step that repeats. */
+  const rep=$('#d1').value;
+  if((rep==='3'||rep==='4'||rep==='5')&&$('#u'+rep).value==='in'&&$('#fb-d1').className.indexOf('ok')<0){
+    $('#fb-d1').appendChild(document.createTextNode(' You also marked that step as inside the unit, and work inside the unit rolls back together, so it cannot be the one that survives.'));
+  }
+  if(all){
+    lockAll(true);
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    $('#summary').textContent=COPY.summary.all;
+    initSecond();
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: move the failure point, with the unit as the case sets it. */
+function initSecond(){
+  const pt=$('#pt'),lim=$('#lim');
+  if(pt.options.length)return;
+  COPY.second.points.forEach(function(o){pt.appendChild(option(o[0],o[1]));});
+  COPY.second.limits.forEach(function(o){lim.appendChild(option(o[0],o[1]));});
+  pt.value='a5';lim.value='3';
+  render();
+}
+function simulate(point,always,limit,keyOn){
+  const ran={a3:[3],a4:[3,4],a5:[3,4,5],a6:[3,4,5,6]}[point];
+  const committed=(point==='a6');
+  const rolledBack=committed?[]:ran.filter(function(s){return s<=4;});
+  const survives=committed?[]:ran.filter(function(s){return s===5;});
+  const redelivered=!committed;
+  const useAlways=always&&!committed;
+  const attempts=committed?1:(useAlways?limit:2);
+  let letters;
+  if(committed){letters=1;}
+  else if(useAlways){letters=survives.length?(keyOn?1:limit):0;}
+  else{letters=survives.length?(keyOn?1:2):1;}
+  return {ran:ran,committed:committed,rolledBack:rolledBack,survives:survives,redelivered:redelivered,useAlways:useAlways,attempts:attempts,letters:letters,limit:limit};
+}
+function stepsText(a){return a.length?(a.length===1?'Step '+a[0]:'Steps '+a.join(', ').replace(/, (\d+)$/,' and $1')):'None';}
+function render(){
+  const point=$('#pt').value,always=$('#always').checked,limit=Number($('#lim').value),keyOn=$('#keyon').checked;
+  $('#always').disabled=(point==='a6');
+  if(point==='a6')$('#always').checked=false;
+  $('#lim').disabled=!($('#always').checked);
+  const r=simulate(point,$('#always').checked,limit,keyOn);
+  const rows=[
+   ['Steps that ran before the failure',stepsText(r.ran)],
+   ['Steps the rollback reverses',r.committed?'None. The unit committed.':stepsText(r.rolledBack)],
+   ['Steps whose first effect survives',r.committed?'None. Nothing needs to be reversed.':stepsText(r.survives)],
+   ['Message delivered again',r.committed?'No. The commit removed it from the queue.':(r.useAlways?`Yes, until the backout count reaches ${fmt(r.limit)}. Then it goes to the dead-letter queue and its named owner.`:'Yes, once. The second delivery succeeds.')],
+   ['Letters in the document store at the end',fmt(r.letters)]
+  ];
+  const body=$('#tieTable tbody');body.textContent='';
+  rows.forEach(function(x,i){
+    body.appendChild(h('tr',null,[h('td',{text:x[0]}),h('td',{class:i===rows.length-1?'num':'',text:x[1]})]));
+  });
+  let note='';
+  if(r.committed){note='The failure comes after the commit, so nothing comes back and one letter is written.';}
+  else if(r.survives.length&&!keyOn){note=`The letter was written before the failure and survives the rollback, so each new attempt writes another. Without a key checked before the letter, ${fmt(r.letters)} letters are written.`;}
+  else if(r.survives.length&&keyOn){note='The letter was written before the failure. Each later attempt finds the key and skips the write, so one letter is written.';}
+  else{note='The failure comes before the letter, so the rollback undoes everything that ran. The repeat is safe whether or not a key is checked.';}
+  $('#secondNote').textContent=note;
+}
+$('#pt').addEventListener('change',render);
+$('#always').addEventListener('change',render);
+$('#lim').addEventListener('change',render);
+$('#keyon').addEventListener('change',render);
+$('#restore').addEventListener('click',function(){
+  $('#pt').value='a5';$('#always').checked=false;$('#keyon').checked=false;$('#lim').value='3';
+  render();
+  $('#secondNote').textContent=COPY.second.restored;
+  $('#pt').focus();
+});
+})();
+</script>
+</body>
+</html>

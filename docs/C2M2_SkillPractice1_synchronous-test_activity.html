@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test each flow for a synchronous call</title>
+<style>
+:root{--bg:#F4F0FF;--panel:#FFFFFF;--ink:#1B1F24;--muted:#4F5459;--line:#D6CAFE;--soft:#E9E2FF;--ctl:#73777D;--accent:#8A40FC;--accent-ink:#FFFFFF;--accent-text:#5B1FB8;--accent-soft:#D6CAFE;--ok:#5B1FB8;--ok-bg:#D6CAFE;--near:#5B1FB8;--near-bg:#FFFFFF;--bad:#4F5459;--bad-bg:#E7E8EA;--mark:#D6CAFE;--focus:#5B1FB8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.scope{border-left:4px solid var(--accent);background:var(--panel);padding:10px 14px;margin:12px 0;border-radius:0 8px 8px 0}
+.scope p{margin:.2rem 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--accent)}
+.card.near{border-left:5px double var(--accent)}
+.card.bad{border-left:5px solid var(--ctl)}
+.stephead{display:flex;gap:.6rem;align-items:baseline;margin-bottom:.35rem}
+.stepid{font-size:.8rem;font-weight:700;color:var(--accent-text);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem;white-space:nowrap}
+.stepact{font-size:1.02rem;font-weight:600}
+.facts{margin:.2rem 0 .7rem;font-size:.95rem}
+.facts p{margin:.25rem 0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+.span2{grid-column:1 / -1}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:2px solid var(--ctl);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-text);border-color:var(--accent-text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near);border-style:dashed}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted);border-color:var(--ctl)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}.stephead{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice &middot; a fictional case: the Sample Enterprise</p>
+<h1>Test each flow for a synchronous call</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-cond">
+<h2 id="h-cond">Three conditions, all at once</h2>
+<dl id="terms"></dl>
+<div class="scope" id="rule"></div>
+</section>
+
+<section aria-labelledby="h-flows">
+<h2 id="h-flows">The six flows</h2>
+<p class="hint" id="flowNote"></p>
+<div id="flows"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my verdicts</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<div class="pair">
+<div class="field"><label for="wf">A flow that passed all three conditions</label><select id="wf"></select></div>
+<div class="field"><label for="wc">The condition to switch off</label><select id="wc"></select></div>
+</div>
+<p><button type="button" class="btn secondary" id="restore">Restore the conditions</button></p>
+<div class="scope" id="variant" role="status" aria-live="polite" hidden><p id="variantText"></p></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A synchronous call keeps the caller's work open until the provider answers. The caller is the system making the request, and the provider is the system handling it. That ties the caller to the provider's speed and availability at the same moment. The tie is called temporal coupling. Some flows can carry it and some cannot. Test the six flows below, give each a verdict, and name the condition that fails wherever one does.`,
+ terms:[
+  ['Need','The caller needs the answer to finish its own work.'],
+  ['Contract','A published contract covers the operation. A published contract is the provider\'s commitment to an operation, the data it accepts and returns, its errors and its version.'],
+  ['Rule','The caller has a safe rule for every outcome, including no response at all.']
+ ],
+ rule:`Keep a flow synchronous only when you can name all three. A timeout means the caller stopped waiting. It does not show what the provider did. Test the conditions in order, and name the first one that fails.`,
+ flowNote:'For each flow, choose a verdict. A flow that cannot be synchronous takes the first condition that fails. A flow that can takes the rule for a missing response. Then check. Nothing is timed.',
+ verdicts:[['','Choose a verdict'],['viable','Synchronous is viable'],['not','Synchronous is not viable']],
+ conds:[['','Choose'],
+  ['need','Need: nobody needs the answer to finish their work'],
+  ['contract','Contract: no published contract covers the operation'],
+  ['rule','Rule: no safe rule exists for a missing response']],
+ rules:[['','Choose'],
+  ['retry','Repeat the read, because a read changes nothing'],
+  ['empty','Treat no answer as "nothing found" and draft without it'],
+  ['wait','Keep waiting until the provider answers, with no limit']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a verdict and the matching second field, then check.',
+  badNot:'All three conditions hold for this flow, so a synchronous call is viable. First move: check them in turn. Who needs the answer to finish? Which published contract covers the operation? What does the caller do with no answer?',
+  badViable:'At least one condition fails for this flow. First move: ask who needs the answer to finish their work, then whether a published contract covers the operation. Name the first one that fails.',
+  nearCondGeneric:'Not viable is right. The failing condition is out of place. Test the conditions in order: does the caller need the answer to finish, and then does a published contract cover the operation? Name the first one that fails.',
+  nearRule:'Viable is right. The rule for a missing response is out of place. Ask what a repeat does to the provider, and what the caller loses by guessing or by waiting without end.'
+ },
+ summary:{
+  idle:'Choose a verdict and the matching second field for every flow, then check again.',
+  some:'Some flows need another look. Read the notes on the marked flows, change your choices and check again.'
+ },
+ second:{
+  intro:'Take one of the flows that can be synchronous and switch one condition off. These are illustrative what-ifs, not facts about the case. Watch the verdict move, and see which single condition moved it.',
+  choose:'Choose a flow and a condition.',
+  flowPick:[['','Choose a flow'],['FLW-01','FLW-01: provisions and endorsements'],['FLW-02','FLW-02: claim header']],
+  condPick:[['','Choose a condition'],['need','Need'],['contract','Contract'],['rule','Rule']],
+  whatIf:{
+   'FLW-01':{
+    need:'Suppose the draft could be written without the provisions, and they were attached afterward.',
+    contract:'Suppose the policyInquiry and endorsementList APIs were withdrawn from the published set.',
+    rule:'Suppose each read now records a charge, so a repeat is no longer harmless.'
+   },
+   'FLW-02':{
+    need:'Suppose the draft could be written without the claim header, and it were attached afterward.',
+    contract:'Suppose the claimHeader API were withdrawn from the published set.',
+    rule:'Suppose each read now records a charge, so a repeat is no longer harmless.'
+   }
+  },
+  because:{
+   need:'A synchronous call earns its cost only when the caller needs the answer to finish. With no such need, nobody should hold work open for it.',
+   contract:'The caller could still reach the operation, but only by depending on the provider\'s internals, which can change without notice.',
+   rule:'After a timeout the caller cannot tell whether to repeat the call. A timeout means the caller stopped waiting, not that the provider did nothing.'
+  },
+  ordinal:{need:'first',contract:'second',rule:'third'},
+  tail:'Nothing else about the flow changed. One condition decided it.',
+  restored:'Restored. Both flows pass all three conditions again.'
+ }
+};
+
+/* The six flows. key.viable is the keyed verdict; key.cond or key.rule is the keyed second field. */
+const FLOWS=[
+ {id:'FLW-01',title:'Provisions and endorsements in force on the loss date',
+  facts:[
+   'Direction: the assistant reads from the policy master. Kind: query. When: at draft time.',
+   'Published: the policyInquiry and endorsementList APIs, both read-only. The draft cannot be written without the provisions. A read does not change the policy master.'
+  ],
+  key:{viable:true,rule:'retry'},
+  ok:'Correct. Synchronous is viable. The draft needs the answer, published read-only APIs cover the operation, and a repeat of a read is safe, so a missing response has a rule.'},
+ {id:'FLW-02',title:'Claim header',
+  facts:[
+   'Direction: the assistant reads from the claims master. Kind: query. When: at draft time.',
+   'Published: the claimHeader API, read-only. The draft cannot be written without the header. A read does not change the claims master.'
+  ],
+  key:{viable:true,rule:'retry'},
+  ok:'Correct. Synchronous is viable. The draft needs the answer, a published read-only API covers the operation, and a repeat of a read is safe, so a missing response has a rule.'},
+ {id:'FLW-03',title:'Claim-received notice',
+  facts:[
+   'Direction: the claims master tells the assistant that a claim has arrived, on the CLAIMS.EVENT.OUT queue. A queue holds a message until its receiver takes it. Kind: notification.',
+   'The claims master sends the notice and carries on with its own work. It waits for no reply.'
+  ],
+  key:{viable:false,cond:'need'},
+  ok:'Correct. Not viable on the first condition. The claims master needs no answer to finish, so nobody is waiting, and a synchronous call would put a wait where none is needed.'},
+ {id:'FLW-04',title:'Adjuster-approved determination',
+  facts:[
+   'Direction: the assistant sends an approved determination to the claims master. Kind: command. The claims master accepts writes only through its existing transactions, one of which reads the CLAIMS.EVENT.IN queue.',
+   'In a synchronous version, the assistant would hold the approval open until the claims master confirmed it. No published API covers this write.'
+  ],
+  key:{viable:false,cond:'contract'},
+  nearBy:{
+   need:'Not viable is right. In a synchronous version the assistant would wait for the confirmation, so the first condition holds. Test the next one.',
+   rule:'Not viable is right. A write with no way to recognize a repeat also lacks a safe rule for a missing response. That is a real problem, but it comes third. Taking the conditions in order, the first failure is earlier.'
+  },
+  ok:'Correct. Not viable on the second condition. The assistant would wait for a confirmation, but no published contract covers a write, so a synchronous call would reach into the claims master\'s internals. The lack of a safe rule for a missing response is a further problem, and it comes after this one.'},
+ {id:'FLW-05',title:'Nightly policy snapshot',
+  facts:[
+   'Direction: the policy tables POLMAST and ENDMAST are copied to the lakehouse. Kind: bulk transfer. When: in the batch window, the overnight hours reserved for bulk jobs, 22:00 to 02:00 US Central.',
+   'No process waits for the copy while it runs.'
+  ],
+  key:{viable:false,cond:'need'},
+  ok:'Correct. Not viable on the first condition. Nobody waits on an overnight copy, so there is no caller that needs an answer to finish its own work.'},
+ {id:'FLW-06',title:'Coverage wordings for citation',
+  facts:[
+   'Direction: the assistant retrieves coverage wordings from the rules repository through a retrieval index. Kind: evidence retrieval.',
+   'The draft cannot cite a provision without the wording. The repository is a collection of documents. No operation over it has been published.'
+  ],
+  key:{viable:false,cond:'contract'},
+  nearBy:{
+   need:'Not viable is right. The draft cannot cite without the wording, so the first condition holds. Test the next one.'
+  },
+  ok:'Correct. Not viable on the second condition. The draft needs the wording, but the repository is a set of documents and no published contract covers it.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function sel(id,opts){const s=h('select',{id:id});opts.forEach(function(o){s.appendChild(option(o[0],o[1]));});return s;}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#rule').appendChild(h('p',{text:COPY.rule}));
+$('#flowNote').textContent=COPY.flowNote;
+$('#secondIntro').textContent=COPY.second.intro;
+
+/* Cards */
+FLOWS.forEach(function(f){
+  const card=h('article',{class:'card',id:'card-'+f.id});
+  card.appendChild(h('div',{class:'stephead'},[h('span',{class:'stepid',text:f.id}),h('span',{class:'stepact',text:f.title})]));
+  const fx=h('div',{class:'facts'});
+  f.facts.forEach(function(t){fx.appendChild(h('p',{text:t}));});
+  card.appendChild(fx);
+  const grid=h('div',{class:'pair'});
+  grid.appendChild(h('div',{class:'field span2'},[h('label',{for:'v-'+f.id,text:'Your verdict'}),sel('v-'+f.id,COPY.verdicts)]));
+  grid.appendChild(h('div',{class:'field'},[h('label',{for:'c-'+f.id,text:'If not viable: the first condition that fails'}),sel('c-'+f.id,COPY.conds)]));
+  grid.appendChild(h('div',{class:'field'},[h('label',{for:'r-'+f.id,text:'If viable: the rule for a missing response'}),sel('r-'+f.id,COPY.rules)]));
+  card.appendChild(grid);
+  card.appendChild(h('div',{class:'fb',id:'fb-'+f.id,role:'status','aria-live':'polite'}));
+  $('#flows').appendChild(card);
+  $('#c-'+f.id).disabled=true;
+  $('#r-'+f.id).disabled=true;
+  $('#v-'+f.id).addEventListener('change',function(){
+    const v=$('#v-'+f.id).value;
+    $('#c-'+f.id).disabled=(v!=='not');
+    $('#r-'+f.id).disabled=(v!=='viable');
+    if(v!=='not')$('#c-'+f.id).value='';
+    if(v!=='viable')$('#r-'+f.id).value='';
+    clearFb(f.id);
+  });
+});
+function clearFb(id){
+  const b=$('#fb-'+id);b.className='fb';b.textContent='';
+  $('#card-'+id).className='card';
+}
+function showFb(f,res){
+  const box=$('#fb-'+f.id);
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  $('#card-'+f.id).className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Key: verdict first, then the second field. Three feedback states. */
+function flowState(f){
+  const v=$('#v-'+f.id).value;
+  if(!v)return {s:'idle',m:COPY.msg.idle};
+  const cond=$('#c-'+f.id).value,rule=$('#r-'+f.id).value;
+  if(v==='viable'){
+    if(!f.key.viable)return {s:'bad',m:COPY.msg.badViable};
+    if(!rule)return {s:'idle',m:COPY.msg.idle};
+    if(rule!==f.key.rule)return {s:'near',m:COPY.msg.nearRule};
+    return {s:'ok',m:f.ok};
+  }
+  if(f.key.viable)return {s:'bad',m:COPY.msg.badNot};
+  if(!cond)return {s:'idle',m:COPY.msg.idle};
+  if(cond!==f.key.cond){
+    const tailored=f.nearBy&&f.nearBy[cond];
+    return {s:'near',m:tailored||COPY.msg.nearCondGeneric};
+  }
+  return {s:'ok',m:f.ok};
+}
+
+function lockAll(state){
+  FLOWS.forEach(function(f){
+    $('#v-'+f.id).disabled=state;
+    if(state){$('#c-'+f.id).disabled=true;$('#r-'+f.id).disabled=true;}
+  });
+}
+
+function summaryAll(){
+  const total=FLOWS.length;
+  const viable=FLOWS.filter(function(f){return f.key.viable;}).length;
+  const need=FLOWS.filter(function(f){return !f.key.viable&&f.key.cond==='need';}).length;
+  const contract=FLOWS.filter(function(f){return !f.key.viable&&f.key.cond==='contract';}).length;
+  return `Every verdict holds. ${fmt(viable)} of the ${fmt(total)} flows can be synchronous. ${fmt(need)} fail on need and ${fmt(contract)} fail on contract. The two kinds of failure are not alike. In one, nobody is waiting. In the other, someone waits on an operation that nobody has published.`;
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  FLOWS.forEach(function(f){
+    const r=flowState(f);
+    showFb(f,r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    lockAll(true);
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    $('#summary').textContent=summaryAll();
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: switch one condition off for a flow that passed all three */
+COPY.second.flowPick.forEach(function(o){$('#wf').appendChild(option(o[0],o[1]));});
+COPY.second.condPick.forEach(function(o){$('#wc').appendChild(option(o[0],o[1]));});
+function renderVariant(){
+  const fl=$('#wf').value,cd=$('#wc').value;
+  const box=$('#variant');
+  if(!fl||!cd){box.hidden=true;$('#variantText').textContent='';return;}
+  const flow=FLOWS.filter(function(f){return f.id===fl;})[0];
+  const text=COPY.second.whatIf[fl][cd]+' '+
+    `${fl} is no longer viable as a synchronous call. It fails the ${COPY.second.ordinal[cd]} condition, ${cd}. `+
+    COPY.second.because[cd]+' '+COPY.second.tail;
+  $('#variantText').textContent=text;
+  box.hidden=false;
+}
+$('#wf').addEventListener('change',renderVariant);
+$('#wc').addEventListener('change',renderVariant);
+$('#restore').addEventListener('click',function(){
+  $('#wf').value='';$('#wc').value='';
+  $('#variant').hidden=false;
+  $('#variantText').textContent=COPY.second.restored;
+  $('#wf').focus();
+});
+})();
+</script>
+</body>
+</html>

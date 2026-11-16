@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidence what each component commits the client to</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--rule:#73777D;--soft:#f3effe;--accent:#8A40FC;--accent-deep:#5a24b5;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5a24b5}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:920px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.chead{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.4rem}
+.cid{font-size:.8rem;font-weight:700;color:var(--accent-deep);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.ctitle{font-size:1.02rem;font-weight:600}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin:.3rem 0 .7rem}
+.facts div{font-size:.93rem}
+.facts .k{display:block;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.commit{margin:.1rem 0 .6rem;font-size:.95rem}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--rule);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--rule)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+.lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair,.facts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Evidence what each component commits the client to</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Three statuses</h2>
+<dl id="defs"></dl>
+<p id="method"></p>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Six commitments</h2>
+<p class="hint" id="workNote"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my statuses</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Remove the observation</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vcard" class="card" hidden>
+<span class="lab">Illustrative observation: not part of the case record</span>
+<div class="chead"><span class="cid">K6</span><span class="ctitle">Regional availability and capacity</span></div>
+<p class="commit" id="vtext"></p>
+<div class="field"><label for="vst">Status</label><select id="vst"></select></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check this status</button></div>
+<div class="fb" id="vfb" role="status" aria-live="polite"></div>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A drafting assistant built on watsonx.ai and watsonx.data commits the Sample Enterprise to particular work: identities, regions, plans and recovery duties. Each card below pairs what product documentation describes with a fact about the client's own setting. For each commitment, choose its status and the client role that owns it.`,
+ defs:[
+  ['Evidenced','Documented behavior and an observation in the client\'s own setting agree. Documentation alone is never enough.'],
+  ['Conditional','The question is open. A named observation would settle it. Unproven is not the same as failed.'],
+  ['Fails a gate','The client\'s own facts already show a breach of a requirement that cannot be traded away.']
+ ],
+ method:'Product documentation describes behavior for a given offering, plan, region and date. Every product statement below is carried as of the date shown, and must be rechecked at approval.',
+ workNote:'Choose a status and an owner for every card, then check. Nothing is timed.',
+ statuses:[['evidenced','Evidenced'],['conditional','Conditional'],['fails','Fails a gate']],
+ owners:[
+  ['plat','AI platform owner'],
+  ['sre','Site reliability engineer, platform operations'],
+  ['iam','Identity and access lead'],
+  ['arch','Enterprise architect'],
+  ['dir','Claims operations director (sponsor)'],
+  ['prov','The platform provider'],
+  ['eng','You, the engineer']
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a status and an owner.',
+  docOnly:'Documentation describes behavior for some plan, region and date. It becomes evidence for this client only when an observation in the client\'s own setting matches it. Ask which observation would settle the question, and whether anyone has made it.',
+  unproven:'Unproven is not the same as failed. An option fails a gate only on evidence of a breach. Ask whether the client\'s facts show a breach, or only an open question.',
+  shown:'Here the client\'s own fact already settles the question. Ask what remains to be observed before the breach is certain.',
+  nearOwner:'The status is right. The owner is out of place: ',
+  ownEng:'you leave when the engagement ends, so the commitment needs a client role.',
+  ownProv:'the provider is not the client. Find the client role that answers for this work.',
+  ownWrong:'that role\'s work does not cover this commitment. Find the role that would carry it after go-live.'
+ },
+ summary:{
+  idle:'Choose a status and an owner for every card, then check again.',
+  some:'Some cards need another look. Read the notes on the marked cards and check again.',
+  all:'Every status holds. Nothing is evidenced on documentation alone, five commitments are conditional with a settling observation named, and one fails a gate on the client\'s own facts.'
+ },
+ second:{
+  intro:'Suppose one settling observation now arrives. Nothing else about the case changes.',
+  swap:'Add a written confirmation of European availability and capacity',
+  restoreNote:'Removed. With no observation, regional feasibility is conditional again.',
+  text:'Written confirmation from the provider, dated at commitment, that the selected deployment form is offered in the European region, eue-01, with capacity available for the client\'s committed start.',
+  mark:'dated at commitment',
+  idle:'Choose a status for the regional commitment now.',
+  ok:'Documentation and an observation in the client\'s own region now agree, so the commitment is evidenced as of the confirmation\'s date. It is perishable: the regional terms are rechecked at approval. The other five cards do not move, because the observation settles only this question.',
+  cond:'The observation named on the card has now been made, in the client\'s own region. Ask what is still open.',
+  fail:'The confirmation shows availability, not a breach.'
+ }
+};
+
+/* The cards. st is the keyed status; owners is the accepted set. */
+const K=[
+ {id:'K1',title:'Regional endpoint, token method and API version',
+  doc:'watsonx.ai documentation, accessed 23 September 2026, describes regional endpoints, a token method for workload identities, and versioned APIs.',
+  est:'The deployment has no public egress and reaches the estate over a dedicated private link. The client runs two regions: use-01 for North America and eue-01 for Europe.',
+  commit:'A supported regional endpoint, an approved workload identity and a pinned API version in each region the assistant serves.',
+  st:'conditional',owners:['plat'],
+  settle:'one authenticated request from a non-production account in each region.',
+  why:'No request has been made from the client\'s setting, so the commitment is conditional. The AI platform owner holds what runs on the platform.'},
+ {id:'K2',title:'Access roles for people and the service identity',
+  doc:'watsonx.ai and watsonx.data documentation, accessed 23 September 2026, describes roles and access policies for users, groups and service identities.',
+  est:'The subsidiary\'s staff sign in through the subsidiary\'s own directory, not the corporate identity provider. Federating it requires an entitlement review with a lead time of six weeks.',
+  commit:'Least-privilege access for adjusters, reviewers and the assistant\'s service identity, issued through the identity store the subsidiary actually uses.',
+  st:'conditional',owners:['iam'],
+  settle:'one user, one group and one service identity tested against each product\'s effective policies, after the entitlement review.',
+  why:'The roles are documented, but the identities they would bind to sit in a directory the platform has not been tested against, behind a six-week review. The identity and access lead owns it.'},
+ {id:'K3',title:'Division of duties in the lakehouse',
+  doc:'watsonx.data documentation, dated 2 September 2025 to 23 September 2026, describes which duties the provider holds and which the client holds in each deployment form.',
+  est:'The lakehouse is standing up for this engagement, has no established ingestion schedule, and its deployment form has not yet been named.',
+  commit:'The client\'s share of lakehouse operations, which depends on the deployment form chosen.',
+  st:'conditional',owners:['plat','arch'],
+  settle:'current responsibility documentation for the exact offering, once its deployment form is named.',
+  why:'The duty split depends on a deployment form nobody has named. Until it is, the client\'s share of the work cannot be read off the documentation.'},
+ {id:'K4',title:'Production plan',
+  doc:'watsonx.data documentation, accessed 23 September 2026, describes a Lite plan limited to evaluation.',
+  est:'The draft rollout plan reuses the evaluation instance from the pilot, whose plan identifier reads Lite, for production.',
+  commit:'A supported production plan for the instance that will run on real claims.',
+  st:'fails',owners:['plat'],
+  settle:'none needed: the plan identifier already shows the breach.',
+  why:'A production option requires a supported production plan, and the documentation limits Lite to evaluation. The client\'s own record shows the reliance, so the option as drafted fails the gate. The AI platform owner holds the plan.'},
+ {id:'K5',title:'Backup and restore',
+  doc:'watsonx.data documentation on high availability and recovery, dated 29 October 2025, describes provider backup of managed metadata and states that restoring external storage components remains with the client.',
+  est:'Claim records must be retained for seven years. Nobody has yet restored managed metadata or an external dependency against that requirement.',
+  commit:'Restoring the external storage the lakehouse depends on, to the client\'s recovery requirement.',
+  st:'conditional',owners:['sre'],
+  settle:'a restore of managed metadata and one external dependency, validated against the recovery requirement.',
+  why:'The documentation leaves external-storage restore with the client, so the duty goes to a client role, the site reliability engineer for platform operations. Recovery stays conditional until a restore is validated.'},
+ {id:'K6',title:'Regional availability and capacity',
+  doc:'watsonx.data documentation, accessed 23 September 2026, lists the European region among those offered for the selected deployment form.',
+  est:'European policyholder data must be processed in the European region. The pilot ran only in use-01, North America. No capacity check or provider confirmation exists for eue-01.',
+  commit:'Processing European claims in eue-01, with capacity available when the client commits.',
+  st:'conditional',owners:['plat'],
+  settle:'a capacity-confirming provision check or written confirmation from the provider, made at commitment.',
+  why:'A region listed in documentation is not capacity confirmed for this client, and the pilot ran elsewhere. Regional feasibility holds only for the region and capacity confirmed at commitment.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function listSelect(id,items,ph){
+  const s=h('select',{id:id});
+  s.appendChild(option('',ph));
+  items.forEach(function(x){s.appendChild(option(x[0],x[1]));});
+  return s;
+}
+function fact(k,v){return h('div',null,[h('span',{class:'k',text:k}),v]);}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#method').textContent=COPY.method;
+$('#workNote').textContent=COPY.workNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+K.forEach(function(k){
+  const card=h('article',{class:'card',id:'card-'+k.id});
+  card.appendChild(h('div',{class:'chead'},[h('span',{class:'cid',text:k.id}),h('span',{class:'ctitle',text:k.title})]));
+  card.appendChild(h('div',{class:'facts'},[fact('What the documentation describes',k.doc),fact(`The client's setting`,k.est)]));
+  card.appendChild(h('p',{class:'commit'},[h('strong',{text:'What it commits the client to: '}),k.commit]));
+  card.appendChild(h('div',{class:'pair'},[
+    h('div',{class:'field'},[h('label',{for:'st-'+k.id,text:'Status'}),listSelect('st-'+k.id,COPY.statuses,'Choose a status')]),
+    h('div',{class:'field'},[h('label',{for:'ow-'+k.id,text:'Client owner'}),listSelect('ow-'+k.id,COPY.owners,'Choose an owner')])
+  ]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+k.id,role:'status','aria-live':'polite'}));
+  $('#cards').appendChild(card);
+});
+$('#vst').appendChild(option('','Choose a status'));
+COPY.statuses.forEach(function(x){$('#vst').appendChild(option(x[0],x[1]));});
+
+/* Keys */
+function cardState(st,ow,k){
+  if(!st||!ow)return {s:'idle',m:COPY.msg.idle};
+  const stOk=st===k.st, owOk=k.owners.indexOf(ow)>-1;
+  if(stOk&&owOk)return {s:'ok',m:k.why+' Settling observation: '+k.settle};
+  if(stOk){
+    const why=ow==='eng'?COPY.msg.ownEng:(ow==='prov'?COPY.msg.ownProv:COPY.msg.ownWrong);
+    return {s:'near',m:COPY.msg.nearOwner+why};
+  }
+  if(st==='evidenced')return {s:'bad',m:COPY.msg.docOnly};
+  if(st==='fails')return {s:'bad',m:COPY.msg.unproven};
+  return {s:'bad',m:COPY.msg.shown};
+}
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  K.forEach(function(k){
+    const r=cardState($('#st-'+k.id).value,$('#ow-'+k.id).value,k);
+    showFb($('#fb-'+k.id),$('#card-'+k.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    K.forEach(function(k){$('#st-'+k.id).disabled=true;$('#ow-'+k.id).disabled=true;});
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: one settling observation arrives */
+function setVariantText(){
+  const p=$('#vtext');
+  p.textContent='';
+  const t=COPY.second.text, m=COPY.second.mark, i=t.indexOf(m);
+  p.appendChild(document.createTextNode(t.slice(0,i)));
+  p.appendChild(h('mark',{text:m}));
+  p.appendChild(document.createTextNode(t.slice(i+m.length)));
+}
+$('#swap').addEventListener('click',function(){
+  setVariantText();
+  $('#restoreNote').textContent='';
+  $('#vst').value='';
+  $('#vst').disabled=false;
+  $('#vcheck').disabled=false;
+  $('#vfb').className='fb';
+  $('#vfb').textContent='';
+  $('#vcard').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#vst').focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  const sel=$('#vst').value;
+  let r;
+  if(!sel)r={s:'idle',m:COPY.second.idle};
+  else if(sel==='evidenced')r={s:'ok',m:COPY.second.ok};
+  else if(sel==='conditional')r={s:'bad',m:COPY.second.cond};
+  else r={s:'bad',m:COPY.second.fail};
+  showFb($('#vfb'),null,r);
+  if(r.s==='ok'){$('#vst').disabled=true;$('#vcheck').disabled=true;}
+});
+$('#restore').addEventListener('click',function(){
+  $('#vcard').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

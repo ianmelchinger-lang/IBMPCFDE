@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Translate the identity at each boundary</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1d2024;--muted:#73777D;--line:#d3d5d8;--soft:#f0f1f2;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--focus:#4b1aa8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:920px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.dhead{display:flex;flex-wrap:wrap;gap:.3rem .6rem;align-items:baseline;margin-bottom:.2rem}
+.did{font-size:.8rem;font-weight:700;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.dtitle{font-size:1.02rem;font-weight:600}
+.flow{color:var(--muted);font-size:.88rem}
+.ddesc{margin:.1rem 0 .6rem;font-size:.95rem}
+.ddesc .k{font-weight:700}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.93rem;padding:.45rem .5rem;border:1px solid #8d9196;border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--ink);opacity:.8}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:#8d9196}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.remits li{margin:.35rem 0}
+.radios label{display:flex;gap:.55rem;align-items:flex-start;padding:.3rem 0;font-weight:400;font-size:1rem}
+.radios input{margin-top:.35rem;width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+fieldset.radios{border:1px solid var(--line);border-radius:10px;background:#fff;margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.live{border-left:4px solid var(--accent);background:var(--accent-soft);color:var(--ink);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.live p{margin:.25rem 0}
+table{border-collapse:collapse;width:100%;margin:.5rem 0;font-size:.93rem}
+th,td{border:1px solid #9a8fc4;padding:.35rem .5rem;text-align:left;vertical-align:top}
+td.n,th.n{text-align:right}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.trio{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Translate the identity at each boundary</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Six terms</h2>
+<dl id="terms"></dl>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">What the register records</h2>
+<ul id="facts"></ul>
+<h3 id="remit-h"></h3>
+<ul class="remits" id="remits"></ul>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Translate the four boundaries</h2>
+<p class="hint" id="workNote"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check the boundaries</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="resolve" class="panel" hidden aria-labelledby="h-res">
+<h2 id="h-res" style="margin-top:0">Resolve the untranslated boundary</h2>
+<p id="resolveNote"></p>
+<div class="trio" style="grid-template-columns:1fr 1fr">
+<div class="field"><label for="adj">Adjustment</label><select id="adj"></select></div>
+<div class="field"><label for="appr">Who approves it</label><select id="appr"></select></div>
+</div>
+<div class="bar"><button type="button" class="btn" id="rcheck">Check my resolution</button></div>
+<div class="fb" id="rfb" role="status" aria-live="polite"></div>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<fieldset class="radios">
+<legend id="evLegend"></legend>
+<label><input type="radio" name="design" value="split" checked><span id="splitLabel"></span></label>
+<label><input type="radio" name="design" value="one"><span id="oneLabel"></span></label>
+</fieldset>
+<div class="live" id="liveBox" role="status" aria-live="polite"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A boundary is a point where a request enters a system that keeps its own registry of identities and its own rules for access. A design fits the estate's identity arrangement only when every boundary states how the caller's identity crosses it and what the receiver checks. Follow one request through four boundaries and state both.`,
+ terms:[
+  ['Authentication','Establishing who the caller is, against a registry the receiver trusts.'],
+  ['Authorization object','The thing the receiver checks to decide what an identity may do, such as a role or a group.'],
+  ['Propagated','The caller\'s own identity continues across the boundary and the receiver recognizes it.'],
+  ['Mapped','The receiver associates the identity it was shown with an identity in its own registry.'],
+  ['Substituted','A service acts downstream under its own identity and carries the human caller\'s identifier as an attribute, so actions can still be attributed.'],
+  ['Effective identity','The identity the receiver actually authorizes, whatever the caller presented. On the mainframe, a user and its groups sit in the security interface called SAF.']
+ ],
+ facts:[
+  `The AI platform's user sign-in trusts the corporate identity provider only. The ${fmt(186)} adjusters hold accounts in the subsidiary directory, a separate identity store kept since the acquisition. Linking the two directories, called federation, needs an entitlement review with a ${fmt(6)}-week lead time that nobody has scheduled.`,
+  `The pilot's four reviewers held temporary corporate accounts, issued by exception.`,
+  `The API layer over the systems of record maps the signed token of the service identity svc-claims-assist to a SAF user, CLMASST. CLMASST belongs to the read group GCLMRO and to no other group.`,
+  `The API layer maps the signed token of svc-claims-submit to the SAF user CLMSUBM, a member of the application group GCLMAPP. This identity submits approved determinations only.`,
+  `Under the rule of use, the assistant drafts and the adjuster of record decides. The submitted message carries the adjuster's identifier.`,
+  `The identity under which the API layer runs the CICS transactions POLI and CLMI has not been observed.`
+ ],
+ remitHead:'Who holds what',
+ roles:[
+  ['iam','Identity and access lead','Holds the identity registries and approves how identities are trusted, mapped or federated.'],
+  ['int','Integration engineer, systems of record','Owns the API layer and the mainframe side of a mapping, together with the identity lead.'],
+  ['plat','AI platform owner','Owns what runs on the platform.'],
+  ['dir','Claims operations director (sponsor)','Owns the outcome and the go-live decision.'],
+  ['eng','You, the engineer','Recommends the design. Does not approve it.']
+ ],
+ workNote:'Choose three things for each boundary: how the identity crosses, the identity the receiver ends up authorizing, and what the receiver checks. Then check. Nothing is timed.',
+ modes:[['m_prop','Propagated'],['m_map','Mapped'],['m_sub','Substituted, with attribution'],['m_none','No translation exists today'],['m_unobs','Not yet observed']],
+ effs:[['e_adjdir','The adjuster, as a subsidiary directory account'],['e_svcassist','svc-claims-assist'],['e_clmasst','CLMASST (SAF user)'],['e_svcsubmit','svc-claims-submit'],['e_clmsubm','CLMSUBM (SAF user)'],['e_app','The application'],['e_test','A privileged test account'],['e_none','No identity the receiver can authorize'],['e_unobs','Not yet observed']],
+ azs:[['a_trust','Platform sign-in trust: corporate identity provider only'],['a_gro','SAF group GCLMRO (read)'],['a_gapp','SAF group GCLMAPP (application)'],['a_cics','CICS transaction authority'],['a_net','The private link: callers on it are trusted'],['a_unobs','Not yet observed']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose all three for this boundary.',
+  first:'First move: write who presents, then ask which registry the receiver trusts. Whatever that registry does not hold needs a mapping or a substitute, or it does not cross.',
+  nearHead:'The structure is right. ',
+  elem:{mode:'The way the identity crosses is out of place.',eff:'The effective identity is out of place. It is what the receiver authorizes, not what the caller presented.',az:'What the receiver checks is out of place.'}
+ },
+ trap:{
+  e_app:'No boundary records "the application" as an identity. A receiver authorizes an identity in its own registry, so name the service identity or the user it maps to.',
+  e_test:'A privileged test account shows that account\'s access and nothing more. Production runs under the identities it will actually use.',
+  a_net:'Access is decided for each request. A private link supplies a route. It does not say who may do what.',
+  m_prop_B1:'Propagation needs the receiver to trust the caller\'s own registry. The platform trusts the corporate provider only.',
+  m_prop_B4:'The register has not observed this hop, so it cannot be written as propagated. One representative transaction would show the identity CICS sees.',
+  m_sub_B1:'Substitution is an adjustment you can choose below. This boundary, as it stands today, has no translation.',
+  m_map_B1:'A mapping needs an account in a registry the platform trusts. The adjusters hold none there, so nothing can be mapped yet.',
+  a_gapp_B2:'GCLMAPP would let the read identity write. Each service holds only the group its function needs.',
+  e_adjdir_B1:'That is what the adjuster presents. The platform does not authorize it, so the effective identity is none the platform recognizes.'
+ },
+ summary:{
+  idle:'Choose all three for every boundary, then check again.',
+  some:'Some boundaries need another look. Read the notes on the marked boundaries, change your choices and check again.',
+  all:'All four boundaries hold. Exactly one has no translation today, and one is recorded as not yet observed rather than assumed.'
+ },
+ resolveNote:'The boundary with no translation today needs an adjustment, and someone with authority has to approve it. Choose the adjustment and the approver.',
+ adjs:[
+  ['sub','Substitution with attribution: the front end authenticates the adjuster against the subsidiary directory, and the assistant acts downstream as svc-claims-assist, carrying the adjuster\'s identifier'],
+  ['fed','Federation: wait for the entitlement review, and record its date as a dependency'],
+  ['exc','Exception accounts for all 186 adjusters'],
+  ['shr','One shared adjuster account']
+ ],
+ adjFb:{
+  sub:{s:'ok',m:'Accepted. The adjuster still authenticates against the directory that holds the account. The service identity acts downstream, and the carried identifier keeps each action attributable. Substitution adds an edge, from the front end to the subsidiary directory, so that edge needs its own path and identity.'},
+  fed:{s:'ok',m:'Accepted. Federation lets the adjuster\'s own identity cross. The cost is time: the review has a six-week lead time and its date becomes a dependency of go-live.'},
+  exc:{s:'bad',m:'This scales the pilot\'s workaround to every adjuster and bypasses the review that the exception stood in for. First move: ask what the exception accounts were doing for the four reviewers, and whether the review has been done.'},
+  shr:{s:'bad',m:'Nobody\'s actions can be attributed to a person. The rule of use needs the adjuster of record to be identifiable. First move: ask which identifier would let the receiver say who acted.'}
+ },
+ apprFb:{
+  iam:{s:'ok',m:'The identity and access lead holds the registries and approves how identities are trusted. You recommend. The lead approves.'},
+  int:{s:'near',m:'The integration engineer co-owns the mainframe side of a mapping, which makes this role close. The approval of how an identity is trusted sits with the identity and access lead.'},
+  plat:{s:'near',m:'The platform owner answers for what runs on the platform. That is a different decision from how the registries trust an identity.'},
+  dir:{s:'bad',m:'The sponsor decides which design to take and when. The sponsor does not approve how a registry trusts an identity. First move: ask who holds the registry the receiver trusts.'},
+  eng:{s:'bad',m:'You recommend the design. Recording yourself as the approver removes the separation between the person who proposes and the person who answers. First move: ask who holds the registry.'}
+ },
+ rIdle:'Choose an adjustment and an approver.',
+ second:{
+  intro:'Hold the boundaries above fixed and move one fact: how many service identities the design uses. Nothing here is checked. Watch what the read paths may now do.',
+  legend:'The design uses',
+  split:'two service identities, one for reading and one for submitting',
+  one:'one service identity, holding both groups, for every flow'
+ }
+};
+
+/* Keys. Each boundary has a keyed mode, effective identity and authorization object. */
+const BD=[
+ {id:'B1',flow:'FLW-07',title:'The adjuster signs in to the platform',who:'The adjuster presents a credential from the subsidiary directory.',recv:'The AI platform',
+  key:{mode:'m_none',eff:'e_none',az:'a_trust'},
+  why:'The platform trusts the corporate identity provider only, and the adjusters hold accounts in the subsidiary directory. No translation exists. The pilot worked because four reviewers held corporate accounts issued by exception.'},
+ {id:'B2',flow:'FLW-01 and FLW-02',title:'The platform reads policy and claim data through the API layer',who:'The platform presents the signed token of svc-claims-assist.',recv:'The API layer over the systems of record',
+  key:{mode:'m_map',eff:'e_clmasst',az:'a_gro'},
+  why:'The API layer maps the service identity to the SAF user CLMASST, which belongs to GCLMRO only. The receiver authorizes CLMASST, and the read group is what it checks.'},
+ {id:'B3',flow:'FLW-04',title:'The platform submits the approved determination',who:'The platform presents the signed token of svc-claims-submit. The message carries the adjuster of record\'s identifier.',recv:'The API layer over the systems of record',
+  key:{mode:'m_map',eff:'e_clmsubm',az:'a_gapp'},
+  why:'A separate service identity is mapped to CLMSUBM in the application group, used for submission only. The adjuster\'s identifier travels in the message, so the action stays attributable to the adjuster of record.'},
+ {id:'B4',flow:'Inside the systems of record',title:'The API layer runs the CICS transactions POLI and CLMI',who:'The API layer calls the CICS region CICSPR1 for the request.',recv:'The CICS region',
+  key:{mode:'m_unobs',eff:'e_unobs',az:'a_unobs'},
+  why:'The register records this identity as not yet observed. It is written as unverified until one representative transaction shows the identity CICS sees. It is not written as propagated.'}
+];
+const FLOWS=[{id:'FLW-01',name:'Read policy data',needs:'read'},{id:'FLW-02',name:'Read claim data',needs:'read'},{id:'FLW-04',name:'Submit approved determination',needs:'write'}];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function sel(id,ph,list){const s=h('select',{id:id});s.appendChild(option('',ph));list.forEach(function(x){s.appendChild(option(x[0],x[1]));});return s;}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+COPY.facts.forEach(function(t){$('#facts').appendChild(h('li',{text:t}));});
+$('#remit-h').textContent=COPY.remitHead;
+COPY.roles.forEach(function(r){$('#remits').appendChild(h('li',null,[h('strong',{text:r[1]+'. '}),r[2]]));});
+$('#workNote').textContent=COPY.workNote;
+$('#resolveNote').textContent=COPY.resolveNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#evLegend').textContent=COPY.second.legend;
+$('#splitLabel').textContent=COPY.second.split;
+$('#oneLabel').textContent=COPY.second.one;
+
+BD.forEach(function(b){
+  const card=h('article',{class:'card',id:'card-'+b.id});
+  card.appendChild(h('div',{class:'dhead'},[h('span',{class:'did',text:b.id}),h('span',{class:'dtitle',text:b.title}),h('span',{class:'flow',text:b.flow})]));
+  card.appendChild(h('p',{class:'ddesc'},[h('span',{class:'k',text:'Presents: '}),b.who+' ',h('span',{class:'k',text:'Receiver: '}),b.recv+'.']));
+  card.appendChild(h('div',{class:'trio'},[
+   h('div',{class:'field'},[h('label',{for:'mode-'+b.id,text:'How the identity crosses'}),sel('mode-'+b.id,'Choose',COPY.modes)]),
+   h('div',{class:'field'},[h('label',{for:'eff-'+b.id,text:'Effective identity'}),sel('eff-'+b.id,'Choose',COPY.effs)]),
+   h('div',{class:'field'},[h('label',{for:'az-'+b.id,text:'What the receiver checks'}),sel('az-'+b.id,'Choose',COPY.azs)])
+  ]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+b.id,role:'status','aria-live':'polite'}));
+  $('#cards').appendChild(card);
+});
+$('#adj').appendChild(option('','Choose an adjustment'));
+COPY.adjs.forEach(function(a){$('#adj').appendChild(option(a[0],a[1]));});
+$('#appr').appendChild(option('','Choose an approver'));
+COPY.roles.forEach(function(r){$('#appr').appendChild(option(r[0],r[1]));});
+
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* The boundary key. Three elements; one wrong is near, two or more is wrong. */
+function boundaryState(b,pick){
+  if(!pick.mode||!pick.eff||!pick.az)return {s:'idle',m:COPY.msg.idle};
+  const wrong=[];
+  ['mode','eff','az'].forEach(function(k){if(pick[k]!==b.key[k])wrong.push(k);});
+  if(!wrong.length)return {s:'ok',m:b.why};
+  let note='';
+  [pick.eff,pick.az,pick.mode+'_'+b.id,pick.mode,pick.eff+'_'+b.id,pick.az+'_'+b.id].forEach(function(t){
+    if(!note&&COPY.trap[t])note=' '+COPY.trap[t];
+  });
+  if(wrong.length===1)return {s:'near',m:COPY.msg.nearHead+COPY.msg.elem[wrong[0]]+note};
+  return {s:'bad',m:COPY.msg.first+note};
+}
+function readPick(id){return {mode:$('#mode-'+id).value,eff:$('#eff-'+id).value,az:$('#az-'+id).value};}
+
+let resolved=false;
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  BD.forEach(function(b){
+    const r=boundaryState(b,readPick(b.id));
+    showFb($('#fb-'+b.id),$('#card-'+b.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    BD.forEach(function(b){['mode','eff','az'].forEach(function(k){$('#'+k+'-'+b.id).disabled=true;});});
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#resolve').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+$('#rcheck').addEventListener('click',function(){
+  const a=$('#adj').value,p=$('#appr').value;
+  const box=$('#rfb');
+  if(!a||!p){showFb(box,null,{s:'idle',m:COPY.rIdle});return;}
+  const fa=COPY.adjFb[a],fp=COPY.apprFb[p];
+  box.className='fb '+(fa.s==='ok'&&fp.s==='ok'?'ok':(fa.s==='bad'||fp.s==='bad'?'bad':'near'));
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[box.className.split(' ')[1]]}));
+  box.appendChild(h('span',{text:'Adjustment. '+fa.m}));
+  box.appendChild(h('br'));
+  box.appendChild(h('span',{text:'Approver. '+fp.m}));
+  if(fa.s==='ok'&&fp.s==='ok'){
+    $('#adj').disabled=true;$('#appr').disabled=true;$('#rcheck').hidden=true;
+    $('#second').hidden=false;
+    renderLive();
+  }
+});
+
+/* Second pass: the same flows with one assumption moved */
+function groupsFor(design,flow){
+  if(design==='one')return ['GCLMRO','GCLMAPP'];
+  return flow.needs==='write'?['GCLMAPP']:['GCLMRO'];
+}
+function renderLive(){
+  const design=document.querySelector('input[name=design]:checked').value;
+  const box=$('#liveBox');
+  box.textContent='';
+  const tbl=h('table');
+  tbl.appendChild(h('tr',null,[h('th',{text:'Flow'}),h('th',{text:'Effective identity'}),h('th',{text:'Groups held'}),h('th',{text:'Can it write?'})]));
+  let writers=0;
+  FLOWS.forEach(function(f){
+    const g=groupsFor(design,f);
+    const canWrite=g.indexOf('GCLMAPP')>-1;
+    if(canWrite)writers++;
+    const ident=design==='one'?'CLMASST':(f.needs==='write'?'CLMSUBM':'CLMASST');
+    tbl.appendChild(h('tr',null,[h('td',{text:f.id+' '+f.name}),h('td',{text:ident}),h('td',{text:g.join(' and ')}),h('td',{text:canWrite?'Yes':'No'})]));
+  });
+  box.appendChild(tbl);
+  box.appendChild(h('p',null,[h('strong',{text:'Flows that can write: '}),fmt(writers)+' of '+fmt(FLOWS.length)+'.']));
+  box.appendChild(h('p',{text:design==='one'
+    ? 'Every flow now holds the application group. A read path that misbehaves can write, and an audit cannot say which function acted. The design is simpler to describe and fails least privilege.'
+    : 'Only the submit path holds the application group. A read path cannot write, and each identity maps to one function an auditor can name.'}));
+}
+document.querySelectorAll('input[name=design]').forEach(function(r){r.addEventListener('change',renderLive);});
+})();
+</script>
+</body>
+</html>

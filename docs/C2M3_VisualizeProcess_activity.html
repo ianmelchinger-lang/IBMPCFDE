@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the fit from problem to signal</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1d2024;--muted:#73777D;--line:#d3d5d8;--soft:#f0f1f2;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--focus:#4b1aa8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:#8d9196}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.pcard.ok{border-left:5px solid var(--ok)}
+.pcard.near{border-left:5px solid var(--near)}
+.pcard.bad{border-left:5px solid var(--bad)}
+.pcard .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.pcard .ptitle{font-weight:600}
+.pcard .pdesc{color:var(--muted);font-size:.93rem}
+.pcard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.pcard .fb{grid-column:1 / -1;margin-top:.2rem}
+li.divider{margin:14px 0;padding:6px 0;text-align:center;font-weight:700;color:var(--accent);border-top:3px solid var(--accent);border-bottom:1px dashed var(--accent);letter-spacing:.04em;text-transform:uppercase;font-size:.85rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:16px 0}
+.live{border-left:4px solid var(--accent);background:var(--accent-soft);color:var(--ink);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.live p{margin:.25rem 0}
+.live ol{margin:.4rem 0 .6rem;padding-left:1.4rem}
+.live li{margin:.2rem 0}
+.live li.again{font-weight:700}
+.lab{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pcard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Process assembly</p>
+<h1>Assemble the fit from problem to signal</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-problem">
+<h2 id="h-problem">The problem</h2>
+<fieldset id="problem"><legend id="problemLegend"></legend></fieldset>
+<div class="fb" id="fb-problem" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-path">
+<h2 id="h-path">The path</h2>
+<p id="pathNote"></p>
+<ol class="path" id="path"></ol>
+<div class="fb" id="fb-path" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-signal">
+<h2 id="h-signal">The signal</h2>
+<fieldset id="signal"><legend id="signalLegend"></legend></fieldset>
+<div class="fb" id="fb-signal" role="status" aria-live="polite"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my assembly</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<fieldset id="secondOpts"><legend id="secondLegend"></legend></fieldset>
+<div class="live" id="liveBox" role="status" aria-live="polite"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A design fits the estate when, for every flow, the constraint that sets its design has been found, adjusted for or escalated, and recorded with an authority behind it. Assemble the path that produces that record: choose the sentence that states the problem, put the moves in the order they must run, and choose the signal that shows the work succeeded.`,
+ terms:[
+  ['Binding constraint','A condition backed by a documented authority, with its scope and the consequence of breaking it.'],
+  ['Governing constraint','Among the binding constraints on one flow, the one that sets that flow\'s design.'],
+  ['Escalate','Hand a conflict to the owner of the earlier decision instead of resolving it quietly inside this work.']
+ ],
+ problemLegend:'Which sentence states the problem in operational terms?',
+ problem:[
+  {id:'pa',text:'One owner has the facts wrong, so the design needs another round of sign-off.',
+   whyNot:'Each confirmation is accurate for the constraint its owner can see. Nothing here says an owner is mistaken.'},
+  {id:'pb',ok:true,text:'Every owner has confirmed a nominal value under average conditions, and nobody has asked which constraint governs each flow, or in which period. A design that passes the checklist can still fail on the morning the first European adjuster signs in, or on the first day of a close.',
+   okMsg:'The problem is a question nobody asked, for every flow and every period. That is what the fit work supplies.'},
+  {id:'pc',text:'The sponsor wants the assistant in every region, so the design should go on the earliest release train.',
+   whyNot:'That is the sponsor\'s request and a date. It names no obstacle, and a date follows from the slowest chain.'},
+  {id:'pd',text:'The pilot ran on exception accounts, so the pilot should be rerun with real adjusters.',
+   whyNot:'A rerun is one possible repair for one flow. The problem is the question nobody asked of every flow.'}
+ ],
+ problemFirst:'First move: look for the sentence that says what was never asked and why that lets a failure through, rather than a cause, a request or a repair.',
+ pathNote:'Eleven cards, one list. The eight above the line are the work of fitting the design to the estate, in the order it must run. The three below the line belong to other work. Use the buttons to move a card up or down.',
+ handoff:'Outside the fit work',
+ signalLegend:'Which signal shows the fit work succeeded?',
+ signal:[
+  {id:'sa',text:'Every owner has signed that the design fits.',
+   whyNot:'Those sign-offs are what the checklist already collected. Each tests its own constraint and none tests which one governs.'},
+  {id:'sb',ok:true,text:'Every flow names its governing constraint, or none, with its adjustment or escalation, and every edge carries an authority and an evidence status.',
+   okMsg:'The signal can be checked on the day the work ends: each flow has a named constraint or an explicit none, and each edge says who stands behind it and how well it is known.'},
+  {id:'sc',text:'The design passed a run in the client\'s test environment.',
+   whyNot:'A path can work in testing under a privileged account. Passing there does not show what production will accept.'},
+  {id:'sd',text:'A go-live date is on the steering committee\'s agenda.',
+   whyNot:'A date follows from the slowest chain. Having one does not show that any flow\'s governing constraint was found.'}
+ ],
+ signalFirst:'First move: ask what you could check on the day this work ends. A signal shows that the work did its job, not that someone has agreed to it.',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ moves:[
+  {id:'m1',title:'Freeze pattern and scope',desc:'Name the pattern each flow keeps and what would force a return to the pattern decision.',
+   why:'Holds. Fitting a pattern that is still moving is not fitting, so it comes first.'},
+  {id:'m2',title:'Name constraint authorities',desc:'Give every constraint an owner, and keep the engineer\'s recommendation apart from approval.',
+   why:'Holds. A constraint without an authority is not binding, and only binding constraints can govern.'},
+  {id:'m3',title:'Translate identity',desc:'Set the mode, the effective identity and the authorization object at each boundary.',
+   why:'Holds. An identity mechanism such as substitution through a front end can add an edge, so it comes before paths.'},
+  {id:'m4',title:'Permit paths and placements',desc:'Give every edge and every resting copy a status.',
+   why:'Holds. Capacity is computed per edge and per region, and placement fixes both.'},
+  {id:'m5',title:'Find the governing capacity limit',desc:'Compute headroom and worst-case demand, retries included, for each period.',
+   why:'Holds. It works on the edges and regions the placement fixed, and it produces changes for the calendar.'},
+  {id:'m6',title:'Fit windows and cadence',desc:'Place each required change on its owner\'s calendar and find the earliest date.',
+   why:'Holds. It schedules the changes the three moves before it produce.'},
+  {id:'m7',title:'Name the governing constraint per flow',desc:'For each flow, name the constraint that sets its design, then adjust within the pattern or escalate.',
+   why:'Holds. A window can govern a flow as readily as a rate, so it needs all four results. An adjustment that alters an edge sends the work back to placement.'},
+  {id:'m8',title:'Package the integration map',desc:'Record what is fixed, observed, assumed or open, with an authority and an evidence status on every edge.',
+   why:'Holds. The map is packaged last, once each flow has its governing constraint.'}
+ ],
+ distractors:[
+  {id:'d1',title:'Reselect a pattern',desc:'Replace a flow\'s chosen pattern with another one.',
+   below:'Holds. A fit check that finds a pattern failing in one period escalates to the pattern decision. It does not switch patterns.',
+   above:'Out of place. A fit check that finds a pattern failing in one period escalates to the pattern decision. Switching quietly changes a decision this work does not own.'},
+  {id:'d2',title:'Allocate a rate budget',desc:'Divide a shared limit among the consumers that use it.',
+   below:'Holds. The fit work finds the governing limit and records it. Dividing the limit is a separate allocation.',
+   above:'Out of place. The fit work finds the governing limit and records it. Dividing it among consumers is a separate allocation with its own owner.'},
+  {id:'d3',title:'Assemble the solution design',desc:'Bring the finished pieces of the design together in one document.',
+   below:'Holds. Assembly follows once the integration map is packaged, because it needs the finished map.',
+   above:'Out of place. Assembly brings finished pieces together. The integration map is one of them, so it cannot be assembled before the map exists.'}
+ ],
+ belongsAbove:'Out of place. This move belongs inside the fit work, above the line.',
+ deps:[
+  {before:'m1',after:'m2',why:'Fitting a pattern that is still moving is not fitting, so freeze the pattern first.'},
+  {before:'m2',after:'m3',why:'A constraint without an authority is not binding, and only binding constraints can govern. Name the authorities first.'},
+  {before:'m2',after:'m4',why:'A constraint without an authority is not binding, and only binding constraints can govern. Name the authorities first.'},
+  {before:'m2',after:'m5',why:'A constraint without an authority is not binding, and only binding constraints can govern. Name the authorities first.'},
+  {before:'m2',after:'m6',why:'A constraint without an authority is not binding, and only binding constraints can govern. Name the authorities first.'},
+  {before:'m3',after:'m4',why:'An identity mechanism such as substitution through a front end can add an edge, so settle identity before permitting paths.'},
+  {before:'m4',after:'m5',why:'Capacity is computed per edge and per region, and placement fixes both.'},
+  {before:'m3',after:'m6',why:'The calendar schedules the changes the identity, placement and capacity moves produce, so those come first.'},
+  {before:'m4',after:'m6',why:'The calendar schedules the changes the identity, placement and capacity moves produce, so those come first.'},
+  {before:'m5',after:'m6',why:'The calendar schedules the changes the identity, placement and capacity moves produce, so those come first.'},
+  {before:'m3',after:'m7',why:'A window can govern a flow as readily as a rate, so naming the governing constraint needs all four results.'},
+  {before:'m4',after:'m7',why:'A window can govern a flow as readily as a rate, so naming the governing constraint needs all four results.'},
+  {before:'m5',after:'m7',why:'A window can govern a flow as readily as a rate, so naming the governing constraint needs all four results.'},
+  {before:'m6',after:'m7',why:'A window can govern a flow as readily as a rate, so naming the governing constraint needs all four results.'},
+  {before:'m7',after:'m8',why:'The map is packaged once each flow has its governing constraint.'}
+ ],
+ pathSet:'Some cards sit on the wrong side of the line. Read the notes on the marked cards.',
+ pathOrder:'The right eight sit above the line and the other work sits below it. The order inside the path is out of place on the marked cards.',
+ pathOk:'The path holds, in the order the moves depend on one another.',
+ summary:{
+  idle:'Choose a problem and a signal, then check again.',
+  some:'Part of the assembly needs another look. Read the notes on each part and check again.',
+  all:'The problem, the path and the signal all hold. Each move closes before the one that depends on it opens.'
+ },
+ second:{
+  intro:'Hold the order fixed and move one assumption: what the adjustment on one flow turns out to change. Nothing here is checked.',
+  legend:'The adjustment for one flow turns out to change',
+  label:'Consequence of the order, not part of the assembly',
+  opts:[
+   {id:'none',text:'nothing outside the flow itself',from:null},
+   {id:'edge',text:'an edge, for example a front end that carries a substituted identity',from:'m4'},
+   {id:'demand',text:'the demand or retry assumptions behind a limit',from:'m5'},
+   {id:'date',text:'only a date, for example a split change',from:'m6'}
+  ],
+  none:'No move runs again, and the packaged map stands.',
+  some:function(k,total){return fmt(k)+' of '+fmt(total)+' moves run again. Every move that depends on a changed result runs again, and the moves before it stand.';}
+ },
+ initial:['m5','d2','m1','m8','m3','m6','m2','d1','m7','m4','d3'],
+ aboveCount:8
+};
+
+const MOVES={};COPY.moves.forEach(function(m){MOVES[m.id]=m;});
+COPY.distractors.forEach(function(m){MOVES[m.id]=m;});
+function isDistractor(id){return id.charAt(0)==='d';}
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let order=COPY.initial.slice();
+let flags={};   /* path feedback keyed by card id, cleared whenever the order changes */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#problemLegend').textContent=COPY.problemLegend;
+$('#signalLegend').textContent=COPY.signalLegend;
+$('#pathNote').textContent=COPY.pathNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#secondLegend').textContent=COPY.second.legend;
+
+function radios(host,name,items){
+  items.forEach(function(o){
+    const inp=h('input',{type:'radio',name:name,value:o.id});
+    inp.addEventListener('change',function(){$('#fb-'+name).className='fb';$('#fb-'+name).textContent='';});
+    host.appendChild(h('label',{class:'opt'},[inp,h('span',{text:o.text})]));
+  });
+}
+radios($('#problem'),'problem',COPY.problem);
+radios($('#signal'),'signal',COPY.signal);
+
+/* The path */
+function renderPath(focusSpec){
+  const ol=$('#path');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    if(i===COPY.aboveCount){
+      ol.appendChild(h('li',{class:'divider','aria-hidden':'true',text:COPY.handoff}));
+    }
+    const m=MOVES[id];
+    const f=flags[id];
+    const card=h('li',{class:'pcard'+(f?' '+f.s:''),'data-id':id});
+    const zone=(i<COPY.aboveCount)?('Position '+fmt(i+1)+' in the path'):'Outside the fit work';
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:zone}),h('br'),
+      h('span',{class:'ptitle',text:m.title}),h('br'),
+      h('span',{class:'pdesc',text:m.desc})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: '+m.title,text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: '+m.title,text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function move(id,dir){
+  const i=order.indexOf(id), j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  $('#fb-path').className='fb';$('#fb-path').textContent='';
+  renderPath(id+':'+(dir<0?'up':'down'));
+  const pos=order.indexOf(id);
+  $('#live').textContent=pos<COPY.aboveCount?(MOVES[id].title+' is now at position '+fmt(pos+1)+' in the path.'):(MOVES[id].title+' is now outside the fit work.');
+}
+
+/* Keys */
+function setFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m));
+}
+function checkChoice(name,items,first){
+  const sel=document.querySelector('input[name='+name+']:checked');
+  if(!sel)return {s:'idle',m:'Choose one.'};
+  const o=items.filter(function(x){return x.id===sel.value;})[0];
+  if(o.ok)return {s:'ok',m:o.okMsg};
+  return {s:'bad',m:o.whyNot+' '+first};
+}
+function evalPath(ord){
+  const above=ord.slice(0,COPY.aboveCount);
+  const below=ord.slice(COPY.aboveCount);
+  const f={};
+  let setErr=false,orderErr=false;
+  above.forEach(function(id){if(isDistractor(id)){f[id]={s:'bad',m:MOVES[id].above};setErr=true;}});
+  below.forEach(function(id){if(!isDistractor(id)){f[id]={s:'bad',m:COPY.belongsAbove};setErr=true;}});
+  const pos={};above.forEach(function(id,i){pos[id]=i;});
+  COPY.deps.forEach(function(d){
+    if(pos[d.before]!==undefined&&pos[d.after]!==undefined&&pos[d.before]>pos[d.after]){
+      if(!f[d.after])f[d.after]={s:'near',m:'Out of place. '+d.why};
+      orderErr=true;
+    }
+  });
+  let res;
+  if(setErr)res={s:'bad',m:COPY.pathSet};
+  else if(orderErr)res={s:'near',m:COPY.pathOrder};
+  else{
+    res={s:'ok',m:COPY.pathOk};
+    above.forEach(function(id){f[id]={s:'ok',m:MOVES[id].why};});
+    below.forEach(function(id){f[id]={s:'ok',m:MOVES[id].below};});
+  }
+  return {res:res,flags:f};
+}
+function checkPath(){
+  const r=evalPath(order);
+  flags=r.flags;
+  renderPath(null);
+  setFb($('#fb-path'),r.res);
+  return r.res.s;
+}
+
+/* Second pass: the dependency pairs decide what runs again. */
+function reopened(startId){
+  const out={};out[startId]=true;
+  let grew=true;
+  while(grew){
+    grew=false;
+    COPY.deps.forEach(function(d){
+      if(out[d.before]&&!out[d.after]){out[d.after]=true;grew=true;}
+    });
+  }
+  return out;
+}
+function renderLive(){
+  const sel=document.querySelector('input[name=assume]:checked');
+  const opt=COPY.second.opts.filter(function(o){return o.id===sel.value;})[0];
+  const again=opt.from?reopened(opt.from):{};
+  const box=$('#liveBox');
+  box.textContent='';
+  box.appendChild(h('span',{class:'lab',text:COPY.second.label}));
+  const ol=h('ol');
+  let k=0;
+  COPY.moves.forEach(function(m){
+    const runs=!!again[m.id];
+    if(runs)k++;
+    ol.appendChild(h('li',{class:runs?'again':'',text:(runs?'Runs again: ':'Stands: ')+m.title}));
+  });
+  box.appendChild(ol);
+  box.appendChild(h('p',{text:opt.from?COPY.second.some(k,COPY.moves.length):COPY.second.none}));
+}
+COPY.second.opts.forEach(function(o,i){
+  const inp=h('input',{type:'radio',name:'assume',value:o.id});
+  if(i===0)inp.checked=true;
+  inp.addEventListener('change',renderLive);
+  $('#secondOpts').appendChild(h('label',{class:'opt'},[inp,h('span',{text:o.text})]));
+});
+
+$('#check').addEventListener('click',function(){
+  const p=checkChoice('problem',COPY.problem,COPY.problemFirst);
+  setFb($('#fb-problem'),p);
+  const pathState=checkPath();
+  const s=checkChoice('signal',COPY.signal,COPY.signalFirst);
+  setFb($('#fb-signal'),s);
+  const allOk=(p.s==='ok'&&pathState==='ok'&&s.s==='ok');
+  const anyIdle=(p.s==='idle'||s.s==='idle');
+  $('#summary').textContent=allOk?COPY.summary.all:(anyIdle?COPY.summary.idle:COPY.summary.some);
+  if(allOk){$('#second').hidden=false;renderLive();}
+});
+
+renderPath(null);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the path from requirements to options</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--rule:#73777D;--soft:#f3effe;--accent:#8A40FC;--accent-deep:#5a24b5;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5a24b5}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--rule)}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.pcard.ok{border-left:5px solid var(--ok)}
+.pcard.near{border-left:5px solid var(--near)}
+.pcard.bad{border-left:5px solid var(--bad)}
+.pcard .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.pcard .ptitle{font-weight:600}
+.pcard .pdesc{color:var(--muted);font-size:.93rem}
+.pcard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.pcard .fb{grid-column:1 / -1;margin-top:.2rem}
+li.divider{margin:14px 0;padding:6px 0;text-align:center;font-weight:700;color:var(--accent-deep);border-top:3px solid var(--accent);border-bottom:1px dashed var(--accent);letter-spacing:.04em;text-transform:uppercase;font-size:.85rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pcard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Process assembly</p>
+<h1>Assemble the path from requirements to options</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-problem">
+<h2 id="h-problem">The problem</h2>
+<fieldset id="problem"><legend id="problemLegend"></legend></fieldset>
+<div class="fb" id="fb-problem" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-path">
+<h2 id="h-path">The path</h2>
+<p id="pathNote"></p>
+<ol class="path" id="path"></ol>
+<div class="fb" id="fb-path" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-signal">
+<h2 id="h-signal">The signal</h2>
+<fieldset id="signal"><legend id="signalLegend"></legend></fieldset>
+<div class="fb" id="fb-signal" role="status" aria-live="polite"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my assembly</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<fieldset id="reopen"><legend id="reopenLegend"></legend></fieldset>
+<div class="bar"><button type="button" class="btn" id="rcheck">Check where it reopens</button></div>
+<div class="fb" id="fb-reopen" role="status" aria-live="polite"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`The options section of a solution design says what was compared, on what rules, and why each option was kept or lost. Assemble the path that produces one for the Sample Enterprise: choose the sentence that states the problem, put the moves in the order they must run, and choose the signal that shows the work succeeded.`,
+ terms:[
+  ['Gate','A pass/fail test no strength elsewhere can offset.'],
+  ['Disposition','What happened to an option: viable, conditional, deferred or rejected, with one decisive reason.'],
+  ['Reopen condition','The change that would make a closed option worth considering again.']
+ ],
+ problemLegend:'Which sentence states the problem in operational terms?',
+ problem:[
+  {id:'pa',text:'The pilot worked, so the platform should be confirmed this month.',
+   whyNot:`That is the sponsor's request. It names a goal and no obstacle.`},
+  {id:'pb',ok:true,text:`The requirements are written, but the steering pack ranks only versions of the pilot's approach, on a total that can hide a broken requirement, and nothing records why any option would lose.`,
+   okMsg:'The problem is a comparison that cannot be defended: the wrong set, the wrong arithmetic and no record. That is what this work supplies.'},
+  {id:'pc',text:`Cycle time stands at ${fmt(9.4,1)} days against a promise of ${fmt(5,1)}.`,
+   whyNot:'That is the business gap the work serves. It does not say what stops a sound choice of solution.'},
+  {id:'pd',text:`The AI platform owner's capability list is incomplete.`,
+   whyNot:'A fuller feature list is one input. It would still be scored on totals, against versions of one approach.'}
+ ],
+ problemFirst:'First move: look for the sentence that says what is wrong with the comparison itself, rather than a request, a business gap or a missing input.',
+ pathNote:'Nine cards, one list. The seven above the line are the work of comparing options, in the order it must run. The two below the line follow the handoff to design. Use the buttons to move a card up or down.',
+ handoff:'Handoff to design',
+ signalLegend:'Which signal shows the work succeeded?',
+ signal:[
+  {id:'sa',text:'The steering meeting confirms the platform.',
+   whyNot:'A confirmation can happen on a weak comparison. It shows a decision was made, not that it can be defended.'},
+  {id:'sb',ok:true,text:'Another engineer can reconstruct, from the record alone, why each option was kept, held conditional or rejected, and what would reopen it.',
+   okMsg:'The signal can be checked on the day the work ends, by someone who was not in the room.'},
+  {id:'sc',text:'The preferred option has the highest total.',
+   whyNot:'A total at one value of an uncertain input says nothing about whether the order holds, or whether a gate was averaged away.'},
+  {id:'sd',text:'The AI review board approves the assistant.',
+   whyNot:'Approval comes later and tests the use, not the comparison of options.'}
+ ],
+ signalFirst:'First move: ask what you could check on the day this work ends. A signal shows that this work did its job, not that a later step did.',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ moves:[
+  {id:'m1',title:'Frame the boundary',desc:'List the requirements in scope, the exclusions, and who holds authority for weights, platform, governance and architecture.',
+   why:'Holds. Every rule after it traces to a requirement in scope.'},
+  {id:'m2',title:'Set the decision rules',desc:'Mark each requirement a gate or a weighted criterion, with its measure and threshold. Return any without a threshold.',
+   why:'Holds. Rules trace only to requirements in scope, so the boundary comes first.'},
+  {id:'m3',title:'Generate materially different options',desc:'Describe each by operating concept and commitment, merge variants, and include the status quo and a non-AI approach.',
+   why:'Holds. The rules are fixed before the candidates are visible, so they cannot be fitted to a favorite.'},
+  {id:'m4',title:'Evidence the commitments',desc:'For each component, record what it commits the client to, its owner, a dated source and its status.',
+   why:'Holds. A commitment belongs to a defined option.'},
+  {id:'m5',title:'Compare on common rules',desc:'Apply the gates first, then score only the options that pass, with any benefit netted.',
+   why:'Holds. A gate cannot test a commitment whose status is unknown.'},
+  {id:'m6',title:'Test the stability of the order',desc:'Move each uncertain input across its credible range and see whether the order changes.',
+   why:'Holds. Sensitivity varies a ranking that already exists.'},
+  {id:'m7',title:'Record the dispositions',desc:'Give each option a disposition, decisive reason, evidence, owner, date and reopen condition.',
+   why:'Holds. Whether an option is conditional or rejected depends on how stable its position is.'}
+ ],
+ distractors:[
+  {id:'d1',title:'Choose the integration patterns',desc:'Decide how the preferred design connects to the systems of record.'},
+  {id:'d2',title:'Assemble the solution design',desc:'Write the components and data flows around the preferred option.'}
+ ],
+ distractorOk:'Holds. This is design work. It follows the handoff because it builds on the option the record keeps.',
+ premature:'Out of place. This is design work, and it needs an option the comparison has kept. Placed inside the path, it designs before the choice exists.',
+ belongsAbove:'Out of place. This move belongs inside the comparison, above the handoff.',
+ deps:[
+  {before:'m1',after:'m2',why:'Rules trace only to requirements in scope, so frame the boundary first.'},
+  {before:'m2',after:'m3',why:'Criteria written after the candidates are visible tend to fit the favorite, so fix the rules first.'},
+  {before:'m3',after:'m4',why:'A commitment belongs to a defined option, so generate the options first.'},
+  {before:'m4',after:'m5',why:'A gate cannot test a commitment whose status is unknown, so evidence the commitments first.'},
+  {before:'m5',after:'m6',why:'Sensitivity varies an existing ranking, so compare first.'},
+  {before:'m6',after:'m7',why:'Conditional against rejected depends on whether the order is stable, so test stability first.'}
+ ],
+ pathSet:'Some cards sit on the wrong side of the handoff. Read the notes on the marked cards.',
+ pathOrder:'The right seven sit above the line and the design work sits below it. The order inside the path is out of place on the marked cards.',
+ pathOk:'The path holds, in the order the moves depend on one another.',
+ summary:{
+  idle:'Choose a problem and a signal, then check again.',
+  some:'Part of the assembly needs another look. Read the notes on each part and check again.',
+  all:'The problem, the path and the signal all hold. Each move closes before the one that depends on it opens.'
+ },
+ second:{
+  intro:'Every option now has its disposition. Then the decision authority revises one weight: cycle time is to count for more. Nothing else changes.',
+  legend:'From which move does the work reopen?',
+  key:'m2',
+  ok:'A weight is part of the decision rules. Every later move rests on those rules, so the work reopens at the rules and runs forward from there. The boundary is unchanged, and the record stays reconstructible because each move is redone in order.',
+  byMove:{
+   m1:'The requirements in scope have not changed, so the boundary stands. Ask which move the weight belongs to.',
+   m3:'The weight does not change which approaches exist. Ask which move the weight itself belongs to.',
+   m4:'No component commits the client to anything new. Ask which move the weight itself belongs to.',
+   m5:'Rescoring is needed, but it would start from rules nobody has re-approved. Ask which move the weight belongs to.',
+   m6:'A stability test on old rules tests the wrong ranking. Ask which move the weight belongs to.',
+   m7:'Rewriting dispositions alone keeps the scores the old weight produced. Ask which move the weight belongs to.'
+  }
+ },
+ initial:['m5','m2','d1','m7','m1','m4','m3','d2','m6'],
+ aboveCount:7
+};
+
+const MOVES={};COPY.moves.forEach(function(m){MOVES[m.id]=m;});
+COPY.distractors.forEach(function(m){MOVES[m.id]=m;});
+function isDistractor(id){return id.charAt(0)==='d';}
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let order=COPY.initial.slice();
+let flags={};   /* path feedback keyed by card id, cleared whenever the order changes */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#problemLegend').textContent=COPY.problemLegend;
+$('#signalLegend').textContent=COPY.signalLegend;
+$('#pathNote').textContent=COPY.pathNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#reopenLegend').textContent=COPY.second.legend;
+
+function radios(host,name,items){
+  items.forEach(function(o){
+    const inp=h('input',{type:'radio',name:name,value:o.id});
+    inp.addEventListener('change',function(){$('#fb-'+name).className='fb';$('#fb-'+name).textContent='';});
+    host.appendChild(h('label',{class:'opt'},[inp,h('span',{text:o.text})]));
+  });
+}
+radios($('#problem'),'problem',COPY.problem);
+radios($('#signal'),'signal',COPY.signal);
+radios($('#reopen'),'reopen',COPY.moves.map(function(m){return {id:m.id,text:m.title};}));
+
+/* The path */
+function renderPath(focusSpec){
+  const ol=$('#path');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    if(i===COPY.aboveCount){
+      ol.appendChild(h('li',{class:'divider','aria-hidden':'true',text:COPY.handoff}));
+    }
+    const m=MOVES[id];
+    const f=flags[id];
+    const card=h('li',{class:'pcard'+(f?' '+f.s:''),'data-id':id});
+    const zone=(i<COPY.aboveCount)?('Position '+fmt(i+1)+' in the path'):'After the handoff';
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:zone}),h('br'),
+      h('span',{class:'ptitle',text:m.title}),h('br'),
+      h('span',{class:'pdesc',text:m.desc})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: '+m.title,text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: '+m.title,text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function move(id,dir){
+  const i=order.indexOf(id), j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  $('#fb-path').className='fb';$('#fb-path').textContent='';
+  renderPath(id+':'+(dir<0?'up':'down'));
+  const pos=order.indexOf(id);
+  $('#live').textContent=pos<COPY.aboveCount?(MOVES[id].title+' is now at position '+fmt(pos+1)+' in the path.'):(MOVES[id].title+' is now after the handoff.');
+}
+
+/* Keys */
+function setFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m));
+}
+function checkChoice(name,items,first){
+  const sel=document.querySelector('input[name='+name+']:checked');
+  if(!sel)return {s:'idle',m:'Choose one.'};
+  const o=items.filter(function(x){return x.id===sel.value;})[0];
+  if(o.ok)return {s:'ok',m:o.okMsg};
+  return {s:'bad',m:o.whyNot+' '+first};
+}
+function checkPath(){
+  const above=order.slice(0,COPY.aboveCount);
+  const below=order.slice(COPY.aboveCount);
+  const f={};
+  let setErr=false,orderErr=false;
+  above.forEach(function(id){if(isDistractor(id)){f[id]={s:'bad',m:COPY.premature};setErr=true;}});
+  below.forEach(function(id){if(!isDistractor(id)){f[id]={s:'bad',m:COPY.belongsAbove};setErr=true;}});
+  const pos={};above.forEach(function(id,i){pos[id]=i;});
+  COPY.deps.forEach(function(d){
+    if(pos[d.before]!==undefined&&pos[d.after]!==undefined&&pos[d.before]>pos[d.after]){
+      if(!f[d.after])f[d.after]={s:'near',m:'Out of place. '+d.why};
+      orderErr=true;
+    }
+  });
+  let res;
+  if(setErr)res={s:'bad',m:COPY.pathSet};
+  else if(orderErr)res={s:'near',m:COPY.pathOrder};
+  else{
+    res={s:'ok',m:COPY.pathOk};
+    above.forEach(function(id){f[id]={s:'ok',m:MOVES[id].why};});
+    below.forEach(function(id){f[id]={s:'ok',m:COPY.distractorOk};});
+  }
+  flags=f;
+  renderPath(null);
+  setFb($('#fb-path'),res);
+  return res.s;
+}
+
+$('#check').addEventListener('click',function(){
+  const p=checkChoice('problem',COPY.problem,COPY.problemFirst);
+  setFb($('#fb-problem'),p);
+  const pathState=checkPath();
+  const s=checkChoice('signal',COPY.signal,COPY.signalFirst);
+  setFb($('#fb-signal'),s);
+  const allOk=(p.s==='ok'&&pathState==='ok'&&s.s==='ok');
+  const anyIdle=(p.s==='idle'||s.s==='idle');
+  $('#summary').textContent=allOk?COPY.summary.all:(anyIdle?COPY.summary.idle:COPY.summary.some);
+  if(allOk)$('#second').hidden=false;
+});
+
+/* Second pass: a material change after the record */
+$('#rcheck').addEventListener('click',function(){
+  const sel=document.querySelector('input[name=reopen]:checked');
+  let r;
+  if(!sel)r={s:'idle',m:'Choose one.'};
+  else if(sel.value===COPY.second.key)r={s:'ok',m:COPY.second.ok};
+  else r={s:'bad',m:COPY.second.byMove[sel.value]};
+  setFb($('#fb-reopen'),r);
+});
+
+renderPath(null);
+})();
+</script>
+</body>
+</html>

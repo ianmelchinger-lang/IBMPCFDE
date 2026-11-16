@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Place the changes on the calendar</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1d2024;--muted:#73777D;--line:#d3d5d8;--soft:#f0f1f2;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--focus:#4b1aa8}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:920px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.dhead{display:flex;flex-wrap:wrap;gap:.3rem .6rem;align-items:baseline;margin-bottom:.3rem}
+.dtitle{font-size:1.02rem;font-weight:600}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select,input[type=text]{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid #8d9196;border-radius:6px;background:#fff;color:var(--ink);width:100%;font-variant-numeric:tabular-nums}
+select:disabled,input[type=text]:disabled{background:var(--soft);color:var(--ink);opacity:.8}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:#8d9196}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+table{border-collapse:collapse;width:100%;margin:.5rem 0;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:.4rem .55rem;text-align:left;vertical-align:top}
+.live table th,.live table td{border-color:#9a8fc4}
+table.cal{table-layout:fixed;max-width:520px}
+table.cal th,table.cal td{text-align:center;padding:.25rem .1rem;font-size:.88rem}
+table.cal td.off{color:var(--muted)}
+table.cal td.close{background:var(--accent-soft);color:var(--ink)}
+table.cal td.train{outline:3px solid var(--accent);outline-offset:-3px;font-weight:700}
+table.cal td.freeze{background:var(--ink);color:#fff;font-weight:700}
+table.cal caption{text-align:left;font-weight:600;padding:.2rem 0}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1rem;font-size:.88rem;margin:.3rem 0 .6rem}
+.sw{display:inline-block;width:.9rem;height:.9rem;border:1px solid #8d9196;vertical-align:-.1rem;margin-right:.3rem}
+.sw.freeze{background:var(--ink)}
+.sw.close{background:var(--accent-soft)}
+.sw.train{outline:3px solid var(--accent);outline-offset:-3px}
+.radios label{display:flex;gap:.55rem;align-items:flex-start;padding:.3rem 0;font-weight:400;font-size:1rem}
+.radios input{margin-top:.35rem;width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+fieldset.radios{border:1px solid var(--line);border-radius:10px;background:#fff;margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.live{border-left:4px solid var(--accent);background:var(--accent-soft);color:var(--ink);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.live p{margin:.25rem 0}
+.lab{display:inline-block;font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Place the changes on the calendar</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Five terms</h2>
+<dl id="terms"></dl>
+</section>
+
+<section aria-labelledby="h-chg">
+<h2 id="h-chg">The five changes</h2>
+<table id="changes"><thead><tr><th>Change</th><th>Owner</th><th>Cadence and duration</th></tr></thead><tbody></tbody></table>
+<ul id="rules"></ul>
+<div id="calwrap"></div>
+<div class="legend" id="legend"></div>
+</section>
+
+<section aria-labelledby="h-s1">
+<h2 id="h-s1">Step 1: test each window</h2>
+<p class="hint" id="s1Note"></p>
+<div id="s1"></div>
+<div class="bar"><button type="button" class="btn" id="c1">Check the windows</button></div>
+<div class="fb" id="s1fb" role="status" aria-live="polite"></div>
+</section>
+
+<section id="s2" hidden aria-labelledby="h-s2">
+<h2 id="h-s2">Step 2: resolve the change that does not fit</h2>
+<div class="card" id="card-split">
+<div class="field"><label for="split">What do you do with the deployment?</label><select id="split"></select></div>
+<div class="fb" id="fb-split" role="status" aria-live="polite"></div>
+</div>
+<div class="bar"><button type="button" class="btn" id="c2">Check my resolution</button></div>
+</section>
+
+<section id="s3" hidden aria-labelledby="h-s3">
+<h2 id="h-s3">Step 3: find the earliest Thursday under each identity design</h2>
+<p class="hint" id="s3Note"></p>
+<div id="cards3"></div>
+<div class="bar"><button type="button" class="btn" id="c3">Check my dates</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<fieldset class="radios">
+<legend id="evLegend"></legend>
+</fieldset>
+<div class="live" id="liveBox" role="status" aria-live="polite"></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* Calendar arithmetic. All dates are UTC calendar dates, so the result never depends on the reader's time zone. */
+const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function D(y,m,d){return new Date(Date.UTC(y,m-1,d));}
+function iso(t){return t.toISOString().slice(0,10);}
+function addDays(t,n){const x=new Date(t.getTime());x.setUTCDate(x.getUTCDate()+n);return x;}
+function isBiz(t){const w=t.getUTCDay();return w!==0&&w!==6;}
+function addBD(t,n){let x=t,c=0;while(c<n){x=addDays(x,1);if(isBiz(x))c++;}return x;}
+function subBD(t,n){let x=t,c=0;while(c<n){x=addDays(x,-1);if(isBiz(x))c++;}return x;}
+function nextThuAfter(t){let x=addDays(t,1);while(x.getUTCDay()!==4)x=addDays(x,1);return x;}
+function later(a,b){return a.getTime()>=b.getTime()?a:b;}
+function lab(t){return DN[t.getUTCDay()]+' '+t.getUTCDate()+' '+MN[t.getUTCMonth()]+' '+t.getUTCFullYear();}
+
+/* Fixtures. */
+const FREEZE=D(2027,1,4);
+const TRAINS=[D(2027,1,14),D(2027,2,11),D(2027,3,11)];
+const CUTOFF_BD=5;
+const CLOSE_FROM=D(2027,1,28),CLOSE_TO=D(2027,2,3);
+const TICKET_BD=10;
+const REVIEW_WEEKS=6;
+const WINDOW_H=3.0;
+const CHG04={deploy:1.5,verify:1.0,rollback:1.0};
+const CHG03_H=1.5;
+const HALF_DARK={deploy:1.5,rollback:1.0};
+const HALF_ENABLE={verify:1.0,rollback:0.5};
+
+function rideTrain(submit){for(let i=0;i<TRAINS.length;i++){if(submit.getTime()<=subBD(TRAINS[i],CUTOFF_BD).getTime())return TRAINS[i];}return null;}
+function trainEffect(submit){const t=rideTrain(submit);return t?addDays(t,1):null;}
+function ticketDone(n){return addBD(FREEZE,n);}
+function reviewDone(){return addDays(FREEZE,REVIEW_WEEKS*7);}
+function subGoLive(n){return nextThuAfter(later(trainEffect(FREEZE),ticketDone(n)));}
+function fedGoLive(n){return nextThuAfter(later(later(trainEffect(FREEZE),ticketDone(n)),reviewDone()));}
+function inClose(t){return t.getTime()>=CLOSE_FROM.getTime()&&t.getTime()<=CLOSE_TO.getTime();}
+function branch04(){return CHG04.deploy+CHG04.verify+CHG04.rollback;}
+function half(h){return Object.keys(h).reduce(function(a,k){return a+h[k];},0);}
+const KEY={
+ b04:branch04(),
+ cutoff:subBD(TRAINS[0],CUTOFF_BD),
+ trainEff:trainEffect(FREEZE),
+ ticket:ticketDone(TICKET_BD),
+ subGo:subGoLive(TICKET_BD),
+ review:reviewDone(),
+ fedGo:fedGoLive(TICKET_BD),
+ missGo:nextThuAfter(addDays(TRAINS[1],1))
+};
+
+const COPY={
+ lead:`Every change a design needs belongs to an owner with a calendar of its own. The go-live date comes from the slowest chain of those changes, and a window that cannot hold a change's worst branch, rollback included, is not a window for that change. Test each window, then find the earliest Thursday under each identity design.`,
+ terms:[
+  ['Cadence','How often an owner can approve or release a change: a recurring train, a weekly window, a ticket queue, a review.'],
+  ['Change window','The protected period in which a change may be made. Here it is Thursday, 20:00 to 23:00 US Central, which is three hours.'],
+  ['Release train and cutoff','A recurring release that carries changes to a protected system. A change must be submitted by the cutoff to ride it. Changes on a train take effect the next day.'],
+  ['Worst branch','The longest credible path through deployment, verification and rollback. A window must hold it, not the happy path.'],
+  ['Business day','Monday to Friday. No holidays are observed in this calendar.']
+ ],
+ changes:[
+  ['CHG-01 Mappings and group grants for both service identities','Integration engineer with the identity and access lead','Rides the monthly release train'],
+  ['CHG-02 Allowlist ticket for the path from the European deployment to the API layer','Network and connectivity engineer',fmt(TICKET_BD)+' business days from submission'],
+  ['CHG-03 Log routing change','Site reliability engineer, platform operations','Thursday window. Worst branch '+fmt(CHG03_H,1)+' hours'],
+  ['CHG-04 Platform deployment in the European region','AI platform owner','Thursday window. Deploy '+fmt(CHG04.deploy,1)+' hours, verify '+fmt(CHG04.verify,1)+' hours, rollback '+fmt(CHG04.rollback,1)+' hours'],
+  ['CHG-05 Federation of the subsidiary directory with the corporate identity provider (federation design only)','Identity and access lead',fmt(REVIEW_WEEKS)+' weeks from scheduling']
+ ],
+ rules:[
+  'Design freeze falls on Monday 4 January 2027. Every submission and scheduling request is made that day.',
+  'Release trains run on Thursday 14 January, Thursday 11 February and Thursday 11 March 2027. The cutoff is five business days before a train.',
+  'The month-end close runs from 28 January to 3 February 2027.',
+  'Go-live is a Thursday window after every prerequisite is in effect.',
+  'The substitution design needs CHG-01 to CHG-04. The federation design needs all five.'
+ ],
+ legend:[['freeze','Design freeze'],['train','Release train'],['close','Month-end close']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ s1Note:'Work out the worst branch of CHG-04 in hours, then say whether each Thursday change fits its three-hour window. Nothing is timed.',
+ s1:{
+  idle:'Enter the worst branch and choose a result for both changes.',
+  nan:'Enter a number of hours.',
+  ok:'The worst branch is deployment, verification and rollback in sequence, '+fmt(branch04(),1)+' hours. That is more than the three-hour window.',
+  near:'Rollback is part of the branch. A window must hold the longest path, and that includes backing the change out.',
+  bad:'First move: add deployment, verification and rollback, then compare the total with the three-hour window.',
+  fit03:'CHG-03 has a worst branch of '+fmt(CHG03_H,1)+' hours, which the window holds.',
+  fit03bad:'Compare the worst branch with the window. CHG-03 is well inside it.',
+  fit04:'CHG-04 does not fit its window. It is the change to resolve.',
+  fit04bad:'Compare the worst branch with the window. The total is longer than three hours.'
+ },
+ splits:[
+  ['whole','Schedule the deployment whole in one Thursday window'],
+  ['split','Split it into a dark deploy and a later traffic enablement, each with its own verification and rollback'],
+  ['extend','Ask the release and change manager for a longer window'],
+  ['skip','Drop the rollback allowance, since a rollback is unlikely']
+ ],
+ splitFb:{
+  whole:{s:'bad',m:'A window shorter than the worst branch is not a usable window for that change. Scheduling it whole fails. First move: ask what the worst branch is, and whether the window holds it.'},
+  split:{s:'ok',m:'Split as follows. The dark deploy takes '+fmt(half(HALF_DARK),1)+' hours with its rollback, and the traffic enablement takes '+fmt(half(HALF_ENABLE),1)+' hours with its verification and rollback. Each fits three hours. The change stays unscheduled until a timed rehearsal of each half fits the window.'},
+  extend:{s:'bad',m:'The window belongs to its owner and is protected. Changing it is not within the design. First move: ask which part of the change can be made smaller.'},
+  skip:{s:'bad',m:'A rollback allowance exists because rollback is needed on the day it is not expected. Removing it leaves a change that cannot be backed out before the next protected period. First move: ask what a failed verification leaves you to do.'}
+ },
+ s3Note:'Choose each date from the calendar. Nothing is timed.',
+ dateIdle:'Choose every date and the change that takes effect last.',
+ lastOpts:[['c1','CHG-01 mappings, on the train'],['c2','CHG-02 allowlist ticket'],['c3','CHG-03 log routing'],['c4','CHG-04 deployment'],['c5','CHG-05 federation review']],
+ summary:{
+  idle:'Choose a date for every question and the change that takes effect last, then check again.',
+  some:'Some dates need another look. Read the notes on the marked cards, change your choices and check again.',
+  all:'Both dates hold. Substitution reaches Thursday 21 January. Federation waits for the review and reaches Thursday 18 February.'
+ },
+ second:{
+  intro:'Hold the calendar fixed and move one assumption: how long the allowlist ticket takes. Nothing here is checked. The other changes do not move.',
+  legend:'The allowlist ticket takes, from submission',
+  label:'Illustrative lead times, not part of the register',
+  opts:[[10,'10 business days, as recorded'],[15,'15 business days'],[20,'20 business days']]
+ }
+};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+function showFbBox(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+COPY.changes.forEach(function(r){$('#changes tbody').appendChild(h('tr',null,r.map(function(c){return h('td',{text:c});})));});
+COPY.rules.forEach(function(t){$('#rules').appendChild(h('li',{text:t}));});
+$('#s1Note').textContent=COPY.s1Note;
+$('#s3Note').textContent=COPY.s3Note;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#evLegend').textContent=COPY.second.legend;
+COPY.legend.forEach(function(l){$('#legend').appendChild(h('span',null,[h('span',{class:'sw '+l[0]}),l[1]]));});
+
+/* The calendar for January and February 2027, Monday first. It is a reference, not a control. */
+function buildMonth(year,month){
+  const first=D(year,month,1);
+  const t=h('table',{class:'cal'});
+  t.appendChild(h('caption',{text:MN[month-1]+' '+year}));
+  const head=h('tr');['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function(n){head.appendChild(h('th',{scope:'col',text:n}));});
+  t.appendChild(head);
+  let cur=addDays(first,-((first.getUTCDay()+6)%7));
+  for(;;){
+    const tr=h('tr');
+    for(let i=0;i<7;i++){
+      const inMonth=cur.getUTCMonth()===month-1;
+      const cls=[];
+      if(!inMonth)cls.push('off');
+      if(inMonth&&inClose(cur))cls.push('close');
+      if(inMonth&&TRAINS.some(function(x){return iso(x)===iso(cur);}))cls.push('train');
+      if(inMonth&&iso(cur)===iso(FREEZE))cls.push('freeze');
+      const td=h('td',{class:cls.join(' '),title:lab(cur),text:inMonth?String(cur.getUTCDate()):''});
+      tr.appendChild(td);
+      cur=addDays(cur,1);
+    }
+    t.appendChild(tr);
+    if(cur.getUTCMonth()!==month-1&&cur.getUTCDay()===1)break;
+  }
+  return t;
+}
+$('#calwrap').appendChild(buildMonth(2027,1));
+$('#calwrap').appendChild(buildMonth(2027,2));
+
+/* Step 1 */
+(function(){
+  const c=h('article',{class:'card',id:'card-s1'});
+  c.appendChild(h('div',{class:'pair'},[
+   h('div',{class:'field'},[h('label',{for:'b04',text:'Worst branch of CHG-04, in hours'}),h('input',{type:'text',id:'b04',inputmode:'decimal',autocomplete:'off'})]),
+   h('div',{class:'field'},[h('label',{for:'f03',text:'Does CHG-03 fit its window?'}),yn('f03')])
+  ]));
+  c.appendChild(h('div',{class:'pair',style:'margin-top:10px'},[
+   h('div',{class:'field'},[h('label',{for:'f04',text:'Does CHG-04 fit its window?'}),yn('f04')])
+  ]));
+  $('#s1').appendChild(c);
+  function yn(id){const s=h('select',{id:id});s.appendChild(option('','Choose'));s.appendChild(option('yes','Yes, it fits'));s.appendChild(option('no','No, it does not fit'));return s;}
+})();
+$('#split').appendChild(option('','Choose'));
+COPY.splits.forEach(function(s){$('#split').appendChild(option(s[0],s[1]));});
+
+function parse(v){const t=String(v).replace(/,/g,'').trim();return (t===''||isNaN(Number(t)))?NaN:Number(t);}
+function r1(x){return Math.round(x*10)/10;}
+
+$('#c1').addEventListener('click',function(){
+  const v=parse($('#b04').value);
+  const parts=[];let worst='ok',anyIdle=false;
+  function add(s,m){parts.push(m);if(s==='idle')anyIdle=true;else if(s==='bad')worst='bad';else if(s==='near'&&worst!=='bad')worst='near';}
+  if(isNaN(v))add('idle',COPY.s1.nan);
+  else if(r1(v)===r1(KEY.b04))add('ok',COPY.s1.ok);
+  else if(r1(v)===r1(CHG04.deploy+CHG04.verify)||r1(v)===r1(WINDOW_H))add('near',COPY.s1.near);
+  else add('bad',COPY.s1.bad);
+  const a=$('#f03').value,b=$('#f04').value;
+  if(!a)add('idle',COPY.s1.idle);else if(a==='yes')add('ok',COPY.s1.fit03);else add('bad',COPY.s1.fit03bad);
+  if(!b)add('idle',COPY.s1.idle);else if(b==='no')add('ok',COPY.s1.fit04);else add('bad',COPY.s1.fit04bad);
+  const state=anyIdle?'idle':worst;
+  showFbBox($('#s1fb'),$('#card-s1'),{s:state,m:state==='idle'?COPY.s1.idle:(state==='near'?'The structure is right. ':'')+parts.join(' ')});
+  if(state==='ok'){
+    ['b04','f03','f04'].forEach(function(i){$('#'+i).disabled=true;});
+    $('#c1').hidden=true;$('#s2').hidden=false;
+  }
+});
+$('#c2').addEventListener('click',function(){
+  const v=$('#split').value;
+  const box=$('#fb-split'),card=$('#card-split');
+  if(!v){showFbBox(box,card,{s:'idle',m:'Choose how to resolve the deployment.'});return;}
+  const r=COPY.splitFb[v];
+  showFbBox(box,card,r);
+  if(r.s==='ok'){$('#split').disabled=true;$('#c2').hidden=true;$('#s3').hidden=false;}
+});
+
+/* Step 3: dates under each design. Each question has a keyed date, a set of near-misses, and a first move. */
+function dateSelect(id){
+  const s=h('select',{id:id});
+  s.appendChild(option('','Choose a date'));
+  for(let t=FREEZE;t.getTime()<=D(2027,2,28).getTime();t=addDays(t,1)){s.appendChild(option(iso(t),lab(t)));}
+  return s;
+}
+function lastSelect(id){const s=h('select',{id:id});s.appendChild(option('','Choose'));COPY.lastOpts.forEach(function(o){s.appendChild(option(o[0],o[1]));});return s;}
+const MISS=KEY.missGo;
+const Q={
+ sub:[
+  {id:'sTrain',label:'When do the mappings (CHG-01) take effect?',key:KEY.trainEff,
+   ok:'Submitted on '+lab(FREEZE)+', before the cutoff of '+lab(KEY.cutoff)+', the change rides the '+lab(TRAINS[0])+' train and takes effect the next day.',
+   near:{[iso(TRAINS[0])]:'Train changes take effect the next day, not on the train day.',[iso(KEY.cutoff)]:'That is the cutoff for submission. The change rides the train and takes effect the day after the train.'},
+   miss:'The submission on '+lab(FREEZE)+' is before the cutoff of '+lab(KEY.cutoff)+'. The first train carries it.'},
+  {id:'sTicket',label:'When does the allowlist ticket (CHG-02) complete?',key:KEY.ticket,
+   ok:fmt(TICKET_BD)+' business days from '+lab(FREEZE)+' skips both weekends and lands on '+lab(KEY.ticket)+'.',
+   near:{[iso(addDays(FREEZE,TICKET_BD))]:'Count business days, not calendar days. Weekends do not count.',[iso(addBD(FREEZE,TICKET_BD-1))]:'That is nine business days. Count ten.',[iso(addBD(FREEZE,TICKET_BD+1))]:'That is eleven business days. Count ten.'},
+   miss:null},
+  {id:'sGo',label:'What is the earliest go-live under substitution?',key:KEY.subGo,thu:true,
+   ok:'The train change is in effect on '+lab(KEY.trainEff)+' and the ticket completes on '+lab(KEY.ticket)+'. The first Thursday window after both is '+lab(KEY.subGo)+'. A missed train cutoff would cost more: the next train puts go-live on '+lab(MISS)+'.',
+   near:{[iso(TRAINS[0])]:'That is the train day. The mappings take effect the next day, so this Thursday is too early.',[iso(addDays(KEY.subGo,7))]:'That Thursday is feasible but it is not the earliest, and it falls inside the month-end close.'},
+   miss:'The submission makes the first cutoff, so the first train carries it. First move: find the date every prerequisite is in effect, then the first Thursday after it.'}
+ ],
+ fed:[
+  {id:'fReview',label:'When does the federation review (CHG-05) complete?',key:KEY.review,
+   ok:fmt(REVIEW_WEEKS)+' weeks from '+lab(FREEZE)+' is '+lab(KEY.review)+'.',
+   near:{[iso(addDays(KEY.review,-7))]:'That is five weeks. Count six.',[iso(addDays(KEY.review,7))]:'That is seven weeks. Count six.'},
+   miss:null},
+  {id:'fGo',label:'What is the earliest go-live under federation?',key:KEY.fedGo,thu:true,
+   ok:'The review completes on '+lab(KEY.review)+', after every other change. The first Thursday window after it is '+lab(KEY.fedGo)+'.',
+   near:{[iso(addDays(KEY.fedGo,7))]:'That Thursday is feasible but it is not the earliest.',[iso(TRAINS[1])]:'That Thursday comes before the review completes.',[iso(KEY.subGo)]:'That is the date under substitution. Federation waits for the review.'},
+   miss:'First move: find the date every prerequisite is in effect, including the review, then the first Thursday after it.'},
+  {id:'fLast',label:'Which change takes effect last?',key:'c5',last:true,
+   ok:'The review is the slowest chain by a month, so it sets the date.',
+   near:{c2:'The ticket completes on '+lab(KEY.ticket)+', which is long before the review.'}}
+ ]
+};
+function qField(q){return h('div',{class:'field'},[h('label',{for:q.id,text:q.label}),q.last?lastSelect(q.id):dateSelect(q.id)]);}
+function addCard(id,title,list){
+  const c=h('article',{class:'card',id:'card-'+id});
+  c.appendChild(h('div',{class:'dhead'},[h('span',{class:'dtitle',text:title})]));
+  c.appendChild(h('div',{class:'pair'},list.map(qField)));
+  c.appendChild(h('div',{class:'fb',id:'fb-'+id,role:'status','aria-live':'polite'}));
+  $('#cards3').appendChild(c);
+}
+addCard('sub','Substitution design',Q.sub);
+addCard('fed','Federation design',Q.fed);
+
+function qState(q){
+  const v=$('#'+q.id).value;
+  if(!v)return {s:'idle',m:COPY.dateIdle};
+  const key=q.last?q.key:iso(q.key);
+  if(v===key)return {s:'ok',m:q.ok};
+  if(q.near[v])return {s:'near',m:q.near[v]};
+  if(q.thu&&new Date(v+'T00:00:00Z').getUTCDay()!==4)return {s:'bad',m:'Go-live is a Thursday window. First move: find the date every prerequisite is in effect, then the first Thursday after it.'};
+  if(q.miss)return {s:'bad',m:q.miss};
+  return {s:'bad',m:q.last?'First move: list when each change takes effect and pick the latest.':'First move: write the rule for this change from the register, then count from the design freeze.'};
+}
+function groupState(list){
+  const rs=list.map(qState);
+  if(rs.some(function(r){return r.s==='idle';}))return {s:'idle',m:COPY.dateIdle};
+  const bad=rs.filter(function(r){return r.s==='bad';}),near=rs.filter(function(r){return r.s==='near';});
+  if(!bad.length&&!near.length)return {s:'ok',m:rs.map(function(r){return r.m;}).join(' ')};
+  if(bad.length)return {s:'bad',m:bad.concat(near).map(function(r){return r.m;}).join(' ')};
+  return {s:'near',m:'The structure is right. '+near.map(function(r){return r.m;}).join(' ')};
+}
+$('#c3').addEventListener('click',function(){
+  const a=groupState(Q.sub),b=groupState(Q.fed);
+  showFbBox($('#fb-sub'),$('#card-sub'),a);
+  showFbBox($('#fb-fed'),$('#card-fed'),b);
+  if(a.s==='ok'&&b.s==='ok'){
+    Q.sub.concat(Q.fed).forEach(function(q){$('#'+q.id).disabled=true;});
+    $('#c3').hidden=true;
+    $('#summary').textContent=COPY.summary.all;
+    $('#second').hidden=false;
+    renderLive();
+  }else{
+    $('#summary').textContent=(a.s==='idle'||b.s==='idle')?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the same chain with the ticket lead time moved. */
+COPY.second.opts.forEach(function(o){
+  const inp=h('input',{type:'radio',name:'lead',value:String(o[0])});
+  if(o[0]===TICKET_BD)inp.checked=true;
+  $('#second fieldset').appendChild(h('label',null,[inp,h('span',{text:o[1]})]));
+});
+$('#second fieldset').className='radios';
+function renderLive(){
+  const n=Number(document.querySelector('input[name=lead]:checked').value);
+  const tr=trainEffect(FREEZE),tk=ticketDone(n);
+  const go=subGoLive(n),fed=fedGoLive(n);
+  const box=$('#liveBox');
+  box.textContent='';
+  box.appendChild(h('span',{class:'lab',text:COPY.second.label}));
+  const t=h('table');
+  t.appendChild(h('tr',null,[h('th',{text:'Milestone'}),h('th',{text:'Date'})]));
+  [['Train change takes effect',lab(tr)],['Allowlist ticket completes',lab(tk)],['Earliest go-live, substitution',lab(go)],['Earliest go-live, federation',lab(fed)]].forEach(function(r){t.appendChild(h('tr',null,[h('td',{text:r[0]}),h('td',{text:r[1]})]));});
+  box.appendChild(t);
+  box.appendChild(h('p',{text:'Go-live waits for the last prerequisite to take effect, not the first. The train change did not move.'+(inClose(go)?' The substitution date now falls inside the month-end close marked on the calendar.':'')}));
+  box.appendChild(h('p',{text:fed.getTime()===KEY.fedGo.getTime()?'The federation date did not move, because the review finishes after the ticket.':'The federation date moved with the ticket.'}));
+}
+document.querySelectorAll('input[name=lead]').forEach(function(r){r.addEventListener('change',renderLive);});
+})();
+</script>
+</body>
+</html>
