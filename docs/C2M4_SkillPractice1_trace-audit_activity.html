@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit a draft design in both directions</title>
+<style>
+:root{--bg:#f6f4fa;--panel:#ffffff;--ink:#1d1a26;--muted:#73777D;--muted-ink:#5E6268;--line:#d8d3e6;--soft:#ebe8f3;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--accent-deep:#5B1FC4;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5B1FC4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.kicker{margin:0 0 .3rem;color:var(--muted-ink);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted-ink);font-size:.92rem}
+input{accent-color:var(--accent)}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--muted);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+select:disabled{background:var(--soft);color:var(--muted-ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep);border-color:var(--accent)}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted-ink);border-color:var(--muted)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:10px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.rowhead{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.35rem}
+.rid{font-size:.8rem;font-weight:700;color:var(--accent-deep);background:var(--accent-soft);border-radius:6px;padding:.1rem .5rem}
+.rname{font-weight:600}
+.detail{margin:.15rem 0;font-size:.95rem}
+.detail .k{color:var(--muted-ink);font-weight:600}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .75rem;margin:.5rem 0 .2rem}
+.ctl label{font-weight:600;font-size:.9rem;min-width:7rem}
+.grouphint{margin:.1rem 0 .4rem}
+.facts li{margin:.35rem 0}
+#second .btn{margin:.3rem .5rem .3rem 0}
+.lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted-ink);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.ctl label{min-width:0;width:100%}.ctl select{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Audit a draft design in both directions</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Two passes and one test</h2>
+<dl id="defs"></dl>
+<p id="method"></p>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">What the case says</h2>
+<ul class="facts" id="facts"></ul>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Audit the twenty-four rows</h2>
+<p id="phaseNote" class="hint"></p>
+<div class="bar"><button type="button" class="btn secondary" id="bulk">Mark every blank row as traced</button></div>
+<div id="groups"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my marks</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the register</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" hidden>
+<p class="hint" id="vlabel"></p>
+<div id="vrows"></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check these two rows</button></div>
+<p id="vsummary" class="summary" role="status" aria-live="polite"></p>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A solution design is reviewable when every part has a reason and every requirement has a part. The draft below has an allocation table and a decision log. Audit it row by row. Mark each row as traced, or name its defect. Then choose a repair for each defect.`,
+ defs:[
+  ['Forward pass','Start from a requirement and find the part, interface or human step the design allocates it to.'],
+  ['Backward pass','Start from a component or a decision and find the requirement that needs it.'],
+  ['Enforcement point','The part where a control is applied, so that you can point at it. "The system" and "a layer" are not enforcement points.']
+ ],
+ method:'A row is traced when its link holds in the direction you walk it. A human step is a valid target when the design names the role and the task. Where the draft allocates a requirement to something, ask whether you could point at it.',
+ facts:[
+  `The funded use is the drafting assistant for North American claims. The register holds ${fmt(12)} requirements.`,
+  `The sponsor owns the register. The AI platform owner runs the platform the assistant sits on.`,
+  `The internal quality sample covers ${fmt(400)} claims each quarter, and the determination reversal rate is read from it. The claims desk supervisor runs the claims desk.`,
+  `The workload identity is svc-claims-assist. It maps to the read-only user CLMASST in the group GCLMRO.`,
+  `The assistant calls the published read APIs only to read policy and claim data.`
+ ],
+ notes:{
+  mark:'Run the forward pass on the requirements and the backward pass on the components and decisions. Most rows hold, so you can mark every blank row as traced first and then change the rows with a defect. Nothing is timed.',
+  repair:'Every mark holds. Four rows are defects. Choose a repair for each, then check.',
+  done:'The repairs hold. Nothing further is required here.'
+ },
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ groups:[
+  {id:'req',title:'Requirements: forward pass',hint:'For each requirement, read what the allocation table gives it.'},
+  {id:'cmp',title:'Components: backward pass',hint:'For each component, read the requirements it cites.'},
+  {id:'dec',title:'Decisions: backward pass',hint:'For each decision, read the reason and the alternatives it records.'}
+ ],
+ marks:{
+  req:[['traced','Traced'],['unsupported','Unsupported: no part meets it'],['noenf','No enforcement point is named']],
+  cmp:[['traced','Traced'],['untraced','Untraced: no requirement needs it']],
+  dec:[['traced','Traced'],['undefended','Undefended: no requirement chose it']]
+ },
+ flagBad:`Follow this row's link in both directions before you flag it. A row is a defect only when a link is missing.`,
+ missBad:{
+  req:'A requirement is traced only when the design allocates it to something you can point at: a part, an interface or a named human step. First move: read this row\'s allocation and ask what, exactly, would enforce the requirement.',
+  cmp:'A component is traced only when a requirement in the register asks for it. First move: find the requirement that needs this component.',
+  dec:'A decision is traced only when its reason names the requirement or constraint that chose among the options. First move: read the reason and ask what it rests on.'
+ },
+ nearUnsupported:'Something is missing in this row, which is right, but it is a different defect. The row does name an allocation. Ask whether it names something you can point at.',
+ nearNoenf:'Something is missing in this row, which is right, but it is a different defect. Ask whether the row names any allocation at all.',
+ idleMsg:'Choose a mark for this row.',
+ summaryMark:{
+  idle:'Choose a mark for every row, then check again.',
+  some:'Some marks need another look. Read the notes on the marked rows, change your choices and check again.',
+  all:'Every mark holds. Two requirements, one component and one decision lacked a link, and twenty rows had one.'
+ },
+ summaryRepair:{
+  idle:'Choose a repair for every defect, then check again.',
+  some:'Some repairs need another look. Read the notes on the marked rows, change your choices and check again.',
+  all:'Every repair holds. Each defect now has a link, a removal, or an owner for the open question.'
+ },
+ repairLabel:'Repair',
+ repairPlaceholder:'Choose a repair',
+ second:{
+  intro:'The register is not fixed. Suppose the sponsor adds one requirement. Then audit the two rows it touches.',
+  swap:'Add a claim-sorting requirement to the register',
+  label:'Illustrative: REQ-13 is not in the register. It exists only in this exercise.',
+  restoreNote:'Restored. The register holds twelve requirements again, and the claim-triage deployment has no requirement.',
+  idle:'Choose a mark for both rows, then check again.',
+  some:'One or both marks need another look. Read the notes and check again.',
+  all:'Both rows hold. The component did not change. The register did, and the trace now closes in both directions. The audit checks links, not where a link came from. A requirement the sponsor adds, with an acceptance method of its own, gives the component a reason. A requirement written to fit the component only looks like one.',
+  badReq:'The requirement is allocated to a part that exists and can meet it. Follow the link from the requirement to the part before you flag it.',
+  badCmp:'The component now cites a requirement in the register. Follow the link from the component back to the requirement before you flag it.'
+ }
+};
+
+/* Rows. key is the keyed mark. ok is the message when the mark is right. */
+const ROWS=[
+ {id:'REQ-01',kind:'req',name:'Each determination letter cites the provision relied on.',alloc:'SDC-01 drafting service, SDC-02 retrieval index, SDC-03 read adapter',key:'traced',
+  ok:'Traced. The drafting service, the retrieval index and the read adapter each cite REQ-01.'},
+ {id:'REQ-02',kind:'req',name:'The assistant drafts and the adjuster of record decides.',alloc:'SDC-01 drafting service, SDC-05 adjuster review (a human step)',key:'traced',
+  ok:'Traced. The drafting service drafts, and the adjuster review step, a named human step, decides.'},
+ {id:'REQ-03',kind:'req',name:'The claims master is written only through existing transactions.',alloc:'SDC-04 determination publisher',key:'traced',
+  ok:'Traced. The determination publisher cites REQ-03.'},
+ {id:'REQ-04',kind:'req',name:'EU policyholder data is processed in the EU region.',alloc:'The trust boundary: the pilot runs in the North American region and the EU is held open (SDD-04)',key:'traced',
+  ok:'Traced. The boundary is the allocation target. The pilot stays in the North American region, and the EU is held open.'},
+ {id:'REQ-05',kind:'req',name:'Claim records are retained for seven years.',alloc:'SYS-02 claims master and SYS-04 document store, both existing systems',key:'traced',
+  ok:'Traced. The allocation names two existing systems, the claims master and the document store.'},
+ {id:'REQ-06',kind:'req',name:`The determination reversal rate does not rise above ${fmt(3.1,1)} percent.`,alloc:'None',key:'unsupported',
+  ok:'Correct. The allocation reads None, so no part, interface or human step meets the reversal guardrail.'},
+ {id:'REQ-07',kind:'req',name:`Cycle time falls from ${fmt(9.4,1)} toward ${fmt(5,1)} calendar days.`,alloc:'SDC-01 drafting service',key:'traced',
+  ok:'Traced. The drafting service cites REQ-07.'},
+ {id:'REQ-08',kind:'req',name:`Adjuster touch time falls from ${fmt(68)} minutes, with the benefit netted for review, rework and enrichment failures.`,alloc:'SDC-08 nightly policy snapshot',key:'traced',
+  ok:'Traced. The nightly policy snapshot cites REQ-08.'},
+ {id:'REQ-09',kind:'req',name:'Citations are valid. No threshold is defined yet.',alloc:'SDC-02 retrieval index',key:'traced',
+  ok:'Traced. The retrieval index cites REQ-09.'},
+ {id:'REQ-10',kind:'req',name:'The governance record holds every required field before production.',alloc:'SDC-06 governance record',key:'traced',
+  ok:'Traced. The governance record cites REQ-10.'},
+ {id:'REQ-11',kind:'req',name:'Reads of the systems of record are attributable and read-only.',alloc:'"A security layer"',key:'noenf',
+  ok:'Correct. The allocation names "a security layer", which is not a part or a boundary you can point at. No enforcement point is named.'},
+ {id:'REQ-12',kind:'req',name:'Each approval is attributable to a named adjuster, authenticated through the subsidiary directory.',alloc:'SDC-05 adjuster review (a human step)',key:'traced',
+  ok:'Traced. The adjuster review step cites REQ-12.'},
+
+ {id:'SDC-01',kind:'cmp',name:'Drafting service',cites:'REQ-01, REQ-02, REQ-07',key:'traced',ok:'Traced. It cites REQ-01, REQ-02 and REQ-07.'},
+ {id:'SDC-02',kind:'cmp',name:'Retrieval index',cites:'REQ-01, REQ-09',key:'traced',ok:'Traced. It cites REQ-01 and REQ-09.'},
+ {id:'SDC-03',kind:'cmp',name:'Read adapter',cites:'REQ-01',key:'traced',ok:'Traced. It cites REQ-01.'},
+ {id:'SDC-04',kind:'cmp',name:'Determination publisher',cites:'REQ-03',key:'traced',ok:'Traced. It cites REQ-03.'},
+ {id:'SDC-05',kind:'cmp',name:'Adjuster review (a human step)',cites:'REQ-02, REQ-12',key:'traced',ok:'Traced. It cites REQ-02 and REQ-12.'},
+ {id:'SDC-06',kind:'cmp',name:'Governance record',cites:'REQ-10',key:'traced',ok:'Traced. It cites REQ-10.'},
+ {id:'SDC-07',kind:'cmp',name:'Claim-triage deployment',cites:'None',key:'untraced',
+  ok:'Correct. It cites no requirement, and the funded use covers drafting, not triage.'},
+ {id:'SDC-08',kind:'cmp',name:'Nightly policy snapshot',cites:'REQ-08',key:'traced',ok:'Traced. It cites REQ-08.'},
+
+ {id:'SDD-01',kind:'dec',name:'Approved determinations go by message.',reason:'REQ-03. The claims master has no published contract for a write. Rejected: a write API and a batch.',key:'traced',
+  ok:'Traced. It cites REQ-03 and records the two alternatives it rejected.'},
+ {id:'SDD-02',kind:'dec',name:'Policy reads are synchronous at draft time.',reason:'The pattern rejection record, constraint (b). Rejected: a lakehouse snapshot, constraint (e), up to a day stale.',key:'traced',
+  ok:'Traced. It cites the pattern rejection record for this flow and the alternative it rejected.'},
+ {id:'SDD-03',kind:'dec',name:'The retrieval index sits in the lakehouse.',reason:'"The team already runs it." No rejected alternatives are recorded.',key:'undefended',
+  ok:'Correct. The reason is familiarity, and no alternative is recorded. No requirement chose among the placements.'},
+ {id:'SDD-04',kind:'dec',name:'The pilot runs in the North American region.',reason:'REQ-04 and the data residency rule.',key:'traced',
+  ok:'Traced. It cites REQ-04 and the data residency rule.'}
+];
+
+/* Repairs for the four defects. t is the class of the option: ok, near or bad. */
+const REPAIRS={
+ 'REQ-06':{
+  label:'Repair for REQ-06',
+  opts:[
+   {id:'a',t:'bad',text:'Allocate it to "the system"',m:'"The system" names no part. First move: name the thing you could point at to show the requirement is met.'},
+   {id:'b',t:'near',text:'Allocate it to the drafting service',m:'A part is the right kind of target, but the drafting service produces the drafts and cannot also observe how often their determinations are reversed. Read the case facts for where the reversal rate is already read.'},
+   {id:'c',t:'ok',text:'Allocate it to the quarterly quality sample of 400 claims, under the claims desk supervisor, and record a monitoring obligation',
+    m:'The quality sample already reads the reversal rate. A human process is a valid target when the design names the role and the task, and the monitoring obligation records what the claims desk supervisor must watch.'},
+   {id:'d',t:'bad',text:'Leave it for the configuration team to settle',m:'Configuration instantiates a design. It cannot supply a missing allocation. First move: ask what the design itself must name.'},
+   {id:'e',t:'near',text:'Allocate it to the governance record',m:'The governance record holds a plan and evidence, so it records a reading but does not take one. Name the process that takes the reading.'}
+  ]},
+ 'REQ-11':{
+  label:'Repair for REQ-11',
+  opts:[
+   {id:'a',t:'bad',text:'Add a test that reads must not write',m:'A test shows that a requirement is met. It does not meet it. First move: name the part the test would observe.'},
+   {id:'b',t:'near',text:'Allocate it to the adjuster review step',m:'A named human step can meet a requirement, but adjusters review drafts. They do not make the reads. Ask which part makes the reads.'},
+   {id:'c',t:'bad',text:'Allocate it to "the platform"',m:'"The platform" names no enforcement point. First move: find the boundary the reads cross.'},
+   {id:'d',t:'ok',text:'Allocate it to the read adapter, acting as svc-claims-assist and mapped to the read-only user CLMASST',
+    m:'The read adapter makes every read, so it is the enforcement point. It acts as svc-claims-assist, which maps to the read-only user CLMASST in the group GCLMRO.'},
+   {id:'e',t:'bad',text:'Add a security product to the design',m:'A product is not an enforcement point. First move: name where the control lives, then ask what implements it.'}
+  ]},
+ 'SDC-07':{
+  label:'Repair for SDC-07',
+  opts:[
+   {id:'a',t:'bad',text:'Move it to the configuration team',m:'The configuration team builds what the design says. Whether a part belongs in the design is not theirs to decide. First move: ask who decides the design\'s scope.'},
+   {id:'b',t:'ok',text:'Remove the claim-triage deployment',m:'Nothing in the register needs the component, so removing it leaves no requirement unmet.'},
+   {id:'c',t:'bad',text:'Write a requirement that fits it',m:'A requirement written to fit a part runs the trace backward, and the register belongs to the sponsor. First move: ask who may add a requirement.'},
+   {id:'d',t:'ok',text:'Return it to the sponsor as a scope question',m:'A component with no requirement is a scope question, and the sponsor owns scope. The component waits outside the design until the sponsor answers.'},
+   {id:'e',t:'bad',text:'Keep it, and justify it later',m:'A part kept without a reason adds cost, attack surface and failure paths. First move: ask which requirement needs it today.'}
+  ]},
+ 'SDD-03':{
+  label:'Repair for SDD-03',
+  opts:[
+   {id:'a',t:'near',text:'Move the index to the platform\'s own store',m:'This records a placement, but it swaps one placement for another without a reason. The decision stays open until criteria choose among the options.'},
+   {id:'b',t:'bad',text:'Keep the decision, because the team already runs it',m:'Familiarity is not a requirement. First move: ask which requirement the choice among placements should serve.'},
+   {id:'c',t:'bad',text:'Add a requirement that the platform team runs the index',m:'That writes a requirement to fit the decision. First move: ask what the register needs from the index, not who runs it.'},
+   {id:'d',t:'bad',text:'Leave the placement to the configuration team',m:'A decision about the design is not the configuration team\'s to make. First move: ask who should decide, and by which requirements.'},
+   {id:'e',t:'ok',text:'Return it to the AI platform owner as an open decision, with REQ-01 and REQ-09 as the deciding criteria',
+    m:'The decision has no reason yet, so it returns to the owner of the platform as an open decision. REQ-01 and REQ-09 are the criteria that choose among the placements.'}
+  ]}
+};
+
+/* The moved assumption: a requirement added to fit the untraced component. */
+const VROWS=[
+ {id:'REQ-13',kind:'req',name:'Incoming claims are sorted by complexity before an adjuster sees them.',alloc:'SDC-07 claim-triage deployment',key:'traced'},
+ {id:'SDC-07',kind:'cmp',name:'Claim-triage deployment',cites:'REQ-13',key:'traced'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+let phase='mark';   /* mark, repair, done */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#method').textContent=COPY.method;
+COPY.facts.forEach(function(t){$('#facts').appendChild(h('li',{text:t}));});
+$('#phaseNote').textContent=COPY.notes.mark;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+$('#vlabel').textContent=COPY.second.label;
+
+/* Cards */
+function markSelect(id,kind,aria){
+  const s=h('select',{id:id,'aria-label':aria});
+  s.appendChild(option('','Choose a mark'));
+  COPY.marks[kind].forEach(function(m){s.appendChild(option(m[0],m[1]));});
+  return s;
+}
+function rowCard(r,prefix){
+  const card=h('article',{class:'card',id:prefix+'card-'+r.id});
+  card.appendChild(h('div',{class:'rowhead'},[h('span',{class:'rid',text:r.id}),h('span',{class:'rname',text:r.name})]));
+  if(r.kind==='req')card.appendChild(h('p',{class:'detail'},[h('span',{class:'k',text:'Allocated to: '}),r.alloc]));
+  if(r.kind==='cmp')card.appendChild(h('p',{class:'detail'},[h('span',{class:'k',text:'Cites: '}),r.cites]));
+  if(r.kind==='dec')card.appendChild(h('p',{class:'detail'},[h('span',{class:'k',text:'Reason recorded: '}),r.reason]));
+  card.appendChild(h('div',{class:'ctl'},[
+    h('label',{for:prefix+'mk-'+r.id,text:'Your mark'}),
+    markSelect(prefix+'mk-'+r.id,r.kind,'Your mark for '+r.id)
+  ]));
+  card.appendChild(h('div',{class:'fb',id:prefix+'fb-'+r.id,role:'status'}));
+  if(REPAIRS[r.id]&&!prefix){
+    const rp=REPAIRS[r.id];
+    const sel=h('select',{id:'rp-'+r.id,'aria-label':rp.label});
+    sel.appendChild(option('',COPY.repairPlaceholder));
+    rp.opts.forEach(function(o){sel.appendChild(option(o.id,o.text));});
+    const box=h('div',{class:'ctl',id:'rpbox-'+r.id},[h('label',{for:'rp-'+r.id,text:COPY.repairLabel}),sel]);
+    box.hidden=true;
+    card.appendChild(box);
+    card.appendChild(h('div',{class:'fb',id:'rpfb-'+r.id,role:'status'}));
+  }
+  return card;
+}
+COPY.groups.forEach(function(g){
+  const host=h('div',{id:'grp-'+g.id});
+  host.appendChild(h('h3',{text:g.title}));
+  host.appendChild(h('p',{class:'hint grouphint',text:g.hint}));
+  ROWS.filter(function(r){return r.kind===g.id;}).forEach(function(r){host.appendChild(rowCard(r,''));});
+  $('#groups').appendChild(host);
+});
+VROWS.forEach(function(r){$('#vrows').appendChild(rowCard(r,'v-'));});
+
+/* Feedback */
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Keys */
+function markState(sel,r,okMsg){
+  if(!sel)return {s:'idle',m:COPY.idleMsg};
+  if(sel===r.key)return {s:'ok',m:okMsg};
+  if(r.key==='traced')return {s:'bad',m:COPY.flagBad};
+  if(sel==='traced')return {s:'bad',m:COPY.missBad[r.kind]};
+  if(r.kind==='req'&&sel!==r.key){
+    return {s:'near',m:(r.key==='noenf')?COPY.nearUnsupported:COPY.nearNoenf};
+  }
+  return {s:'bad',m:COPY.missBad[r.kind]};
+}
+function repairState(sel,id){
+  if(!sel)return {s:'idle',m:'Choose a repair for this row.'};
+  const o=REPAIRS[id].opts.filter(function(x){return x.id===sel;})[0];
+  return {s:o.t,m:o.m};
+}
+
+function setSummary(t){$('#summary').textContent=t;}
+
+function checkMarks(){
+  let all=true,anyIdle=false;
+  ROWS.forEach(function(r){
+    const res=markState($('#mk-'+r.id).value,r,r.ok);
+    showFb($('#fb-'+r.id),$('#card-'+r.id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    phase='repair';
+    ROWS.forEach(function(r){
+      $('#mk-'+r.id).disabled=true;
+      if(REPAIRS[r.id]){$('#rpbox-'+r.id).hidden=false;}
+    });
+    $('#phaseNote').textContent=COPY.notes.repair;
+    $('#check').textContent='Check my repairs';
+    $('#bulk').hidden=true;
+    setSummary(COPY.summaryMark.all);
+  }else{
+    setSummary(anyIdle?COPY.summaryMark.idle:COPY.summaryMark.some);
+  }
+}
+
+function checkRepairs(){
+  let all=true,anyIdle=false;
+  Object.keys(REPAIRS).forEach(function(id){
+    const res=repairState($('#rp-'+id).value,id);
+    showFb($('#rpfb-'+id),$('#card-'+id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    phase='done';
+    Object.keys(REPAIRS).forEach(function(id){$('#rp-'+id).disabled=true;});
+    $('#phaseNote').textContent=COPY.notes.done;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    setSummary(COPY.summaryRepair.all);
+  }else{
+    setSummary(anyIdle?COPY.summaryRepair.idle:COPY.summaryRepair.some);
+  }
+}
+
+$('#check').addEventListener('click',function(){
+  if(phase==='mark')checkMarks();
+  else if(phase==='repair')checkRepairs();
+});
+$('#bulk').addEventListener('click',function(){
+  ROWS.forEach(function(r){
+    const s=$('#mk-'+r.id);
+    if(!s.value&&!s.disabled)s.value='traced';
+  });
+  setSummary('Every blank row is marked as traced. Change the rows that have a defect, then check.');
+});
+
+/* Second pass: the same audit, with the register changed */
+$('#swap').addEventListener('click',function(){
+  $('#restoreNote').textContent='';
+  VROWS.forEach(function(r){
+    const s=$('#v-mk-'+r.id);
+    s.value='';s.disabled=false;
+    $('#v-fb-'+r.id).className='fb';
+    $('#v-fb-'+r.id).textContent='';
+    $('#v-card-'+r.id).className='card';
+  });
+  $('#vsummary').textContent='';
+  $('#vcheck').hidden=false;
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#v-mk-REQ-13').focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  VROWS.forEach(function(r){
+    const sel=$('#v-mk-'+r.id).value;
+    let res;
+    if(!sel)res={s:'idle',m:COPY.idleMsg};
+    else if(sel===r.key)res={s:'ok',m:r.kind==='req'?'Traced. SDC-07 now cites it.':'Traced. It now cites REQ-13.'};
+    else res={s:'bad',m:r.kind==='req'?COPY.second.badReq:COPY.second.badCmp};
+    showFb($('#v-fb-'+r.id),$('#v-card-'+r.id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    VROWS.forEach(function(r){$('#v-mk-'+r.id).disabled=true;});
+    $('#vcheck').hidden=true;
+    $('#vsummary').textContent=COPY.second.all;
+  }else{
+    $('#vsummary').textContent=anyIdle?COPY.second.idle:COPY.second.some;
+  }
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

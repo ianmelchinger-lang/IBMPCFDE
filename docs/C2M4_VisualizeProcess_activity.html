@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the path from draft to design</title>
+<style>
+:root{--bg:#f6f4fa;--panel:#ffffff;--ink:#1d1a26;--muted:#73777D;--muted-ink:#5E6268;--line:#d8d3e6;--soft:#ebe8f3;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--accent-deep:#5B1FC4;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5B1FC4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.kicker{margin:0 0 .3rem;color:var(--muted-ink);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted-ink);font-size:.92rem}
+input{accent-color:var(--accent)}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--muted);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+select:disabled{background:var(--soft);color:var(--muted-ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep);border-color:var(--accent)}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted-ink);border-color:var(--muted)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.dgwrap{width:min(1040px,calc(100vw - 32px));position:relative;left:50%;transform:translateX(-50%);margin:12px 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
+.dgwrap svg{display:block;width:100%;min-width:900px;height:auto}
+.dgcap{margin:.2rem 0 .4rem}
+.dg-bound{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-dasharray:8 5}
+.dg-bt{font:700 12px "Segoe UI",system-ui,sans-serif;fill:var(--accent-deep)}
+.dg-in{fill:#fff;stroke:var(--accent);stroke-width:1.6}
+.dg-edge-box{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6}
+.dg-out{fill:#f1f0f4;stroke:var(--muted);stroke-width:1.3}
+.dg-t{font:600 12.5px "Segoe UI",system-ui,sans-serif;fill:var(--ink)}
+.dg-s{font:400 11px "Segoe UI",system-ui,sans-serif;fill:var(--muted-ink)}
+.dg-tag{font:600 11px "Segoe UI",system-ui,sans-serif;fill:var(--accent-deep)}
+.dg-q{font:600 11px Consolas,"Courier New",monospace;fill:var(--ink)}
+.dg-e{fill:none;stroke:var(--ink);stroke-width:1.5}
+.dg-d{fill:none;stroke:var(--muted);stroke-width:1.4;stroke-dasharray:5 4}
+.dg-ar{fill:var(--ink)}
+.dg-ard{fill:var(--muted)}
+.dg-l{font:600 10.5px "Segoe UI",system-ui,sans-serif;fill:var(--ink);paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round}
+.dg-ld{font:italic 400 10.5px "Segoe UI",system-ui,sans-serif;fill:var(--muted-ink);paint-order:stroke;stroke:#fff;stroke-width:3.5px;stroke-linejoin:round}
+.dg-note{font:400 11.5px "Segoe UI",system-ui,sans-serif;fill:var(--muted-ink)}
+.dg-take{font:700 13.5px "Segoe UI",system-ui,sans-serif;fill:var(--accent-deep)}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.pcard.ok{border-left:5px solid var(--ok)}
+.pcard.near{border-left:5px solid var(--near)}
+.pcard.bad{border-left:5px solid var(--bad)}
+.pcard .zone{font-size:.76rem;font-weight:700;color:var(--muted-ink);letter-spacing:.05em;text-transform:uppercase}
+.pcard .ptitle{font-weight:600}
+.pcard .pdesc{color:var(--muted-ink);font-size:.93rem}
+.pcard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.pcard .fb{grid-column:1 / -1;margin-top:.2rem}
+li.divider{margin:14px 0;padding:6px 0;text-align:center;font-weight:700;color:var(--accent-deep);border-top:3px solid var(--accent);border-bottom:1px dashed var(--accent);letter-spacing:.04em;text-transform:uppercase;font-size:.85rem}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pcard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Process assembly</p>
+<h1>Assemble the path from draft to design</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-problem">
+<h2 id="h-problem">The problem</h2>
+<fieldset id="problem"><legend id="problemLegend"></legend></fieldset>
+<div class="fb" id="fb-problem" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-path">
+<h2 id="h-path">The path</h2>
+<p id="pathNote"></p>
+<ol class="path" id="path"></ol>
+<div class="fb" id="fb-path" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-signal">
+<h2 id="h-signal">The signal</h2>
+<fieldset id="signal"><legend id="signalLegend"></legend></fieldset>
+<div class="fb" id="fb-signal" role="status" aria-live="polite"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my assembly</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+
+<section id="result" hidden aria-labelledby="h-result">
+<h2 id="h-result">The design this path produces</h2>
+<p id="resultNote"></p>
+<div class="dgwrap" tabindex="0" role="region" aria-label="Corrected component view. It scrolls sideways on narrow screens.">
+<svg viewBox="0 0 960 645" role="img" aria-labelledby="dgT dgD"><title id="dgT">Corrected component view of the coverage-determination assistant</title><desc id="dgD">A landscape diagram. A dashed trust boundary encloses the assistant. Inside it sit the drafting service, retrieval index, read adapter, determination publisher, governance record and policy snapshot. Adjuster review straddles the boundary. Outside sit the policy master, claims master, API layer, the two claim-event queues, the document store, the rules repository, the subsidiary directory and the observability stack. Each component carries its requirement tags. Each solid line carries its integration-map identifier and its acting identity. The read adapter calls the API layer as svc-claims-assist. The claim-received notice reaches the drafting service from the outbound queue as svc-claims-assist. The determination publisher sends approved determinations to the inbound queue as svc-claims-submit, and an existing transaction consumes them. Adjusters sign in through the subsidiary directory.</desc><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="dg-ar" d="M0,0 L10,5 L0,10 z"/></marker><marker id="arrd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="dg-ard" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="dg-bound" x="350" y="30" width="425" height="518" rx="10"/><text class="dg-bt" x="358" y="22">Assistant's trust boundary · REQ-04: EU held open</text><path class="dg-e" d="M180,148 L120,148" marker-end="url(#arr)"/><path class="dg-e" d="M180,228 L120,228" marker-end="url(#arr)"/><path class="dg-e" d="M390,155 L280,155" marker-end="url(#arr)"/><path class="dg-e" d="M120,282 L175,282" marker-end="url(#arr)"/><path class="dg-e" d="M290,282 L410,282" marker-end="url(#arr)"/><path class="dg-e" d="M390,376 L290,376" marker-end="url(#arr)"/><path class="dg-e" d="M175,376 L120,376" marker-end="url(#arr)"/><path class="dg-e" d="M65,118 L65,78 L390,78" marker-end="url(#arr)"/><path class="dg-e" d="M575,232 L575,205 L640,205 L640,108" marker-end="url(#arr)"/><path class="dg-e" d="M590,322 L690,322" marker-end="url(#arr)" marker-start="url(#arr)"/><path class="dg-e" d="M590,250 L800,250" marker-end="url(#arr)"/><path class="dg-e" d="M825,360 L825,400" marker-end="url(#arr)"/><path class="dg-d" d="M465,232 L465,185" marker-end="url(#arrd)"/><path class="dg-d" d="M725,360 L725,376 L540,376" marker-end="url(#arrd)"/><rect class="dg-out" x="10" y="118" width="110" height="60" rx="6"/><text class="dg-t" x="65" y="144.5" text-anchor="middle">Policy master</text><text class="dg-s" x="65" y="159.0" text-anchor="middle">SYS-01</text><rect class="dg-out" x="10" y="205" width="110" height="215" rx="6"/><text class="dg-t" x="65" y="287.3" text-anchor="middle">Claims master</text><text class="dg-s" x="65" y="301.8" text-anchor="middle">SYS-02</text><text class="dg-s" x="65" y="316.3" text-anchor="middle">writes only through</text><text class="dg-s" x="65" y="330.8" text-anchor="middle">existing transactions</text><text class="dg-tag" x="65" y="345.3" text-anchor="middle">REQ-03 · REQ-05</text><rect class="dg-out" x="10" y="455" width="110" height="58" rx="6"/><text class="dg-t" x="65" y="473.3" text-anchor="middle">Document store</text><text class="dg-s" x="65" y="487.8" text-anchor="middle">SYS-04</text><text class="dg-tag" x="65" y="502.3" text-anchor="middle">REQ-05</text><rect class="dg-out" x="180" y="118" width="100" height="132" rx="6"/><text class="dg-t" x="230" y="173.3" text-anchor="middle">API layer</text><text class="dg-s" x="230" y="187.8" text-anchor="middle">SYS-03</text><text class="dg-s" x="230" y="202.3" text-anchor="middle">published APIs</text><rect class="dg-out" x="175" y="262" width="115" height="40" rx="6"/><text class="dg-q" x="232.5" y="285.8" text-anchor="middle">CLAIMS.EVENT.OUT</text><rect class="dg-out" x="175" y="355" width="115" height="40" rx="6"/><text class="dg-q" x="232.5" y="378.8" text-anchor="middle">CLAIMS.EVENT.IN</text><rect class="dg-out" x="800" y="48" width="150" height="56" rx="6"/><text class="dg-t" x="875" y="72.5" text-anchor="middle">Rules repository</text><text class="dg-s" x="875" y="87.0" text-anchor="middle">SYS-05</text><rect class="dg-out" x="800" y="222" width="150" height="56" rx="6"/><text class="dg-t" x="875" y="246.5" text-anchor="middle">Observability stack</text><text class="dg-s" x="875" y="261.0" text-anchor="middle">SYS-13</text><rect class="dg-out" x="800" y="400" width="150" height="56" rx="6"/><text class="dg-t" x="875" y="424.5" text-anchor="middle">Subsidiary directory</text><text class="dg-s" x="875" y="439.0" text-anchor="middle">SYS-12</text><rect class="dg-in" x="390" y="48" width="150" height="60" rx="6"/><text class="dg-t" x="465" y="74.5" text-anchor="middle">Policy snapshot</text><text class="dg-tag" x="465" y="89.0" text-anchor="middle">SDC-08 · REQ-08</text><rect class="dg-in" x="600" y="48" width="150" height="60" rx="6"/><text class="dg-t" x="675" y="74.5" text-anchor="middle">Retrieval index</text><text class="dg-tag" x="675" y="89.0" text-anchor="middle">SDC-02 · REQ-01, 09</text><rect class="dg-in" x="390" y="125" width="150" height="60" rx="6"/><text class="dg-t" x="465" y="151.5" text-anchor="middle">Read adapter</text><text class="dg-tag" x="465" y="166.0" text-anchor="middle">SDC-03 · REQ-01, 11</text><rect class="dg-in" x="410" y="232" width="180" height="100" rx="6"/><text class="dg-t" x="500" y="271.3" text-anchor="middle">Drafting service</text><text class="dg-tag" x="500" y="285.8" text-anchor="middle">SDC-01</text><text class="dg-tag" x="500" y="300.3" text-anchor="middle">REQ-01, 02, 07</text><rect class="dg-in" x="390" y="342" width="150" height="68" rx="6"/><text class="dg-t" x="465" y="365.3" text-anchor="middle">Determination</text><text class="dg-t" x="465" y="379.8" text-anchor="middle">publisher</text><text class="dg-tag" x="465" y="394.3" text-anchor="middle">SDC-04 · REQ-03</text><rect class="dg-in" x="600" y="475" width="150" height="60" rx="6"/><text class="dg-t" x="675" y="501.5" text-anchor="middle">Governance record</text><text class="dg-tag" x="675" y="516.0" text-anchor="middle">SDC-06 · REQ-10</text><rect class="dg-edge-box" x="690" y="296" width="160" height="64" rx="6"/><text class="dg-t" x="770" y="317.3" text-anchor="middle">Adjuster review</text><text class="dg-tag" x="770" y="331.8" text-anchor="middle">SDC-05 · human step</text><text class="dg-tag" x="770" y="346.3" text-anchor="middle">REQ-02, 12</text><text class="dg-l" x="150" y="141" text-anchor="middle">IMAP-01</text><text class="dg-l" x="150" y="221" text-anchor="middle">IMAP-02</text><text class="dg-l" x="335" y="135" text-anchor="middle">IMAP-01, 02</text><text class="dg-l" x="335" y="148" text-anchor="middle">svc-claims-assist</text><text class="dg-l" x="147" y="275" text-anchor="middle">IMAP-03</text><text class="dg-l" x="350" y="262" text-anchor="middle">IMAP-03</text><text class="dg-l" x="350" y="275" text-anchor="middle">svc-claims-assist</text><text class="dg-l" x="338" y="355" text-anchor="middle">IMAP-04</text><text class="dg-l" x="338" y="368" text-anchor="middle">svc-claims-submit</text><text class="dg-l" x="147" y="369" text-anchor="middle">IMAP-04</text><text class="dg-l" x="80" y="56" text-anchor="start">IMAP-05 · nightly batch</text><text class="dg-l" x="80" y="69" text-anchor="start">identity owned by the integration engineer</text><text class="dg-l" x="648" y="150" text-anchor="start">IMAP-06</text><text class="dg-l" x="648" y="163" text-anchor="start">svc-claims-assist</text><text class="dg-l" x="640" y="337" text-anchor="middle">IMAP-07</text><text class="dg-l" x="640" y="350" text-anchor="middle">svc-claims-assist</text><text class="dg-l" x="598" y="265" text-anchor="start">IMAP-08 · logs stripped of</text><text class="dg-l" x="598" y="278" text-anchor="start">claim content or kept in region</text><text class="dg-l" x="833" y="376" text-anchor="start">IMAP-07 sign-in</text><text class="dg-l" x="833" y="389" text-anchor="start">adjuster via SYS-12</text><text class="dg-ld" x="473" y="212" text-anchor="start">read request</text><text class="dg-ld" x="548" y="369" text-anchor="start">approved determination</text><text class="dg-note" x="10" y="578">Solid line: a flow on the integration map. Dashed line: a handoff inside the assistant. Arrows show the direction of the call or message.</text><text class="dg-note" x="10" y="595">The document store and the rules repository are dependencies. The integration map has no row for them.</text><text class="dg-take" x="10" y="630">Every box names its requirement. Every solid line names its flow and acting identity.</text></svg>
+</div>
+<p id="returns"></p>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A solution design is the document the configuration team builds from and the review board challenges. Assemble the path that produces one: choose the sentence that states the problem, put the moves in the order they must run, and choose the signal that shows the work succeeded.`,
+ terms:[
+  ['Handoff','The point where the design work ends and configuration begins.'],
+  ['Allocation','Assigning a requirement to the component, interface or human step that meets it.'],
+  ['View','One representation of the system, answering one set of concerns.']
+ ],
+ problemLegend:'Which sentence states the problem in operational terms?',
+ problem:[
+  {id:'pa',text:'The claims operations director wants the build to start this month, so the design should go to the configuration team now.',
+   whyNot:'That is the sponsor\'s request. It is a goal, and it names no obstacle.'},
+  {id:'pb',ok:true,text:'Every part of the draft came from an approved record, yet nobody has checked the draft against itself: parts with no reason, requirements with no part, views that disagree, and open questions written as settled. More detail would fix none of them.',
+   okMsg:'The problem is a missing check, stated as four faults. That is what the moves below supply.'},
+  {id:'pc',text:'The draft looks too high-level, so the configuration team cannot start.',
+   whyNot:'That is the team\'s account of a symptom. It points at detail, and detail fixes none of the faults.'},
+  {id:'pd',text:'The enterprise architect should redraw the draft in one clean notation.',
+   whyNot:'A redraw is one possible repair. The problem is what the draft lacks, and a redraw copies each fault as drawn.'}
+ ],
+ problemFirst:'First move: look for the sentence that says what the draft lacks and why that blocks the handoff, rather than a request, a cause or a repair.',
+ pathNote:'Eleven cards, one list. The eight above the line are the moves that produce the design, in the order they must run. Two of them do not depend on each other, so either order is fine. The three below the line belong to configuration. Use the buttons to move a card up or down.',
+ handoff:'Handoff to configuration',
+ signalLegend:'Which signal shows the design work succeeded?',
+ signal:[
+  {id:'sa',text:'Every box in the draft came from an approved record.',
+   whyNot:'That was true before the work began. It tests where the parts came from, not whether each has a reason.'},
+  {id:'sb',ok:true,text:'A reviewer can trace every part to a requirement and every requirement to a part, every connection resolves to one row of the map, every statement carries its kind, and every open decision has an owner.',
+   okMsg:'The signal can be checked on the day the design work ends: a reviewer traces both ways, every edge resolves, every statement has a kind, and every open decision has an owner.'},
+  {id:'sc',text:'The configuration team starts work and asks no questions.',
+   whyNot:'Silence shows that nobody asked, not that the design holds. A fault can surface later, in production.'},
+  {id:'sd',text:'The AI review board approves the design at its next meeting.',
+   whyNot:'That depends on the board\'s calendar and judgment. It cannot be checked on the day the work ends.'}
+ ],
+ signalFirst:'First move: ask what a reviewer could check on the day this work ends. A signal shows that the work did its job, not that the work after it did.',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ moves:[
+  {id:'m1',title:'Baseline the inputs',desc:'Fix which versions of the requirements, the integration map and the chosen option the design cites, and list any conflict.',
+   why:'Holds. Nothing can cite an input that is not fixed.'},
+  {id:'m2',title:'Fix the boundary',desc:'Decide what sits inside the design, what is external, and what is a dependency.',
+   why:'Holds. A component\'s status depends on the boundary.'},
+  {id:'m3',title:'Name the components',desc:'Name the smallest set of parts, each with one responsibility and an owner class.',
+   why:'Holds. Allocation and edges both read the inventory of parts.'},
+  {id:'m4',title:'Allocate both ways',desc:'Trace each requirement to a part, and each part and decision to a requirement.',
+   why:'Holds. It reads the inventory of parts, and the views reconcile only once allocations exist.'},
+  {id:'m5',title:'Resolve every edge',desc:'Give each connection its endpoints, direction, pattern and acting identity, and match it to one row of the integration map.',
+   why:'Holds. It reads the same inventory, and the views reconcile only once the edges exist.'},
+  {id:'m6',title:'Reconcile the views',desc:'Check that every repeated element, line, identity and boundary agrees across the views and the map.',
+   why:'Holds. The views reconcile only once allocations and edges exist.'},
+  {id:'m7',title:'Classify the statements',desc:'Tag each statement as build-to, a value, a step or an open decision, and name an owner for each value, step and open decision.',
+   why:'Holds. Reconciling the views changes elements, and changed elements change their statements.'},
+  {id:'m8',title:'Challenge and hand on',desc:'Review the draft against the register, decide which findings block the handoff, and list the configuration work without doing it.',
+   why:'Holds. The reviewer must know which statements are commitments.'}
+ ],
+ distractors:[
+  {id:'d1',title:'Create the project and deployment spaces',desc:'Set up the project and the test and production deployment spaces.'},
+  {id:'d2',title:'Set the group mapping on the claims master',desc:'Map the service identity to the read-only user and group.'},
+  {id:'d3',title:'Release the adapter change in the Thursday window',desc:'Apply the change on the next release train.'}
+ ],
+ distractorOk:'Holds. This is configuration work. It follows the handoff because it needs the design the moves produce.',
+ premature:'Out of place. This is configuration work, and configuration needs the design the moves produce. Placed inside the path, it is configuration before the design exists.',
+ belongsAbove:'Out of place. This move belongs inside the design work, above the handoff.',
+ deps:[
+  {before:'m1',after:'m2',why:'Nothing can cite an input that is not fixed, so baseline the inputs first.'},
+  {before:'m2',after:'m3',why:'A component\'s status depends on the boundary, so fix the boundary first.'},
+  {before:'m3',after:'m4',why:'Allocation reads the inventory of parts, so name the parts first.'},
+  {before:'m3',after:'m5',why:'Resolving the edges reads the same inventory, so name the parts first.'},
+  {before:'m4',after:'m6',why:'The views reconcile only once allocations exist.'},
+  {before:'m5',after:'m6',why:'The views reconcile only once the edges exist.'},
+  {before:'m6',after:'m7',why:'Changing an element changes its statements, so reconcile the views before you classify the statements.'},
+  {before:'m7',after:'m8',why:'The reviewer must know which statements are commitments, so classify first.'}
+ ],
+ pathSet:'Some cards sit on the wrong side of the handoff. Read the notes on the marked cards.',
+ pathOrder:'The right eight sit above the line and the configuration work sits below it. The order inside the path is out of place on the marked cards.',
+ pathOk:'The path holds, in the order the moves depend on one another.',
+ summary:{
+  idle:'Choose a problem and a signal, then check again.',
+  some:'Part of the assembly needs another look. Read the notes on each part and check again.',
+  all:'The problem, the path and the signal all hold. Each move closes before the one that depends on it opens.'
+ },
+ resultNote:'This is the component view the path produces. Every box names its requirement, and every solid line names its flow and acting identity.',
+ returns:'The path runs forward, with two returns. A component added while the views are reconciled reopens the allocation. A finding that changes a requirement reopens the inputs.',
+ initial:['m6','d2','m3','m8','m1','m5','d1','m7','m2','m4','d3'],
+ aboveCount:8
+};
+
+const MOVES={};COPY.moves.forEach(function(m){MOVES[m.id]=m;});
+COPY.distractors.forEach(function(m){MOVES[m.id]=m;});
+function isDistractor(id){return id.charAt(0)==='d';}
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let order=COPY.initial.slice();
+let flags={};   /* path feedback keyed by card id, cleared whenever the order changes */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#problemLegend').textContent=COPY.problemLegend;
+$('#signalLegend').textContent=COPY.signalLegend;
+$('#pathNote').textContent=COPY.pathNote;
+$('#resultNote').textContent=COPY.resultNote;
+$('#returns').textContent=COPY.returns;
+
+function radios(host,name,items){
+  items.forEach(function(o){
+    const inp=h('input',{type:'radio',name:name,value:o.id});
+    inp.addEventListener('change',function(){$('#fb-'+name).className='fb';$('#fb-'+name).textContent='';});
+    host.appendChild(h('label',{class:'opt'},[inp,h('span',{text:o.text})]));
+  });
+}
+radios($('#problem'),'problem',COPY.problem);
+radios($('#signal'),'signal',COPY.signal);
+
+/* The path */
+function renderPath(focusSpec){
+  const ol=$('#path');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    if(i===COPY.aboveCount){
+      const d=h('li',{class:'divider','aria-hidden':'true',text:COPY.handoff});
+      ol.appendChild(d);
+    }
+    const m=MOVES[id];
+    const f=flags[id];
+    const card=h('li',{class:'pcard'+(f?' '+f.s:''),'data-id':id});
+    const zone=(i<COPY.aboveCount)?('Position '+fmt(i+1)+' in the path'):'After the handoff';
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:zone}),h('br'),
+      h('span',{class:'ptitle',text:m.title}),h('br'),
+      h('span',{class:'pdesc',text:m.desc})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: '+m.title,text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: '+m.title,text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function move(id,dir){
+  const i=order.indexOf(id), j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  $('#fb-path').className='fb';$('#fb-path').textContent='';
+  renderPath(id+':'+(dir<0?'up':'down'));
+  const pos=order.indexOf(id);
+  $('#live').textContent=pos<COPY.aboveCount?(MOVES[id].title+' is now at position '+fmt(pos+1)+' in the path.'):(MOVES[id].title+' is now after the handoff.');
+}
+
+/* Keys */
+function setFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m));
+}
+function checkChoice(name,items,first){
+  const sel=document.querySelector('input[name='+name+']:checked');
+  if(!sel)return {s:'idle',m:'Choose one.'};
+  const o=items.filter(function(x){return x.id===sel.value;})[0];
+  if(o.ok)return {s:'ok',m:o.okMsg};
+  return {s:'bad',m:o.whyNot+' '+first};
+}
+function checkPath(){
+  const above=order.slice(0,COPY.aboveCount);
+  const below=order.slice(COPY.aboveCount);
+  const f={};
+  let setErr=false,orderErr=false;
+  above.forEach(function(id){if(isDistractor(id)){f[id]={s:'bad',m:COPY.premature};setErr=true;}});
+  below.forEach(function(id){if(!isDistractor(id)){f[id]={s:'bad',m:COPY.belongsAbove};setErr=true;}});
+  const pos={};above.forEach(function(id,i){pos[id]=i;});
+  COPY.deps.forEach(function(d){
+    if(pos[d.before]!==undefined&&pos[d.after]!==undefined&&pos[d.before]>pos[d.after]){
+      if(!f[d.after])f[d.after]={s:'near',m:'Out of place. '+d.why};
+      orderErr=true;
+    }
+  });
+  let res;
+  if(setErr)res={s:'bad',m:COPY.pathSet};
+  else if(orderErr)res={s:'near',m:COPY.pathOrder};
+  else{
+    res={s:'ok',m:COPY.pathOk};
+    above.forEach(function(id){f[id]={s:'ok',m:MOVES[id].why};});
+    below.forEach(function(id){f[id]={s:'ok',m:COPY.distractorOk};});
+  }
+  flags=f;
+  renderPath(null);
+  setFb($('#fb-path'),res);
+  return res.s;
+}
+
+$('#check').addEventListener('click',function(){
+  const p=checkChoice('problem',COPY.problem,COPY.problemFirst);
+  setFb($('#fb-problem'),p);
+  const pathState=checkPath();
+  const s=checkChoice('signal',COPY.signal,COPY.signalFirst);
+  setFb($('#fb-signal'),s);
+  const allOk=(p.s==='ok'&&pathState==='ok'&&s.s==='ok');
+  const anyIdle=(p.s==='idle'||s.s==='idle');
+  $('#summary').textContent=allOk?COPY.summary.all:(anyIdle?COPY.summary.idle:COPY.summary.some);
+  $('#result').hidden=!allOk;
+});
+
+renderPath(null);
+})();
+</script>
+</body>
+</html>

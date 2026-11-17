@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sort design statements by kind</title>
+<style>
+:root{--bg:#f6f4fa;--panel:#ffffff;--ink:#1d1a26;--muted:#73777D;--muted-ink:#5E6268;--line:#d8d3e6;--soft:#ebe8f3;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--accent-deep:#5B1FC4;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#5B1FC4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.kicker{margin:0 0 .3rem;color:var(--muted-ink);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted-ink);font-size:.92rem}
+input{accent-color:var(--accent)}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--muted);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+select:disabled{background:var(--soft);color:var(--muted-ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent-deep);border-color:var(--accent)}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--muted-ink);border-color:var(--muted)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.card .lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted-ink);letter-spacing:.05em;text-transform:uppercase;margin-bottom:.2rem}
+.stmt{margin:.2rem 0 .7rem;font-size:1.02rem}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:.4rem 0}
+.ctl label{font-weight:600;font-size:.92rem;min-width:11rem}
+.ctl select{flex:1 1 16rem}
+.p2{border-top:1px dashed var(--muted);margin-top:.7rem;padding-top:.4rem}
+.fixed{font-size:.95rem;margin:.3rem 0}
+.remits li{margin:.35rem 0}
+.remits strong{font-weight:600}
+.tabled dt{font-weight:600}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.45rem .25rem;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem}
+.cons{margin:.5rem 0;padding:.6rem .8rem;border-left:4px solid var(--accent);background:var(--panel);border-radius:0 6px 6px 0}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.ctl label{min-width:0;width:100%}.ctl select{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Sort design statements by kind</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-kinds">
+<h2 id="h-kinds">Four kinds of statement</h2>
+<dl id="defs"></dl>
+<p id="method"></p>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">What the case says</h2>
+<ul id="facts"></ul>
+<h3 id="remit-h"></h3>
+<ul class="remits" id="remits"></ul>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Classify the eight statements</h2>
+<p id="phaseNote" class="hint"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my sorting</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<fieldset id="pick"><legend>The regulatory compliance officer answers</legend></fieldset>
+<div id="outcome" class="cons" role="status" aria-live="polite" hidden></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`The design is ready to hand on when each statement either fixes what must exist and how it behaves, or is labelled honestly. Sort eight statements from the draft into four kinds. Then name who sets each value and who performs each step, and give each open decision an owner and a settling observation.`,
+ defs:[
+  ['Build-to statement','Fixes what must exist and how it behaves. It holds for as long as the design does.'],
+  ['Configuration value','An environment setting that changes faster than the design. It belongs to the person who sets it.'],
+  ['Deployment step','An action that applies the design in a window. It happens once and is then done.'],
+  ['Open decision','A choice nobody with authority has made yet. It needs an owner and a settling observation.']
+ ],
+ method:'Wording does not settle a question. A statement that sounds settled may still be open, and a statement that is open must say so. Ask whether anyone with authority has decided it, and where the case shows that.',
+ facts:[
+  `For a completed determination, only the letter and the adjuster's identity are retained today. The draft, its inputs and the model record are not.`,
+  `The retention rule covers claim records for ${fmt(7)} years. Whether a draft counts as a claim record has not been determined.`,
+  `Whether the EU residency rule reaches this use has not been determined.`,
+  `Environment values change faster than the design: the runner host, the group mappings and the release slots.`,
+  `The monthly release train carries any change that touches the policy master or the claims master. The change window is Thursday, 20:00 to 23:00 US Central.`
+ ],
+ remitHead:'Who does what, as the case records it',
+ roles:[
+  ['plat','AI platform owner','Runs the platform the assistant sits on, and sets the platform\'s environment values.'],
+  ['integ','Integration engineer, systems of record','Knows what the APIs, queues and release train allow. Owns the nightly batch identity.'],
+  ['iam','Identity and access lead','Grants and removes access for people and service accounts.'],
+  ['rel','Release and change manager','Runs the monthly release train and the Thursday change window.'],
+  ['reg','Regulatory compliance officer, insurance','Determines whether a regulatory rule applies to the assistant\'s use.'],
+  ['mr','Model risk and AI governance lead','Approves the assistant for the AI review board, against its controls and evidence.'],
+  ['arch','Enterprise architect','Sets how the subsidiary\'s systems fit together.'],
+  ['eng','You, the engineer','Builds and hands over, then leaves when the engagement ends.']
+ ],
+ notes:{
+  sort:'Choose a kind for each statement, then check. Nothing is timed.',
+  own:'Every statement sits in the right kind. Now name who sets each value and who performs each step, and give each open decision an owner and a settling observation.',
+  done:'The owners and observations hold. Nothing further is required here.'
+ },
+ kinds:[['build','Build-to statement'],['config','Configuration value'],['step','Deployment step'],['open','Open decision']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ sortNear:'This statement is settled, which is right, but the kind is out of place. Ask who may change it and how often: a build-to statement holds for the life of the design, a value belongs to whoever sets it, and a step happens once in a window.',
+ sortBadOpen:'Wording is not settlement. First move: ask which authority has decided this statement, and where the case shows it.',
+ sortBadSettled:'The case shows that this statement has been fixed. First move: ask whether anyone with authority still has to decide it before it can be built.',
+ sortIdle:'Choose a kind for this statement.',
+ ownerNear:'That role has a related remit, but the remit does not cover this statement. Read the remits again and find the one that does.',
+ ownerBadEng:'You leave when the engagement ends. The owner is whoever holds the value, step or decision after you go.',
+ ownerBad:'That role\'s remit does not cover this statement. Find the remit that does.',
+ ownerIdle:'Choose a role.',
+ obsIdle:'Choose a settling observation.',
+ buildFixed:'Fixed by the design. It has no setter and no owner to name.',
+ summarySort:{
+  idle:'Choose a kind for every statement, then check again.',
+  some:'Some kinds need another look. Read the notes on the marked statements, change your choices and check again.',
+  all:'Every statement sits in the right kind. Three fix the design, two are values, one is a step, and two are open.'
+ },
+ summaryOwn:{
+  idle:'Choose an owner for every value, step and open decision, and a settling observation for each open decision, then check again.',
+  some:'Some choices need another look. Read the notes on the marked statements, change your choices and check again.',
+  all:'Every owner and settling observation holds. Each value, step and open decision now has someone accountable, and the build-to statements stay in the design.'
+ },
+ second:{
+  intro:'One open decision decides the shape of the design. Suppose the regulatory compliance officer answers the retention question. Choose an answer, then read what happens to the statement about drafts. This is illustrative: neither answer is in the case, and nothing here is keyed.',
+  yes:'The drafts are claim records',
+  no:'The drafts are not claim records',
+  outYes:'The statement about drafts becomes a build-to statement: the design must retain drafts and their inputs for seven years. A requirement that was traced is now unsupported. The seven-year retention requirement covers drafts, and its allocation to the claims master and the document store does not retain them. A part has to be added to the design.',
+  outNo:'The statement about drafts is withdrawn. No requirement asks for it, and a part or statement that serves no requirement does not stay in the design.'
+ }
+};
+
+/* The eight statements, in the order shown. kind is the keyed kind. */
+const S=[
+ {id:'s1',label:'A',kind:'open',text:'Drafts and their inputs are retained for seven years.',
+  sortWhy:'Open decision, written as settled. The retention rule covers claim records, and whether a draft is one is not determined. Today only the letter and the adjuster\'s identity are retained, so nothing yet supports the statement.',
+  owner:{ok:['reg'],near:['mr'],okMsg:'The regulatory compliance officer determines whether a regulatory rule applies to the assistant\'s use.'},
+  obs:[
+   {id:'a',t:'bad',text:'The team\'s preference to keep drafts for seven years',m:'A preference is not an observation by an authority. It cannot settle whether a rule applies.'},
+   {id:'b',t:'ok',text:'A written determination by the regulatory compliance officer on whether the seven-year claim-records rule reaches drafts and their inputs',m:'An authority\'s written determination on applicability is what settles the question.'},
+   {id:'c',t:'bad',text:'An estimate of the storage cost of keeping drafts',m:'A cost estimate informs the decision but does not settle whether the rule applies.'},
+   {id:'d',t:'near',text:'The seven-year claim-records rule itself',m:'The rule is already known. What is missing is a determination that it reaches drafts.'}
+  ]},
+ {id:'s2',label:'B',kind:'config',text:'Deployment runs from use-lnx-run-01.',
+  sortWhy:'Configuration value. The runner host is an environment value, and it changes faster than the design. It belongs to whoever sets it.',
+  owner:{ok:['plat'],near:['rel'],okMsg:'The AI platform owner sets the platform\'s environment values, including where deployment runs.'}},
+ {id:'s3',label:'C',kind:'build',text:'The assistant reads policy and claim data only through the published read APIs, as svc-claims-assist.',
+  sortWhy:'Build-to statement. It fixes how the assistant must behave: reads go through the published APIs, under one identity.'},
+ {id:'s4',label:'D',kind:'build',text:'The read adapter refuses any operation that writes.',
+  sortWhy:'Build-to statement. It fixes how the read adapter must behave, whatever the configuration says.'},
+ {id:'s5',label:'E',kind:'step',text:'Release the adapter change on the next train, in the Thursday window.',
+  sortWhy:'Deployment step. It applies a change once, in a window: the Thursday window on the monthly release train.',
+  owner:{ok:['rel'],near:['integ'],okMsg:'The release and change manager runs the train and the window.'}},
+ {id:'s6',label:'F',kind:'open',text:'Open: whether EU claims are processed. The regulatory compliance officer is to determine whether the EU residency rule applies.',
+  sortWhy:'Open decision, labelled honestly. It says it is open and names who determines it.',
+  owner:{ok:['reg'],near:['mr'],okMsg:'The regulatory compliance officer determines whether a regulatory rule applies to the assistant\'s use.'},
+  obs:[
+   {id:'a',t:'bad',text:'The claims operations director\'s preference to include EU claims',m:'A preference is not an observation by an authority. It cannot settle whether a rule applies.'},
+   {id:'b',t:'near',text:'The sponsor\'s written decision to fund the EU region',m:'Funding settles scope, not whether a rule applies. What is missing is a determination on applicability.'},
+   {id:'c',t:'bad',text:'The platform team\'s view that EU processing is technically possible',m:'Feasibility does not settle whether a rule applies.'},
+   {id:'d',t:'ok',text:'A written determination by the regulatory compliance officer on whether the EU residency rule applies to this use',m:'An authority\'s written determination on applicability is what settles the question.'}
+  ]},
+ {id:'s7',label:'G',kind:'build',text:'Approved determinations reach the claims master only through an existing transaction.',
+  sortWhy:'Build-to statement. It fixes the only path by which an approved determination reaches the claims master.'},
+ {id:'s8',label:'H',kind:'config',text:'Map svc-claims-assist to the SAF user CLMASST in the group GCLMRO.',
+  sortWhy:'Configuration value. The mapping is set in the environment, and it belongs to whoever sets it.',
+  owner:{ok:['integ','iam'],near:['plat'],okMsg:'The mapping crosses the integration and access remits, so either the integration engineer or the identity and access lead can set it.'}}
+];
+const OWNLAB={config:'Who sets it?',step:'Who performs it?',open:'Who owns the decision?'};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+let phase='sort';   /* sort, own, done */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#method').textContent=COPY.method;
+COPY.facts.forEach(function(t){$('#facts').appendChild(h('li',{text:t}));});
+$('#remit-h').textContent=COPY.remitHead;
+COPY.roles.forEach(function(r){$('#remits').appendChild(h('li',null,[h('strong',{text:r[1]+'. '}),r[2]]));});
+$('#phaseNote').textContent=COPY.notes.sort;
+$('#secondIntro').textContent=COPY.second.intro;
+
+/* Cards */
+function kindSelect(id,aria){
+  const s=h('select',{id:id,'aria-label':aria});
+  s.appendChild(option('','Choose a kind'));
+  COPY.kinds.forEach(function(k){s.appendChild(option(k[0],k[1]));});
+  return s;
+}
+function roleSelect(id,aria){
+  const s=h('select',{id:id,'aria-label':aria});
+  s.appendChild(option('','Choose a role'));
+  COPY.roles.forEach(function(r){s.appendChild(option(r[0],r[1]));});
+  return s;
+}
+S.forEach(function(s){
+  const card=h('article',{class:'card',id:'card-'+s.id});
+  card.appendChild(h('span',{class:'lab',text:'Statement '+s.label}));
+  card.appendChild(h('p',{class:'stmt',text:s.text}));
+  card.appendChild(h('div',{class:'ctl'},[h('label',{for:'kind-'+s.id,text:'Kind'}),kindSelect('kind-'+s.id,'Kind of statement '+s.label)]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+s.id,role:'status'}));
+  const p2=h('div',{class:'p2',id:'p2-'+s.id});
+  p2.hidden=true;
+  if(s.kind==='build'){
+    p2.appendChild(h('p',{class:'fixed',text:COPY.buildFixed}));
+  }else{
+    p2.appendChild(h('div',{class:'ctl'},[h('label',{for:'own-'+s.id,text:OWNLAB[s.kind]}),roleSelect('own-'+s.id,OWNLAB[s.kind]+' (statement '+s.label+')')]));
+    if(s.kind==='open'){
+      const os=h('select',{id:'obs-'+s.id,'aria-label':'Settling observation (statement '+s.label+')'});
+      os.appendChild(option('','Choose a settling observation'));
+      s.obs.forEach(function(o){os.appendChild(option(o.id,o.text));});
+      p2.appendChild(h('div',{class:'ctl'},[h('label',{for:'obs-'+s.id,text:'What settles it?'}),os]));
+    }
+    p2.appendChild(h('div',{class:'fb',id:'fb2-'+s.id,role:'status'}));
+  }
+  card.appendChild(p2);
+  $('#cards').appendChild(card);
+});
+COPY.second.pickOpts=[['yes',COPY.second.yes],['no',COPY.second.no]];
+COPY.second.pickOpts.forEach(function(o){
+  const inp=h('input',{type:'radio',name:'pick',value:o[0]});
+  inp.addEventListener('change',function(){
+    const box=$('#outcome');
+    box.textContent=o[0]==='yes'?COPY.second.outYes:COPY.second.outNo;
+    box.hidden=false;
+  });
+  $('#pick').appendChild(h('label',{class:'opt'},[inp,h('span',{text:o[1]})]));
+});
+
+/* Feedback */
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+
+/* Keys */
+function sortState(sel,s){
+  if(!sel)return {s:'idle',m:COPY.sortIdle};
+  if(sel===s.kind)return {s:'ok',m:s.sortWhy};
+  const settledSel=(sel!=='open'), settledKey=(s.kind!=='open');
+  if(settledSel&&settledKey)return {s:'near',m:COPY.sortNear};
+  return {s:'bad',m:settledKey?COPY.sortBadSettled:COPY.sortBadOpen};
+}
+function ownerState(sel,s){
+  if(!sel)return {s:'idle',m:COPY.ownerIdle};
+  if(s.owner.ok.indexOf(sel)>-1)return {s:'ok',m:s.owner.okMsg};
+  if(s.owner.near.indexOf(sel)>-1)return {s:'near',m:COPY.ownerNear};
+  if(sel==='eng')return {s:'bad',m:COPY.ownerBadEng};
+  return {s:'bad',m:COPY.ownerBad};
+}
+function obsState(sel,s){
+  if(!sel)return {s:'idle',m:COPY.obsIdle};
+  const o=s.obs.filter(function(x){return x.id===sel;})[0];
+  return {s:o.t,m:o.m};
+}
+const RANK={idle:0,ok:1,near:2,bad:3};
+
+function checkSort(){
+  let all=true,anyIdle=false;
+  S.forEach(function(s){
+    const r=sortState($('#kind-'+s.id).value,s);
+    showFb($('#fb-'+s.id),$('#card-'+s.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    phase='own';
+    S.forEach(function(s){
+      $('#kind-'+s.id).disabled=true;
+      $('#p2-'+s.id).hidden=false;
+    });
+    $('#phaseNote').textContent=COPY.notes.own;
+    $('#check').textContent='Check owners and observations';
+    $('#summary').textContent=COPY.summarySort.all;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summarySort.idle:COPY.summarySort.some;
+  }
+}
+function checkOwn(){
+  let all=true,anyIdle=false;
+  S.filter(function(s){return s.kind!=='build';}).forEach(function(s){
+    const parts=[ownerState($('#own-'+s.id).value,s)];
+    if(s.kind==='open')parts.push(obsState($('#obs-'+s.id).value,s));
+    let worst='ok',idle=false;
+    parts.forEach(function(p){
+      if(p.s==='idle')idle=true;
+      else if(RANK[p.s]>RANK[worst])worst=p.s;
+    });
+    let res;
+    if(idle)res={s:'idle',m:parts.filter(function(p){return p.s==='idle';}).map(function(p){return p.m;}).join(' ')};
+    else if(worst==='ok')res={s:'ok',m:parts.map(function(p){return p.m;}).join(' ')};
+    else{
+      const names=(s.kind==='open')?['Owner: ','Settling observation: ']:['Owner: '];
+      res={s:worst,m:parts.map(function(p,i){return p.s==='ok'?'':names[i]+p.m+' ';}).join('').trim()};
+    }
+    showFb($('#fb2-'+s.id),$('#card-'+s.id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    phase='done';
+    S.forEach(function(s){
+      if(s.kind!=='build'){$('#own-'+s.id).disabled=true;}
+      if(s.kind==='open')$('#obs-'+s.id).disabled=true;
+    });
+    $('#phaseNote').textContent=COPY.notes.done;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    $('#summary').textContent=COPY.summaryOwn.all;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summaryOwn.idle:COPY.summaryOwn.some;
+  }
+}
+$('#check').addEventListener('click',function(){
+  if(phase==='sort')checkSort();
+  else if(phase==='own')checkOwn();
+});
+})();
+</script>
+</body>
+</html>
