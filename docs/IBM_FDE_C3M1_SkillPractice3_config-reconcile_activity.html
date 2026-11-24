@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reconcile the candidate against what was evaluated</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--edge:#73777D;--soft:#F1ECFF;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#8A40FC}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.ident{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.ident p{margin:.2rem 0}
+.ident .hint{color:var(--ink)}
+.vals{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin:.3rem 0 .6rem}
+.vals div{font-size:.95rem}
+.vals .k{display:block;color:var(--muted);font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.vals .diff{background:var(--mark);padding:0 .2rem;border-radius:3px}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:.4rem 0}
+.ctl label{font-weight:600;font-size:.92rem;min-width:7.5rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--edge);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+#second .btn{margin:.3rem .5rem .3rem 0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--accent-soft);color:var(--ink);border-color:var(--edge)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.tally{width:100%;border-collapse:collapse;margin:.5rem 0}
+.tally th,.tally td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line);vertical-align:top;font-size:.93rem}
+.tally td.num,.tally th.num{text-align:right}
+.live{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.vals{grid-template-columns:1fr}.ctl label{min-width:0;width:100%}.ctl select{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Reconcile the candidate against what was evaluated</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Terms</h2>
+<dl id="terms"></dl>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">The two configurations</h2>
+<div class="ident" id="ident"></div>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Compare field by field</h2>
+<p class="hint" id="workNote"></p>
+<div id="rows"></div>
+<article class="card" id="card-verdict">
+<h3 id="vq"></h3>
+<div class="ctl"><label for="verdict">The evidence covers</label><select id="verdict"></select></div>
+<div class="fb" id="fb-verdict" role="status" aria-live="polite"></div>
+</article>
+<div class="bar"><button type="button" class="btn" id="check">Check my reconciliation</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the original candidate</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" class="live" hidden></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`Test results describe the exact configuration that produced them. A production candidate is a new copy, so its name can match while what it holds differs. Compare each stored field with the evaluated baseline and decide what each difference needs.`,
+ terms:[
+  ['Evaluated configuration','The exact stored fields and dependencies that produced a piece of validation evidence.'],
+  ['Baseline','The approved, recorded state against which later states are compared.'],
+  ['Model reference','Which model the template calls. Here MODEL-01 and MODEL-02 stand in for two different models.'],
+  ['Maximum output length','The most text the model may return for one draft, counted in tokens, which are the small pieces of text a model counts.'],
+  ['Decoding','How the model picks each next word. Greedy decoding takes the likeliest word every time.'],
+  ['Guardrail','A check on what goes into the model or what comes out of it.'],
+  ['Variables','Named values that fill the prompt, such as a claim summary or a loss date.']
+ ],
+ identNote:'Identifiers on this page are illustrative strings, not product formats.',
+ workNote:'Mark each field, then say what the test evidence covers. Nothing is timed.',
+ marks:[['matched','Matched'],['review','Changed: needs re-review'],['noeffect','Changed: no effect on behavior']],
+ vq:'Both configurations carry the template name pt-coverage-summary. What does the test evidence cover?',
+ verdictOpts:[
+  ['','Choose'],
+  ['name','The candidate, because the template name is unchanged'],
+  ['baseline','The baseline only, until each difference marked for re-review has been reviewed'],
+  ['allbutdesc','The candidate in every respect except its description']
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a mark for this field.',
+  nearDesc:'Tolerated, because a difference worth recording should be recorded. The structure holds. The description is explanatory text for people, so it leaves behavior unchanged. Record the difference and the reason it is safe.',
+  badSame:'The stored values are the same on both sides, so nothing differs here. First move: read the two values side by side before you mark the field.',
+  badDiff:'The values differ. First move: read the two values side by side, then ask whether the difference changes what the assistant would return.',
+  badNoEffect:'The values differ, which is right. This one changes how the assistant answers, so the evidence measured something else. First move: ask whether the field changes which model runs, how much it may return, or what is checked.',
+  badDescMatched:'The two descriptions are not the same, so something changed. First move: read the two values side by side.',
+  verdict:{
+   idle:'Choose what the evidence covers.',
+   ok:'The evidence measured the baseline: asset tst-0417, tested through deployment tdp-0421, scored on eval-coverage-200. Each difference marked for re-review goes to review before implementation. The approval then cites the baseline and the candidate by identifier, so a reviewer can see which evidence supports which release.',
+   name:'A matching name tells you which assets people intend to associate. It does not tell you whether the stored fields match. First move: compare the stored fields the evaluation measured.',
+   allbutdesc:'The description is only one difference. First move: read your own marks and ask what each of the other differences does to the evidence.'
+  }
+ },
+ summary:{
+  idle:'Choose a mark for every field and an answer to the question, then check again.',
+  some:'Some rows need another look. Read the notes on the marked rows, change your choices and check again.',
+  all:'Every row holds. Three differences go to review before production, one is recorded as harmless, and the evidence stays with the baseline until the differences are reviewed.',
+  allTolerated:'Every row is acceptable. Three differences go to review before production. The description went to review as well, which is tolerated, and the note on that row says why it is safe. The evidence stays with the baseline until the differences are reviewed.'
+ },
+ second:{
+  intro:'Hold the baseline fixed and change the candidate. Now it differs from the baseline in its description alone.',
+  swap:'Use a candidate that differs only in its description',
+  restoreNote:'Restored. The candidate differs in four fields again.',
+  verdictNone:'Every stored field the evaluation measured is unchanged, so the evidence applies to this candidate. The description edit is recorded with its reason, and the approval still cites the baseline and the candidate by identifier.',
+  name:'The template name matched in both cases. It was never the evidence.'
+ }
+};
+
+/* Stored fields. behav: the field can change what the assistant returns. */
+const FIELDS=[
+ {id:'prompt',label:'Prompt text',base:'Version 3',cand:'Version 3',behav:true},
+ {id:'model',label:'Model reference',base:'MODEL-01',cand:'MODEL-02',behav:true},
+ {id:'desc',label:'Description',base:'Coverage summary, pilot line',cand:'Coverage summary, all lines',behav:false},
+ {id:'maxout',label:'Maximum output length',base:600,cand:900,unit:' tokens',behav:true},
+ {id:'decode',label:'Decoding',base:'Greedy',cand:'Greedy',behav:true},
+ {id:'guard',label:'Guardrail setting',base:'On input and output',cand:'On input only',behav:true},
+ {id:'vars',label:'Variables',base:'claim_summary, loss_date, policy_id',cand:'claim_summary, loss_date, policy_id',behav:true}
+];
+const WHY={
+ prompt:'Matched. Version 3 on both sides.',
+ decode:'Matched. Greedy decoding on both sides.',
+ vars:'Matched. The same three variables on both sides.',
+ model:'Changed, and it alters behavior. A different model produces different drafts, and the evaluation never measured it. Re-review before production.',
+ maxout:'Changed, and it alters behavior. A longer limit lets drafts run past anything that was evaluated. Re-review before production.',
+ guard:'Changed, and it alters behavior. The check on the output side is gone, and the evaluation ran with it on. Re-review before production.',
+ desc:'Changed, without effect on behavior. The description explains the asset to people. Record the difference and the reason it leaves behavior unchanged.'
+};
+
+/* The key, computed from the stored values. candOf lets the second pass reuse the same rule. */
+function keyFor(f,cand){
+  if(f.base===cand)return 'matched';
+  return f.behav?'review':'noeffect';
+}
+function valueText(f,v){return typeof v==='number'?fmt(v)+(f.unit||''):String(v);}
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#ident').appendChild(h('p',null,[h('strong',{text:'Evaluated baseline: '}),'template pt-coverage-summary, test asset tst-0417, tested through deployment tdp-0421. Results on eval-coverage-200 were accepted by the model risk and AI governance lead.']));
+$('#ident').appendChild(h('p',null,[h('strong',{text:'Production candidate: '}),'the copy of pt-coverage-summary proposed for production.']));
+$('#ident').appendChild(h('p',{class:'hint',text:COPY.identNote}));
+$('#workNote').textContent=COPY.workNote;
+$('#vq').textContent=COPY.vq;
+COPY.verdictOpts.forEach(function(o){$('#verdict').appendChild(option(o[0],o[1]));});
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+/* Feedback */
+function showFb(box,el,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(el)el.className='card'+(res.s==='idle'?'':' '+res.s);
+}
+
+/* Field cards */
+FIELDS.forEach(function(f){
+  const card=h('article',{class:'card',id:'card-'+f.id});
+  card.appendChild(h('h3',{text:f.label}));
+  const differs=f.base!==f.cand;
+  card.appendChild(h('div',{class:'vals'},[
+    h('div',null,[h('span',{class:'k',text:'Evaluated baseline'}),valueText(f,f.base)]),
+    h('div',null,[h('span',{class:'k',text:'Production candidate'}),valueText(f,f.cand)])
+  ]));
+  const sel=h('select',{id:'mk-'+f.id});
+  sel.appendChild(option('','Choose a mark'));
+  COPY.marks.forEach(function(m){sel.appendChild(option(m[0],m[1]));});
+  card.appendChild(h('div',{class:'ctl'},[h('label',{for:'mk-'+f.id,text:'Your mark'}),sel]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+f.id,role:'status','aria-live':'polite'}));
+  $('#rows').appendChild(card);
+});
+
+/* Keys */
+function fieldState(sel,f){
+  if(!sel)return {s:'idle',m:COPY.msg.idle};
+  const key=keyFor(f,f.cand);
+  if(sel===key)return {s:'ok',m:WHY[f.id]};
+  if(key==='noeffect'&&sel==='review')return {s:'near',m:COPY.msg.nearDesc};
+  if(key==='noeffect'&&sel==='matched')return {s:'bad',m:COPY.msg.badDescMatched};
+  if(key==='matched')return {s:'bad',m:COPY.msg.badSame};
+  if(key==='review'&&sel==='noeffect')return {s:'bad',m:COPY.msg.badNoEffect};
+  return {s:'bad',m:COPY.msg.badDiff};
+}
+function verdictState(sel){
+  if(!sel)return {s:'idle',m:COPY.msg.verdict.idle};
+  if(sel==='baseline')return {s:'ok',m:COPY.msg.verdict.ok};
+  return {s:'bad',m:COPY.msg.verdict[sel]};
+}
+
+let locked=false;
+$('#check').addEventListener('click',function(){
+  if(locked)return;
+  let all=true,anyIdle=false,tolerated=false;
+  FIELDS.forEach(function(f){
+    const r=fieldState($('#mk-'+f.id).value,f);
+    showFb($('#fb-'+f.id),$('#card-'+f.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s==='bad'||r.s==='idle')all=false;
+    if(r.s==='near')tolerated=true;
+  });
+  const v=verdictState($('#verdict').value);
+  showFb($('#fb-verdict'),$('#card-verdict'),v);
+  if(v.s==='idle')anyIdle=true;
+  if(v.s!=='ok')all=false;
+  if(all){
+    locked=true;
+    FIELDS.forEach(function(f){$('#mk-'+f.id).disabled=true;});
+    $('#verdict').disabled=true;
+    $('#check').hidden=true;
+    $('#summary').textContent=tolerated?COPY.summary.allTolerated:COPY.summary.all;
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the same rule, applied to a candidate that differs only in its description. */
+function renderVariant(){
+  const box=$('#vwrap');
+  box.textContent='';
+  const rows=FIELDS.map(function(f){
+    const cand=(f.id==='desc')?f.cand:f.base;
+    return {f:f,cand:cand,key:keyFor(f,cand)};
+  });
+  const before=FIELDS.filter(function(f){return keyFor(f,f.cand)==='review';}).length;
+  const after=rows.filter(function(r){return r.key==='review';}).length;
+  const label={matched:'Matched',review:'Changed: needs re-review',noeffect:'Changed: no effect on behavior'};
+  const tb=h('table',{class:'tally'});
+  tb.appendChild(h('thead',null,[h('tr',null,[
+    h('th',{scope:'col',text:'Field'}),h('th',{scope:'col',text:'Baseline'}),h('th',{scope:'col',text:'Candidate'}),h('th',{scope:'col',text:'Result'})
+  ])]));
+  const body=h('tbody');
+  rows.forEach(function(r){
+    body.appendChild(h('tr',null,[
+      h('td',{text:r.f.label}),h('td',{text:valueText(r.f,r.f.base)}),h('td',{text:valueText(r.f,r.cand)}),h('td',{text:label[r.key]})
+    ]));
+  });
+  tb.appendChild(body);
+  box.appendChild(tb);
+  box.appendChild(h('p',null,[h('strong',{text:'Differences sent to re-review: '}),fmt(before)+' before, '+fmt(after)+' now.']));
+  box.appendChild(h('p',{text:after===0?COPY.second.verdictNone:COPY.msg.verdict.ok}));
+  box.appendChild(h('p',{text:COPY.second.name}));
+}
+$('#swap').addEventListener('click',function(){
+  $('#restoreNote').textContent='';
+  renderVariant();
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

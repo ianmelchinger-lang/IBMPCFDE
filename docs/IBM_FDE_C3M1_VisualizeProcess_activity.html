@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assemble the path from problem to signal</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--edge:#73777D;--soft:#F1ECFF;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#8A40FC}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+fieldset{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:12px 0;padding:10px 14px 12px}
+legend{padding:0 .4rem;font-weight:600}
+.opt{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem .25rem;font-weight:400;font-size:1rem;cursor:pointer;border-radius:6px}
+.opt input{margin-top:.35rem;flex:0 0 auto;width:1.05rem;height:1.05rem;accent-color:var(--accent)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--accent-soft);color:var(--ink);border-color:var(--edge)}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.pcard.ok{border-left:5px solid var(--ok)}
+.pcard.near{border-left:5px solid var(--near)}
+.pcard.bad{border-left:5px solid var(--bad)}
+.pcard .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.pcard .ptitle{font-weight:600}
+.pcard .pdesc{color:var(--muted);font-size:.93rem}
+.pcard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.pcard .fb{grid-column:1 / -1;margin-top:.2rem}
+li.divider{margin:14px 0;padding:6px 0;text-align:center;font-weight:700;color:var(--ink);background:var(--accent-soft);border-top:3px solid var(--accent);border-bottom:1px dashed var(--accent);letter-spacing:.04em;text-transform:uppercase;font-size:.85rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pcard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Process assembly</p>
+<h1>Assemble the path from problem to signal</h1>
+<p id="lead"></p>
+<dl id="terms"></dl>
+</header>
+
+<section aria-labelledby="h-problem">
+<h2 id="h-problem">The problem</h2>
+<fieldset id="problem"><legend id="problemLegend"></legend></fieldset>
+<div class="fb" id="fb-problem" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-path">
+<h2 id="h-path">The path</h2>
+<p id="pathNote"></p>
+<ol class="path" id="path"></ol>
+<div class="fb" id="fb-path" role="status" aria-live="polite"></div>
+</section>
+
+<section aria-labelledby="h-signal">
+<h2 id="h-signal">The signal</h2>
+<fieldset id="signal"><legend id="signalLegend"></legend></fieldset>
+<div class="fb" id="fb-signal" role="status" aria-live="polite"></div>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my assembly</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A configuration plan is the agreed statement of where each stage runs, who may change what in each place, what must travel together for the assistant to run, and how the record ties the live service to its source. Assemble the path that produces one: choose the sentence that states the problem, put the moves in an order that respects what must close before what, and choose the signal that shows the work succeeded.`,
+ terms:[
+  ['Deployment record','The document that carries the platform configuration: the workspaces, who holds authority, the assets, and the path an asset takes to production.'],
+  ['Handoff','The point where this work ends and the work on connections and credentials begins.'],
+  ['Promotion path','The route an asset takes from the project to the production space, with the approval it needs along the way.']
+ ],
+ problemLegend:'Which sentence states the problem in operational terms?',
+ problem:[
+  {id:'pa',text:'The platform owner proposes three areas named development, test and production, so the plan should create them by Friday and call the environments separated.',
+   whyNot:'That is a proposed fix. It names no obstacle, and a name does not make a boundary.'},
+  {id:'pb',ok:true,text:`The pilot runs in one working area, and three things are undefined for production: who may change what, whether the unit is complete and matches its evaluation, and whether the record can trace the service to its source and approval. A release now would rest on evidence nobody can trace.`,
+   okMsg:'The problem is three undefined things, stated in terms of what a reviewer would have to see. That is what the configuration plan supplies.'},
+  {id:'pc',text:'The review board meets only every two weeks, so approvals take too long and the release date keeps receding.',
+   whyNot:'That is a scheduling constraint to plan around. It does not say what stops a release from being shown to be sound.'},
+  {id:'pd',text:'The evaluation scores are good and the sponsor is impatient, so the pilot should be promoted as it stands.',
+   whyNot:'That is a conclusion drawn from one result. The problem is what the result is attached to.'}
+ ],
+ problemFirst:'First move: look for the sentence that says what is undefined and why that blocks a release, rather than a proposed fix, a constraint or a conclusion.',
+ pathNote:'Ten cards, one list. The seven above the line are the configuration work, in an order that respects what must close before what. The three below the line follow the handoff or belong to other work. Use the buttons to move a card up or down.',
+ handoff:'Handoff to connections and credentials',
+ signalLegend:'Which signal shows the configuration work succeeded?',
+ signal:[
+  {id:'sa',text:'Three environments named development, test and production exist.',
+   whyNot:'That shows the areas exist. It does not show that anything separates them, or that production matches what was evaluated.'},
+  {id:'sb',ok:true,text:'From the deployment record alone, a reviewer can name each workspace\'s purpose, say who may change what, and confirm that the production unit is complete, matches its evaluation and traces to its source by identifier.',
+   okMsg:'The signal can be checked on the day the work ends, from the record alone, without relying on a name.'},
+  {id:'sc',text:'The assistant is live on every product line.',
+   whyNot:'That belongs to the release that follows. It cannot show that the plan behind the release is sound.'},
+  {id:'sd',text:'The review board approves the release at its next sitting.',
+   whyNot:'An approval shows the board agreed to something. The signal has to show what it agreed to.'}
+ ],
+ signalFirst:'First move: ask what you could check on the day this work ends. A signal shows that the work did its job, not that the work after it did.',
+ chip:{ok:'Holds',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ moves:[
+  {id:'m1',title:'Read the separation requirements',desc:'Decide which stages need a boundary and which people must not cross it.',
+   why:'Holds. The layout comes from the requirements, not from the spaces that happen to exist.'},
+  {id:'m2',title:'Lay out the workspaces',desc:'Give each stage a project or a deployment space, and state each space\'s purpose.',
+   why:'Holds. Roles attach to workspaces, so the workspaces come before the roles.'},
+  {id:'m3',title:'Allocate authority',desc:'Set each role\'s level in each workspace, and name who promotes, validates and deploys.',
+   why:'Holds. Authority is recorded workspace by workspace, after the layout.'},
+  {id:'m4',title:'Build the deployable unit',desc:'List the asset, every dependency it needs in the target space, and how each one arrives.',
+   why:'Holds. The unit has to be complete before any evidence is tied to it.'},
+  {id:'m5',title:'Fix the evaluated baseline',desc:'Record the fields and identifiers that define what was evaluated.',
+   why:'Holds. The baseline describes a complete unit, so the unit comes first.'},
+  {id:'m6',title:'Reconcile and promote',desc:'Compare the candidate with the baseline, review each difference, then promote with an approval reference.',
+   why:'Holds. Reconciliation needs the baseline, and the approval cites it.'},
+  {id:'m7',title:'Complete the record',desc:'Join source, copies, deployments and approval by identifier, and name connections, credentials and identity as handoffs.',
+   why:'Holds. The record states the as-deployed state, so it closes last.'}
+ ],
+ distractors:[
+  {id:'d1',title:'Supply the connections and target credentials',desc:'Create each connection and give it the credentials the target space needs.',
+   ok:'Holds. Connections and credentials are a separate integration prerequisite, so they follow the handoff.'},
+  {id:'d2',title:'Design the monitors and alert recipients',desc:'Choose the signals, the thresholds and who is told when one trips.',
+   ok:'Holds. Monitoring is operating work. It follows the record, which says what there is to watch.'},
+  {id:'d3',title:'Tune the prompt for better drafts',desc:'Edit the prompt text to raise draft quality.',
+   ok:'Holds. This is development work outside the plan. Once the baseline is fixed, a prompt change makes a new configuration to compare and review.'}
+ ],
+ premature:'Out of place. This is work outside the configuration plan, and it follows the handoff or belongs elsewhere. Placed inside the path, it comes before the record it depends on.',
+ belongsAbove:'Out of place. This move belongs inside the configuration work, above the handoff.',
+ deps:[
+  {before:'m1',after:'m2',why:'The layout comes from the requirements, so read the requirements first.'},
+  {before:'m2',after:'m3',why:'Roles attach to workspaces, so lay out the workspaces first.'},
+  {before:'m4',after:'m5',why:'The baseline describes a complete unit, so build the unit first.'},
+  {before:'m5',after:'m6',why:'Reconciliation compares a candidate with the baseline, so fix the baseline first.'},
+  {before:'m1',after:'m7',why:'The record states the as-deployed state, so it closes last.'},
+  {before:'m2',after:'m7',why:'The record states the as-deployed state, so it closes last.'},
+  {before:'m3',after:'m7',why:'The record states the as-deployed state, so it closes last.'},
+  {before:'m4',after:'m7',why:'The record states the as-deployed state, so it closes last.'},
+  {before:'m5',after:'m7',why:'The record states the as-deployed state, so it closes last.'},
+  {before:'m6',after:'m7',why:'The record states the as-deployed state, so it closes last.'}
+ ],
+ pathSet:'Some cards sit on the wrong side of the handoff. Read the notes on the marked cards.',
+ pathOrder:'The right seven sit above the line and the other work sits below it. The order inside the path is out of place on the marked cards.',
+ pathOk:'The path holds, in an order that respects what must close before what.',
+ summary:{
+  idle:'Choose a problem and a signal, then check again.',
+  some:'Part of the assembly needs another look. Read the notes on each part and check again.',
+  all:'The problem, the path and the signal all hold. Each move closes before the one that depends on it opens.'
+ },
+ initial:['m6','d1','m2','m7','m4','m1','d3','m5','m3','d2'],
+ aboveCount:7
+};
+
+const MOVES={};COPY.moves.forEach(function(m){MOVES[m.id]=m;});
+COPY.distractors.forEach(function(m){MOVES[m.id]=m;});
+function isDistractor(id){return id.charAt(0)==='d';}
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+
+let order=COPY.initial.slice();
+let flags={};   /* path feedback keyed by card id, cleared whenever the order changes */
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#problemLegend').textContent=COPY.problemLegend;
+$('#signalLegend').textContent=COPY.signalLegend;
+$('#pathNote').textContent=COPY.pathNote;
+
+function radios(host,name,items){
+  items.forEach(function(o){
+    const inp=h('input',{type:'radio',name:name,value:o.id});
+    inp.addEventListener('change',function(){$('#fb-'+name).className='fb';$('#fb-'+name).textContent='';});
+    host.appendChild(h('label',{class:'opt'},[inp,h('span',{text:o.text})]));
+  });
+}
+radios($('#problem'),'problem',COPY.problem);
+radios($('#signal'),'signal',COPY.signal);
+
+/* The path */
+function renderPath(focusSpec){
+  const ol=$('#path');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    if(i===COPY.aboveCount){
+      const d=h('li',{class:'divider','aria-hidden':'true',text:COPY.handoff});
+      ol.appendChild(d);
+    }
+    const m=MOVES[id];
+    const f=flags[id];
+    const card=h('li',{class:'pcard'+(f?' '+f.s:''),'data-id':id});
+    const zone=(i<COPY.aboveCount)?('Position '+fmt(i+1)+' in the path'):'After the handoff';
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:zone}),h('br'),
+      h('span',{class:'ptitle',text:m.title}),h('br'),
+      h('span',{class:'pdesc',text:m.desc})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: '+m.title,text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: '+m.title,text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function move(id,dir){
+  const i=order.indexOf(id), j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  $('#fb-path').className='fb';$('#fb-path').textContent='';
+  renderPath(id+':'+(dir<0?'up':'down'));
+  const pos=order.indexOf(id);
+  $('#live').textContent=pos<COPY.aboveCount?(MOVES[id].title+' is now at position '+fmt(pos+1)+' in the path.'):(MOVES[id].title+' is now after the handoff.');
+}
+
+/* Keys */
+function setFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m));
+}
+function checkChoice(name,items,first){
+  const sel=document.querySelector('input[name='+name+']:checked');
+  if(!sel)return {s:'idle',m:'Choose one.'};
+  const o=items.filter(function(x){return x.id===sel.value;})[0];
+  if(o.ok)return {s:'ok',m:o.okMsg};
+  return {s:'bad',m:o.whyNot+' '+first};
+}
+function checkPath(){
+  const above=order.slice(0,COPY.aboveCount);
+  const below=order.slice(COPY.aboveCount);
+  const f={};
+  let setErr=false,orderErr=false;
+  above.forEach(function(id){if(isDistractor(id)){f[id]={s:'bad',m:COPY.premature};setErr=true;}});
+  below.forEach(function(id){if(!isDistractor(id)){f[id]={s:'bad',m:COPY.belongsAbove};setErr=true;}});
+  const pos={};above.forEach(function(id,i){pos[id]=i;});
+  COPY.deps.forEach(function(d){
+    if(pos[d.before]!==undefined&&pos[d.after]!==undefined&&pos[d.before]>pos[d.after]){
+      if(!f[d.after])f[d.after]={s:'near',m:'Out of place. '+d.why};
+      orderErr=true;
+    }
+  });
+  let res;
+  if(setErr)res={s:'bad',m:COPY.pathSet};
+  else if(orderErr)res={s:'near',m:COPY.pathOrder};
+  else{
+    res={s:'ok',m:COPY.pathOk};
+    above.forEach(function(id){f[id]={s:'ok',m:MOVES[id].why};});
+    below.forEach(function(id){f[id]={s:'ok',m:MOVES[id].ok};});
+  }
+  flags=f;
+  renderPath(null);
+  setFb($('#fb-path'),res);
+  return res.s;
+}
+
+$('#check').addEventListener('click',function(){
+  const p=checkChoice('problem',COPY.problem,COPY.problemFirst);
+  setFb($('#fb-problem'),p);
+  const pathState=checkPath();
+  const s=checkChoice('signal',COPY.signal,COPY.signalFirst);
+  setFb($('#fb-signal'),s);
+  const allOk=(p.s==='ok'&&pathState==='ok'&&s.s==='ok');
+  const anyIdle=(p.s==='idle'||s.s==='idle');
+  $('#summary').textContent=allOk?COPY.summary.all:(anyIdle?COPY.summary.idle:COPY.summary.some);
+});
+
+renderPath(null);
+})();
+</script>
+</body>
+</html>

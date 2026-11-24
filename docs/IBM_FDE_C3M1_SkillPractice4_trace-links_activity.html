@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trace a production service back to its source</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--edge:#73777D;--soft:#F1ECFF;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#8A40FC}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.chain{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.chain p{margin:.2rem 0}
+.chain .hint{color:var(--ink)}
+.stephead{display:flex;gap:.6rem;align-items:baseline;margin-bottom:.4rem}
+.stepid{font-size:.8rem;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:6px;padding:.1rem .5rem}
+.stepact{font-size:1.02rem;font-weight:600}
+.says{margin:.2rem 0 .7rem;padding:.5rem .7rem;border:1px solid var(--line);border-radius:6px;background:#fff}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:.4rem 0}
+.ctl label{font-weight:600;font-size:.92rem;min-width:12rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--edge);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+#second .btn{margin:.3rem .5rem .3rem 0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--accent-soft);color:var(--ink);border-color:var(--edge)}
+.bar{margin:10px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.tally{width:100%;border-collapse:collapse;margin:.5rem 0}
+.tally th,.tally td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line);vertical-align:top;font-size:.93rem}
+.tally td.num,.tally th.num{text-align:right}
+.live{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.ctl label{min-width:0;width:100%}.ctl select{width:100%}.stephead{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Trace a production service back to its source</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Terms</h2>
+<dl id="terms"></dl>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">The record you inherit</h2>
+<div class="chain" id="chain"></div>
+</section>
+
+<section aria-labelledby="h-trace">
+<h2 id="h-trace">Read it backward</h2>
+<p class="hint" id="traceNote"></p>
+<div id="links"></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the single copy</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" class="live" hidden></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`When operations inherits a production service, the record has to show where it came from and who allowed it. Read the record from the live endpoint back toward the source. At each link, decide whether an identifier holds it or only a name does. Stop at a name and say which identifier would close the link.`,
+ terms:[
+  ['Identifier','A recorded value that distinguishes one particular object from every other, even one with the same name.'],
+  ['Serving name','The name people use to call the service. It is optional and says nothing about which deployment sits behind it.'],
+  ['Source asset','The project asset the production copy descends from.'],
+  ['Test copy and production copy','Each promotion creates a new asset. The source, the test copy and the production copy are three different objects.'],
+  ['Approval record','The entry that connects the evaluated configuration to the candidate authorized for production.']
+ ],
+ chainHead:'The configuration section of the deployment record, in the order it was written:',
+ chain:[
+  'The source asset is src-0412.',
+  'The test copy is tst-0417, which records src-0412 as its source.',
+  'The test deployment is tdp-0421.',
+  'The approval reads "per board minutes". It carries no identifier.',
+  'The production copy is listed by name only: pt-coverage-summary.',
+  'The production deployment is listed by its serving name only: coverage_summary. It has no deployment identifier.'
+ ],
+ idNote:'Identifiers on this page are illustrative strings, not product formats.',
+ traceNote:'Start at the endpoint. Each link opens when the one before it holds. Nothing is timed.',
+ heldOpts:[['','Choose'],['id','An identifier holds it'],['name','Only a name or a phrase holds it']],
+ fixLabel:'Which recorded identity would close it?',
+ fixOpts:[
+  ['','Choose an identity'],
+  ['serving','The serving name, coverage_summary'],
+  ['copyId','The production copy\'s own asset identifier'],
+  ['minutes','The date of the board minutes'],
+  ['depId','The production deployment\'s own identifier'],
+  ['tname','The template name, pt-coverage-summary'],
+  ['apprId','An approval record identifier that cites the evaluated test asset and the production copy'],
+  ['space','The name of the production space']
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose how this link is held. If a name holds it, choose the identity that would close it.',
+  fixIdle:'Choose the identity that would close this link.',
+  idButName:'Look at what the record gives for this link. It gives a name or a phrase, not an identifier. First move: ask whether you could follow what it says to one object and no other.',
+  nameButId:'The record gives identifiers on both sides of this link. First move: read what the record gives for each object.',
+  nearFix:'Right that a name holds this link. The identity you chose belongs to a different object. Ask which object this link points to, and which recorded identifier belongs to that one.',
+  badFixName:'A name helps people recognize an object, and two objects can share one. First move: ask which object this link points to, then find the identifier that belongs to that object.',
+  badFixServing:'A serving name helps people address the service. It is not the identity of the deployment itself. First move: ask which object the endpoint reaches, then find the identifier that belongs to that object.'
+ },
+ summary:{
+  start:'Read the first link.',
+  mid:'That link holds. Read the next one.',
+  all:'The chain holds from the endpoint to the source. Three links were held by a name or a phrase, and each closes with the identifier of the object it points to.'
+ },
+ second:{
+  intro:'Hold the record and its repairs as they are. Add one event.',
+  swap:'A later release adds a second production copy with the same name',
+  restoreNote:'Restored. There is one production copy again.',
+  close:'A count above one means the link cannot show which object it means. The repaired chain gives one at every link. Nothing about the first release had to change for the name-held links to lose their meaning.'
+ }
+};
+
+/* The links, read backward. held is the keyed hold. fix is the keyed closing identity. */
+const LINKS=[
+ {id:'L1',act:'Endpoint to production deployment',
+  says:'The record names the production deployment by its serving name, coverage_summary. It gives no deployment identifier.',
+  held:'name',fix:'depId',
+  why:'Only a name holds this link. The deployment has an identity of its own, and the record needs it. The serving name lets people find the service, and it cannot tell a reviewer which deployment is behind it.'},
+ {id:'L2',act:'Production deployment to production copy',
+  says:'The record says the deployment uses the production copy of pt-coverage-summary. It gives the template name and no identifier for the copy.',
+  held:'name',fix:'copyId',
+  why:'Only a name holds this link. The production copy is a new asset, not the test copy moved, so it needs its own identifier. The template name belongs to every copy.'},
+ {id:'L3',act:'Production copy to approval and evaluation',
+  says:'The record says the release was approved "per board minutes". It gives no approval identifier and does not say which evaluated configuration the approval covers.',
+  held:'name',fix:'apprId',
+  why:'Only a phrase holds this link. An approval record needs an identifier that cites the evaluated test asset and the production copy. Then a reviewer can see which evidence supports which release.'},
+ {id:'L4',act:'Test deployment to test asset',
+  says:'The record gives the test deployment as tdp-0421 and the test asset as tst-0417, by identifier.',
+  held:'id',fix:null,
+  why:'An identifier holds this link on both sides. A reviewer can follow it to exactly one deployment and one asset.'},
+ {id:'L5',act:'Test asset to source asset',
+  says:'The record gives the test asset tst-0417, which records src-0412 as its source, by identifier.',
+  held:'id',fix:null,
+  why:'An identifier holds this link on both sides, so the chain reaches the source.'}
+];
+const CLOSING_WHY={
+ depId:'The deployment\'s own identifier.',
+ copyId:'The production copy\'s own asset identifier.',
+ apprId:'An approval record identifier that cites the evaluated asset and the production copy.'
+};
+const IDS=['depId','copyId','apprId'];
+const NAMES=['serving','tname','space','minutes'];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#chain').appendChild(h('p',null,[h('strong',{text:COPY.chainHead})]));
+COPY.chain.forEach(function(t,i){$('#chain').appendChild(h('p',{text:fmt(i+1)+'. '+t}));});
+$('#chain').appendChild(h('p',{class:'hint',text:COPY.idNote}));
+$('#traceNote').textContent=COPY.traceNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+$('#summary').textContent=COPY.summary.start;
+
+/* Link cards, one open at a time */
+let current=0;
+function showFb(box,el,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(el)el.className='card'+(res.s==='idle'?'':' '+res.s);
+}
+LINKS.forEach(function(k,i){
+  const card=h('article',{class:'card',id:'card-'+k.id});
+  if(i>0)card.hidden=true;
+  card.appendChild(h('div',{class:'stephead'},[h('span',{class:'stepid',text:'Link '+fmt(i+1)}),h('span',{class:'stepact',text:k.act})]));
+  card.appendChild(h('p',{class:'says',text:k.says}));
+  const held=h('select',{id:'held-'+k.id});
+  COPY.heldOpts.forEach(function(o){held.appendChild(option(o[0],o[1]));});
+  card.appendChild(h('div',{class:'ctl'},[h('label',{for:'held-'+k.id,text:'How this link is held'}),held]));
+  const fix=h('select',{id:'fix-'+k.id});
+  COPY.fixOpts.forEach(function(o){fix.appendChild(option(o[0],o[1]));});
+  const fixRow=h('div',{class:'ctl',id:'fixrow-'+k.id,hidden:'hidden'},[h('label',{for:'fix-'+k.id,text:COPY.fixLabel}),fix]);
+  card.appendChild(fixRow);
+  held.addEventListener('change',function(){fixRow.hidden=(held.value!=='name');if(held.value!=='name')fix.value='';});
+  card.appendChild(h('div',{class:'bar'},[h('button',{type:'button',class:'btn',id:'chk-'+k.id,text:'Check this link'})]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+k.id,role:'status','aria-live':'polite'}));
+  $('#links').appendChild(card);
+  $('#chk-'+k.id).addEventListener('click',function(){checkLink(i);});
+});
+
+/* Keys */
+function linkState(selHeld,selFix,k){
+  if(!selHeld)return {s:'idle',m:COPY.msg.idle};
+  if(selHeld==='id'){
+    return k.held==='id'?{s:'ok',m:k.why}:{s:'bad',m:COPY.msg.idButName};
+  }
+  if(k.held==='id')return {s:'bad',m:COPY.msg.nameButId};
+  if(!selFix)return {s:'idle',m:COPY.msg.fixIdle};
+  if(selFix===k.fix)return {s:'ok',m:k.why};
+  if(IDS.indexOf(selFix)>-1)return {s:'near',m:COPY.msg.nearFix};
+  if(selFix==='serving'&&k.id==='L1')return {s:'bad',m:COPY.msg.badFixServing};
+  return {s:'bad',m:COPY.msg.badFixName};
+}
+function checkLink(i){
+  const k=LINKS[i];
+  const r=linkState($('#held-'+k.id).value,$('#fix-'+k.id).value,k);
+  showFb($('#fb-'+k.id),$('#card-'+k.id),r);
+  if(r.s!=='ok')return;
+  $('#held-'+k.id).disabled=true;
+  $('#fix-'+k.id).disabled=true;
+  $('#chk-'+k.id).hidden=true;
+  if(i<LINKS.length-1){
+    const next=$('#card-'+LINKS[i+1].id);
+    next.hidden=false;
+    $('#held-'+LINKS[i+1].id).focus();
+    $('#summary').textContent=COPY.summary.mid;
+  }else{
+    $('#summary').textContent=COPY.summary.all;
+    $('#second').hidden=false;
+  }
+}
+
+/* Second pass: count the objects each link could mean once a second copy exists. */
+const COPIES=2;
+function couldMean(k,repaired){
+  /* A link held by an identifier can mean one object. A link held by a name or phrase that concerns the production copy can mean any copy that fits it. */
+  if(repaired||k.held==='id')return 1;
+  if(k.id==='L2'||k.id==='L3')return COPIES;
+  return null;
+}
+function renderCounts(){
+  const box=$('#vwrap');
+  box.textContent='';
+  box.appendChild(h('p',{text:'Two production copies now share the name pt-coverage-summary. The approval text fits either one.'}));
+  const tb=h('table',{class:'tally'});
+  tb.appendChild(h('thead',null,[h('tr',null,[
+    h('th',{scope:'col',text:'Link'}),
+    h('th',{scope:'col',class:'num',text:'Objects it could mean, as recorded'}),
+    h('th',{scope:'col',class:'num',text:'Objects it could mean, as repaired'})
+  ])]));
+  const body=h('tbody');
+  LINKS.forEach(function(k,i){
+    const a=couldMean(k,false);
+    if(a===null)return;
+    body.appendChild(h('tr',null,[
+      h('td',{text:'Link '+fmt(i+1)+': '+k.act}),
+      h('td',{class:'num',text:fmt(a)}),
+      h('td',{class:'num',text:fmt(couldMean(k,true))})
+    ]));
+  });
+  tb.appendChild(body);
+  box.appendChild(tb);
+  box.appendChild(h('p',{text:COPY.second.close}));
+}
+$('#swap').addEventListener('click',function(){
+  $('#restoreNote').textContent='';
+  renderCounts();
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

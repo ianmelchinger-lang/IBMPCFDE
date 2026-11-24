@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find the assignments that cross a boundary</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--edge:#73777D;--soft:#F1ECFF;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#8A40FC}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.reqs li strong{font-weight:700;color:var(--ink)}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem;margin:.4rem 0}
+.ctl label{font-weight:600;font-size:.92rem;min-width:7.5rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--edge);border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+.cells{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cell{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
+.cell.ok{border-color:var(--ok);border-width:2px}
+.cell.near{border-color:var(--near);border-width:2px}
+.cell.bad{border-color:var(--bad);border-width:2px}
+.cell.none{background:var(--soft)}
+.chk{display:flex;gap:.55rem;align-items:flex-start;font-weight:400;font-size:.95rem;cursor:pointer}
+.chk input{margin-top:.3rem;width:1.05rem;height:1.05rem;flex:0 0 auto;accent-color:var(--accent)}
+.ws{display:block;font-size:.8rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.detail{margin-top:.5rem}
+.detail label{display:block;font-weight:600;font-size:.85rem;margin:.35rem 0 .15rem}
+.detail select{width:100%}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+#second .btn{margin:.3rem .5rem .3rem 0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.93rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--accent-soft);color:var(--ink);border-color:var(--edge)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.tally{width:100%;border-collapse:collapse;margin:.5rem 0}
+.tally th,.tally td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line);vertical-align:top;font-size:.93rem}
+.tally td.num{text-align:right}
+.live{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.cells{grid-template-columns:1fr}.ctl label{min-width:0;width:100%}.ctl select{width:100%}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Find the assignments that cross a boundary</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-reqs">
+<h2 id="h-reqs">What the client requires</h2>
+<ul class="reqs" id="reqs"></ul>
+<h3>Four terms</h3>
+<dl id="terms"></dl>
+</section>
+
+<section aria-labelledby="h-place">
+<h2 id="h-place">Place the three stages</h2>
+<p class="hint" id="placeNote"></p>
+<div id="stages"></div>
+</section>
+
+<section aria-labelledby="h-roster">
+<h2 id="h-roster">Read the draft roster</h2>
+<p class="hint" id="rosterNote"></p>
+<div id="roster"></div>
+</section>
+
+<section aria-labelledby="h-note">
+<h2 id="h-note">Rule on one roster note</h2>
+<article class="card" id="card-note">
+<p id="noteText"></p>
+<div class="ctl"><label for="note-sel">It evidences</label><select id="note-sel"></select></div>
+<div class="fb" id="fb-note" role="status" aria-live="polite"></div>
+</article>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my work</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore all four requirements</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" class="live" hidden></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A separation is real only where role assignments differ. The client has four separation requirements and a draft roster. Place each stage in a workspace, find every assignment that lets someone cross a requirement, and decide what a roster note proves.`,
+ terms:[
+  ['Project','A workspace where engineers build and change solution assets.'],
+  ['Deployment space','A separately controlled workspace, with its own collaborators, that holds assets ready to run.'],
+  ['Stage','A label on a deployment space that records what it is for. It grants no permission.'],
+  ['Role levels','Admin manages the workspace and its collaborators. Editor changes what the workspace holds. Viewer reads and changes nothing.']
+ ],
+ placeNote:'Choose a workspace for each stage. Nothing is timed.',
+ rosterNote:'Tick every assignment that lets someone cross a requirement. For each one you tick, name the requirement it defeats and choose a replacement. The requirements on this page decide the answer, not the stage names.',
+ noteText:`A line on the roster reads: "Separation enforced by Production stage." Which requirement does that line evidence?`,
+ noteSel:[['','Choose'],['R1','R1'],['R2','R2'],['R3','R3'],['R4','R4'],['none','None of them']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ stageMsg:{
+  ok:{
+   dev:'Development belongs in the project, the workspace where engineers build and change solution assets. A deployment space holds assets ready to run, so building does not move there.',
+   test:'Test is a deployment space of its own, a separately controlled target where the change is evaluated before release.',
+   prod:'Production is its own deployment space, so the roles that apply there can differ from the roles in the project and in test.'
+  },
+  near:'The stage needs a workspace, which is right. The plan already has one where solution assets are built and changed. Ask which workspace that is.',
+  bad:'First move: ask where assets are built and changed, and where they are placed to run. A project does the first. A deployment space does the second.'
+ },
+ cellMsg:{
+  idle:'Name the requirement this assignment defeats and choose a replacement.',
+  nearReq:'The assignment is a crossing, which is right. The requirement is out of place. Read each requirement and ask which one this role\'s authority in production would defeat.',
+  nearRep:'The requirement is right. The replacement still lets this role change production assets, so the crossing stays open. Choose a role that cannot change them.',
+  bad:'First move: ask what this role may do in production, then read each requirement for who may do that.'
+ },
+ summary:{
+  idle:'Choose a workspace for every stage, finish the choices on each ticked assignment, and rule on the note, then check again.',
+  missed:'Not every crossing is flagged yet. First move: list who the requirements allow to change production, then read every production-space role against that list.',
+  some:'Some parts need another look. Read the notes on the marked items, change your choices and check again.',
+  all:'Every part holds. The boundary sits in the role assignments, and the stage label evidences none of it.'
+ },
+ second:{
+  intro:'The roster stays as it is. Change one requirement and see which assignments still cross.',
+  swap:'Drop R4: let other roles change production assets',
+  restoreNote:'Restored. All four requirements are in force again.',
+  note:'The inherited Admin entry has no workspace assignment behind it. Whatever the requirements say, the plan cannot count it as a control, because it records only workspace roles it can read.',
+  close:'The roster did not change. The requirements did, and the crossings moved with them. A crossing is defined by a requirement and a role assignment together.'
+ }
+};
+
+const REQS=[
+ ['R1','Every change is evaluated outside production before release.'],
+ ['R2','Whoever builds a change does not place it in production.'],
+ ['R3','A production change needs a recorded AI review board approval before promotion.'],
+ ['R4','Only platform operations changes production assets.']
+];
+
+const WS=[
+ {id:'proj',name:'claims-assist project'},
+ {id:'test',name:'claims-assist-test-space'},
+ {id:'prod',name:'claims-assist-prod-space'}
+];
+
+/* The draft roster. builder: prepares changes. ops: platform operations. canChange: the role level can change what the workspace holds. */
+const ROSTER=[
+ {id:'eng',who:'Enterprise AI deployment engineer (you)',builder:true,ops:false,
+  cells:{proj:{role:'Admin'},test:{role:'Editor'},prod:{role:'Editor'}}},
+ {id:'plat',who:'AI platform owner',builder:false,ops:false,
+  cells:{proj:{role:'Admin'},test:{role:'Viewer'},prod:{role:'Admin',note:'inherited from account; no workspace assignment'}}},
+ {id:'mrg',who:'Model risk and AI governance lead',builder:false,ops:false,
+  cells:{proj:{role:'Viewer'},test:{role:'Editor'},prod:{role:'Editor'}}},
+ {id:'sre',who:'Site reliability engineer, platform operations',builder:false,ops:true,
+  cells:{proj:{role:'Editor'},test:{role:'Viewer'},prod:{role:'Admin'}}},
+ {id:'rel',who:'Release and change manager',builder:false,ops:false,
+  cells:{proj:null,test:{role:'Viewer'},prod:{role:'Viewer'}}}
+];
+
+/* Per-cell explanations for flagged cells that are not crossings. */
+const NOT_CROSSING={
+ test:'Not a crossing. The requirements concern production. R1 needs someone able to change and evaluate assets in test, so an Editor there is working as intended.',
+ proj:'Not a crossing. The project is where engineers build and change assets. The requirements concern who may place a change in production.',
+ prodOps:'Not a crossing. R4 says only platform operations changes production assets, so this assignment is the requirement being met.',
+ view:'Not a crossing. A Viewer reads and changes nothing, so it cannot place a change anywhere.'
+};
+/* Per-cell explanation for each true crossing. */
+const CROSS_WHY={
+ 'eng-prod':'Crossing. You build changes, and an Editor in the production space can place them there. That defeats R2, and because you are not platform operations it defeats R4 as well.',
+ 'plat-prod':'Crossing, at best unverified. If the account really confers Admin in the production space, a role other than operations can change production assets, which defeats R4. If it does not, the roster is wrong. Either way the plan can count only a workspace role it can read.',
+ 'mrg-prod':'Crossing. The lead validates changes and needs Editor in test to evaluate them. An Editor in production lets a role other than operations change production assets, which defeats R4.'
+};
+
+/* The rule engine: which requirements does this assignment defeat, given the requirements in force. */
+function canChange(role){return role==='Admin'||role==='Editor';}
+function defeats(person,wsId,cell,inForce){
+  const out=[];
+  if(!cell||wsId!=='prod'||!canChange(cell.role))return out;
+  if(person.builder&&inForce.indexOf('R2')>-1)out.push('R2');
+  if(!person.ops&&inForce.indexOf('R4')>-1)out.push('R4');
+  return out;
+}
+function crossings(inForce){
+  const m={};
+  ROSTER.forEach(function(p){
+    WS.forEach(function(w){
+      const d=defeats(p,w.id,p.cells[w.id],inForce);
+      if(d.length)m[p.id+'-'+w.id]=d;
+    });
+  });
+  return m;
+}
+const ALL=REQS.map(function(r){return r[0];});
+const KEY=crossings(ALL);
+
+const STAGES=[
+ {id:'dev',label:'Development',key:'proj'},
+ {id:'test',label:'Test',key:'test'},
+ {id:'prod',label:'Production',key:'prod'}
+];
+const STAGE_OPTS=[['','Choose a workspace'],['proj','The claims-assist project'],['test','The test deployment space'],['prod','The production deployment space'],['new','A new deployment space named for the stage']];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+REQS.forEach(function(r){$('#reqs').appendChild(h('li',null,[h('strong',{text:r[0]+'. '}),r[1]]));});
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+$('#placeNote').textContent=COPY.placeNote;
+$('#rosterNote').textContent=COPY.rosterNote;
+$('#noteText').textContent=COPY.noteText;
+COPY.noteSel.forEach(function(o){$('#note-sel').appendChild(option(o[0],o[1]));});
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+/* Feedback */
+function showFb(box,el,res,cls){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(el){el.className=cls+(res.s==='idle'?'':' '+res.s);}
+}
+
+/* Stage placement */
+STAGES.forEach(function(s){
+  const sel=h('select',{id:'stage-'+s.id});
+  STAGE_OPTS.forEach(function(o){sel.appendChild(option(o[0],o[1]));});
+  const card=h('article',{class:'card',id:'card-stage-'+s.id});
+  card.appendChild(h('div',{class:'ctl'},[h('label',{for:'stage-'+s.id,text:s.label}),sel]));
+  card.appendChild(h('div',{class:'fb',id:'fb-stage-'+s.id,role:'status','aria-live':'polite'}));
+  $('#stages').appendChild(card);
+});
+function stageState(sel,s){
+  if(!sel)return {s:'idle',m:'Choose a workspace for this stage.'};
+  if(sel===s.key)return {s:'ok',m:COPY.stageMsg.ok[s.id]};
+  if(s.id==='dev'&&sel==='new')return {s:'near',m:COPY.stageMsg.near};
+  return {s:'bad',m:COPY.stageMsg.bad};
+}
+
+/* Roster */
+const REP=[['','Choose a replacement'],['none','No assignment'],['viewer','Viewer'],['editor','Editor'],['admin','Admin']];
+ROSTER.forEach(function(p){
+  const card=h('article',{class:'card',id:'card-'+p.id});
+  card.appendChild(h('h3',{text:p.who}));
+  const grid=h('div',{class:'cells'});
+  WS.forEach(function(w){
+    const c=p.cells[w.id];
+    const key=p.id+'-'+w.id;
+    if(!c){
+      grid.appendChild(h('div',{class:'cell none'},[h('span',{class:'ws',text:w.name}),'No assignment']));
+      return;
+    }
+    const txt=c.role+(c.note?' ('+c.note+')':'');
+    const cb=h('input',{type:'checkbox',id:'x-'+key});
+    const lab=h('label',{class:'chk'},[cb,h('span',null,[h('span',{class:'ws',text:w.name}),txt])]);
+    const rq=h('select',{id:'rq-'+key});
+    rq.appendChild(option('','Choose a requirement'));
+    REQS.forEach(function(r){rq.appendChild(option(r[0],r[0]));});
+    const rp=h('select',{id:'rp-'+key});
+    REP.forEach(function(o){rp.appendChild(option(o[0],o[1]));});
+    const det=h('div',{class:'detail',id:'det-'+key,hidden:'hidden'},[
+      h('label',{for:'rq-'+key,text:'Requirement it defeats'}),rq,
+      h('label',{for:'rp-'+key,text:'Replacement role'}),rp
+    ]);
+    const fb=h('div',{class:'fb',id:'fb-'+key,role:'status','aria-live':'polite'});
+    const cell=h('div',{class:'cell',id:'cell-'+key},[lab,det,fb]);
+    cb.addEventListener('change',function(){
+      det.hidden=!cb.checked;
+      if(!cb.checked){fb.className='fb';fb.textContent='';cell.className='cell';}
+    });
+    grid.appendChild(cell);
+  });
+  card.appendChild(grid);
+  $('#roster').appendChild(card);
+});
+
+function noCrossReason(p,wsId,cell){
+  if(wsId==='test')return NOT_CROSSING.test;
+  if(wsId==='proj')return NOT_CROSSING.proj;
+  if(cell.role==='Viewer')return NOT_CROSSING.view;
+  return NOT_CROSSING.prodOps;
+}
+function cellState(flagged,key,keyReq,reqSel,repSel){
+  /* Only called for a flagged cell. */
+  if(!key)return null;
+  if(!reqSel||!repSel)return {s:'idle',m:COPY.cellMsg.idle};
+  const reqOk=keyReq.indexOf(reqSel)>-1;
+  const repOk=(repSel==='none'||repSel==='viewer');
+  if(reqOk&&repOk)return {s:'ok',m:CROSS_WHY[key]};
+  if(reqOk&&!repOk)return {s:'near',m:COPY.cellMsg.nearRep};
+  if(!reqOk&&repOk)return {s:'near',m:COPY.cellMsg.nearReq};
+  return {s:'bad',m:COPY.cellMsg.bad};
+}
+function noteState(sel){
+  if(!sel)return {s:'idle',m:'Choose a requirement, or choose none.'};
+  if(sel==='none')return {s:'ok',m:'None. A stage is a label that records what a space is for. It grants and withholds nothing, so it evidences no requirement. Only role assignments do.'};
+  return {s:'bad',m:'First move: ask what a stage label lets or stops anyone from doing. A requirement is evidenced by a role assignment that someone can read.'};
+}
+
+let locked=false;
+function lockAll(){
+  locked=true;
+  document.querySelectorAll('main select, main input[type=checkbox]').forEach(function(i){i.disabled=true;});
+  $('#check').hidden=true;
+  $('#second').hidden=false;
+}
+
+$('#check').addEventListener('click',function(){
+  if(locked)return;
+  let all=true,anyIdle=false,missed=false;
+  STAGES.forEach(function(s){
+    const r=stageState($('#stage-'+s.id).value,s);
+    showFb($('#fb-stage-'+s.id),$('#card-stage-'+s.id),r,'card');
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  ROSTER.forEach(function(p){
+    WS.forEach(function(w){
+      const c=p.cells[w.id];
+      if(!c)return;
+      const key=p.id+'-'+w.id;
+      const flagged=$('#x-'+key).checked;
+      const keyReq=KEY[key];
+      const fb=$('#fb-'+key), cell=$('#cell-'+key);
+      if(flagged){
+        let r;
+        if(keyReq){r=cellState(true,key,keyReq,$('#rq-'+key).value,$('#rp-'+key).value);}
+        else{r={s:'bad',m:noCrossReason(p,w.id,c)};}
+        showFb(fb,cell,r,'cell');
+        if(r.s==='idle')anyIdle=true;
+        if(r.s!=='ok')all=false;
+      }else if(keyReq){
+        missed=true;all=false;
+      }
+    });
+  });
+  const nr=noteState($('#note-sel').value);
+  showFb($('#fb-note'),$('#card-note'),nr,'card');
+  if(nr.s==='idle')anyIdle=true;
+  if(nr.s!=='ok')all=false;
+  if(all){
+    $('#summary').textContent=COPY.summary.all;
+    lockAll();
+  }else if(anyIdle){
+    $('#summary').textContent=COPY.summary.idle;
+  }else if(missed){
+    $('#summary').textContent=COPY.summary.missed;
+  }else{
+    $('#summary').textContent=COPY.summary.some;
+  }
+});
+
+/* Second pass: the same roster with one requirement dropped. The inForce set is read from the requirements list. */
+function describe(p,wsId){
+  const c=p.cells[wsId];
+  return p.who+', '+WS.filter(function(w){return w.id===wsId;})[0].name+': '+c.role;
+}
+function renderTally(){
+  const box=$('#vwrap');
+  box.textContent='';
+  const before=crossings(ALL);
+  const after=crossings(ALL.filter(function(x){return x!=='R4';}));
+  const nb=Object.keys(before).length, na=Object.keys(after).length;
+  box.appendChild(h('p',null,[h('strong',{text:'Crossings under all four requirements: '}),fmt(nb)+'.']));
+  box.appendChild(h('p',null,[h('strong',{text:'Crossings with R4 dropped: '}),fmt(na)+'.']));
+  const tb=h('table',{class:'tally'});
+  tb.appendChild(h('thead',null,[h('tr',null,[h('th',{scope:'col',text:'Assignment'}),h('th',{scope:'col',text:'Defeats, all four'}),h('th',{scope:'col',text:'Defeats, R4 dropped'})])]));
+  const body=h('tbody');
+  Object.keys(before).forEach(function(k){
+    const parts=k.split('-');
+    const p=ROSTER.filter(function(x){return x.id===parts[0];})[0];
+    body.appendChild(h('tr',null,[
+      h('td',{text:describe(p,parts[1])+(p.cells[parts[1]].note?' ('+p.cells[parts[1]].note+')':'')}),
+      h('td',{text:before[k].join(', ')}),
+      h('td',{text:after[k]?after[k].join(', '):'None'})
+    ]));
+  });
+  tb.appendChild(body);
+  box.appendChild(tb);
+  box.appendChild(h('p',{text:COPY.second.note}));
+  box.appendChild(h('p',{text:COPY.second.close}));
+}
+$('#swap').addEventListener('click',function(){
+  $('#restoreNote').textContent='';
+  renderTally();
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

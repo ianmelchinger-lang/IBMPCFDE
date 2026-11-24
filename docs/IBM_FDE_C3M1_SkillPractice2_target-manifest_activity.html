@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Complete the manifest for the production space</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#D6CAFE;--edge:#73777D;--soft:#F1ECFF;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#8A40FC}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.rtitle{font-weight:600;font-size:1.02rem;margin:0}
+.rsub{margin:.1rem 0 .6rem;color:var(--muted);font-size:.93rem}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.field label{display:block;font-weight:600;font-size:.9rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--edge);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--ink)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn.small{padding:.3rem .7rem;font-size:.88rem;background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+#second .btn{margin:.3rem .5rem .3rem 0}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.93rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--accent-soft);color:var(--ink);border-color:var(--edge)}
+ol.path{list-style:none;margin:10px 0;padding:0}
+.ocard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:start}
+.ocard.ok{border-left:5px solid var(--ok)}
+.ocard.near{border-left:5px solid var(--near)}
+.ocard.bad{border-left:5px solid var(--bad)}
+.ocard .zone{font-size:.76rem;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.ocard .ptitle{font-weight:600}
+.ocard .pdesc{color:var(--muted);font-size:.93rem}
+.ocard .mv{display:flex;gap:.4rem;flex-wrap:wrap}
+.ocard .fb{grid-column:1 / -1;margin-top:.2rem}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.tally{width:100%;border-collapse:collapse;margin:.5rem 0}
+.tally th,.tally td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line);vertical-align:top;font-size:.93rem}
+.tally td.num,.tally th.num{text-align:right}
+.live{border-left:4px solid var(--accent);background:var(--soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.pair{grid-template-columns:1fr}.ocard{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Complete the manifest for the production space</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Six terms</h2>
+<dl id="terms"></dl>
+</section>
+
+<section aria-labelledby="h-case">
+<h2 id="h-case">What the case says</h2>
+<ul id="facts"></ul>
+</section>
+
+<section aria-labelledby="h-rows">
+<h2 id="h-rows">Complete the manifest</h2>
+<p class="hint" id="rowsNote"></p>
+<div id="rows"></div>
+</section>
+
+<section id="orderSec" hidden aria-labelledby="h-order">
+<h2 id="h-order">Order the build</h2>
+<p id="orderNote"></p>
+<ol class="path" id="order"></ol>
+</section>
+
+<div class="bar"><button type="button" class="btn" id="check">Check my manifest</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the model dependency</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" class="live" hidden></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`An asset can run in a space only when everything it needs is there too. A manifest lists each item the production space must hold or be told about, what the item is to the running unit, and how it gets there. Complete it, then put the build in order.`,
+ terms:[
+  ['Deployable unit','An asset plus every dependency it needs, in the same target space, to run.'],
+  ['Dependency','Another component the asset relies on, such as a deployed model or a retrieval resource.'],
+  ['Manifest','A list of each required item, its purpose, its target location and how it will arrive or be created.'],
+  ['Promotion','Creating a copy of a project asset in a deployment space.'],
+  ['Online deployment','An object that binds an asset in a space to an endpoint that can be called.'],
+  ['Release evidence','Material that supports the decision to release but is not needed for the unit to run.']
+ ],
+ facts:[
+  `The target is the production deployment space. The principal asset is the prompt template pt-coverage-summary, which holds the instructions and settings for a model.`,
+  `The template has variables, the named values that the prompt fills in. It calls a model that has to be deployed in the target space.`,
+  `The pilot also uses a retrieval index over the coverage rules, an evaluation set of ${fmt(200)} historical claims with known determinations, working notes from building the prompt, and a connection that the index uses to reach the rules.`,
+  `Nobody has yet checked how the retrieval index or the evaluation set can be made available in another space.`
+ ],
+ rowsNote:'For each row, choose what the item is to the running unit and how it reaches the production space. Nothing is timed.',
+ orderNote:'Three items have to be built in the production space. Put them in the order they must happen. Use the buttons to move a card up or down.',
+ classes:[
+  ['principal','Principal asset'],
+  ['dependency','Required to run (dependency)'],
+  ['evidence','Release evidence'],
+  ['deployment','Deployment object'],
+  ['projectonly','Project-only work'],
+  ['integration','Integration prerequisite']
+ ],
+ routes:[
+  ['entered','Entered into the space (promoted or added directly)'],
+  ['created','Created in the space, not promoted'],
+  ['unverified','Route unverified; location recorded'],
+  ['notcarried','Not carried into the space'],
+  ['handoff','Handed off to the integration work']
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose what it is and how it reaches the space.',
+  first:'First move: ask whether the running unit needs this item, whether it only supports the decision to release, or whether it stays behind. Then ask how it would get to the space.',
+  nearRoute:'What the item is to the unit is right. How it reaches the space is out of place. Ask whether the route for this kind of item has been established, or whether the object is made in the space itself.',
+  nearClass:'How it reaches the space is right. What the item is to the unit is out of place. Ask whether the unit needs it to run.',
+  nearRouteUnv:'What the item is to the unit is right. Nobody has established a route for this kind of resource, so the manifest records the route as unverified and notes where the item lives. It does not claim a transfer.'
+ },
+ stepIdle:'Put the three items in order, then check again.',
+ summary:{
+  idle:'Choose a class and a route for every row, then check again.',
+  some:'Some rows need another look. Read the notes on the marked rows, change your choices and check again.',
+  order:'The rows hold. Now order the three items that must be built, then check again.',
+  orderSome:'The order needs another look. Read the notes on the marked cards and check again.',
+  all:'The manifest holds, and so does the build order. Two routes stay unverified on purpose. The plan records them, so a successful transfer of the template cannot hide an incomplete unit.'
+ },
+ second:{
+  intro:'Hold the manifest fixed and change one fact about the template. Then see what the unit needs.',
+  swap:'Suppose the template calls no model deployed in the target space',
+  restoreNote:'Restored. The template calls a model deployed in the target space again.',
+  close:'The unit shrank with its dependencies: one row and one build step went away. It did not become complete. The retrieval index is still required to run, and its route is still unverified.'
+ }
+};
+
+/* The manifest. cls and route are the keyed values. build is the build step that applies, in the keyed order. */
+const ROWS=[
+ {id:'r1',title:'pt-coverage-summary',sub:'Prompt template. It has variables and calls a model deployed in the target space.',cls:'principal',route:'entered',
+  why:'The principal asset. Its variables decide how it enters the space, and the route is confirmed for this form of template. Its arrival says nothing yet about whether it can run.'},
+ {id:'r2',title:'Deployment of the model the template calls',sub:'The model deployment, in the production space.',cls:'dependency',route:'created',
+  why:'A dependency, and it must be deployed in the space before the template. It is made there, not carried over.'},
+ {id:'r3',title:'idx-coverage-rules',sub:'Retrieval index over the coverage rules.',cls:'dependency',route:'unverified',unv:true,
+  why:'Required to run. Its route into another space has not been established, so the manifest records it as required, with the route unverified and its location noted.'},
+ {id:'r4',title:'eval-coverage-200',sub:`Evaluation set: ${fmt(200)} historical claims with known determinations.`,cls:'evidence',route:'unverified',unv:true,
+  why:'Evidence for the decision to release, not something the unit needs to run. Its route is unverified, so the manifest records where the data lives and claims no promotable asset.'},
+ {id:'r5',title:'dep-coverage-summary',sub:'Online deployment that binds the template to a callable endpoint.',cls:'deployment',route:'created',
+  why:'A deployment object ties an asset to an endpoint. It is created in the target space once the template and its model are there.'},
+ {id:'r6',title:'Prompt exploration notes',sub:'Working notes from building the prompt. They exist only in the project.',cls:'projectonly',route:'notcarried',
+  why:'Work that stays in the project. The running unit does not need it.'},
+ {id:'r7',title:'conn-rules-index',sub:'The connection the index uses to reach the coverage rules.',cls:'integration',route:'handoff',
+  why:'A connection and its credentials are a separate integration prerequisite. The manifest names it and hands it off.'}
+];
+
+/* Build order. before: items that must come earlier. */
+const BUILD=[
+ {id:'r2',title:'Deploy the model the template calls',desc:'Model deployment, in the production space.'},
+ {id:'r1',title:'Enter the prompt template',desc:'pt-coverage-summary, in the production space.'},
+ {id:'r5',title:'Create the online deployment',desc:'dep-coverage-summary, in the production space.'}
+];
+const DEPS=[
+ {before:'r2',after:'r1',why:'The template calls the model, so the model\'s deployment has to be in the space first.'},
+ {before:'r1',after:'r5',why:'A deployment binds an asset that is already in the space, so the template comes before it.'}
+];
+const BUILD_OK={
+ r2:'First. Nothing the template needs at run time can be missing when it arrives.',
+ r1:'Second. It arrives into a space where its model is already deployed.',
+ r5:'Last. It binds a template that is in the space, with its model behind it.'
+};
+const INITIAL_ORDER=['r5','r1','r2'];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+let phase='rows';   /* rows, order, done */
+let order=INITIAL_ORDER.slice();
+let flags={};
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.terms.forEach(function(t){$('#terms').appendChild(h('dt',{text:t[0]}));$('#terms').appendChild(h('dd',{text:t[1]}));});
+COPY.facts.forEach(function(t){$('#facts').appendChild(h('li',{text:t}));});
+$('#rowsNote').textContent=COPY.rowsNote;
+$('#orderNote').textContent=COPY.orderNote;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+
+/* Feedback */
+function showFb(box,el,res,cls){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(el)el.className=cls+(res.s==='idle'?'':' '+res.s);
+}
+
+/* Row cards */
+ROWS.forEach(function(r){
+  const card=h('article',{class:'card',id:'card-'+r.id});
+  card.appendChild(h('p',{class:'rtitle',text:r.title}));
+  card.appendChild(h('p',{class:'rsub',text:r.sub}));
+  const cs=h('select',{id:'cls-'+r.id});
+  cs.appendChild(option('','Choose'));
+  COPY.classes.forEach(function(c){cs.appendChild(option(c[0],c[1]));});
+  const rs=h('select',{id:'rte-'+r.id});
+  rs.appendChild(option('','Choose'));
+  COPY.routes.forEach(function(c){rs.appendChild(option(c[0],c[1]));});
+  card.appendChild(h('div',{class:'pair'},[
+    h('div',{class:'field'},[h('label',{for:'cls-'+r.id,text:'What it is to the running unit'}),cs]),
+    h('div',{class:'field'},[h('label',{for:'rte-'+r.id,text:'How it reaches the production space'}),rs])
+  ]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+r.id,role:'status','aria-live':'polite'}));
+  $('#rows').appendChild(card);
+});
+
+/* Keys */
+function rowState(selCls,selRte,key){
+  if(!selCls||!selRte)return {s:'idle',m:COPY.msg.idle};
+  const cOk=selCls===key.cls, rOk=selRte===key.route;
+  if(cOk&&rOk)return {s:'ok',m:key.why};
+  if(cOk&&!rOk)return {s:'near',m:key.unv?COPY.msg.nearRouteUnv:COPY.msg.nearRoute};
+  if(!cOk&&rOk)return {s:'near',m:COPY.msg.nearClass};
+  return {s:'bad',m:COPY.msg.first};
+}
+function orderFlags(ord){
+  const f={};let bad=false;
+  const pos={};ord.forEach(function(id,i){pos[id]=i;});
+  DEPS.forEach(function(d){
+    if(pos[d.before]>pos[d.after]){
+      if(!f[d.after])f[d.after]={s:'near',m:'Out of place. '+d.why};
+      bad=true;
+    }
+  });
+  if(!bad)ord.forEach(function(id){f[id]={s:'ok',m:BUILD_OK[id]};});
+  return {flags:f,ok:!bad};
+}
+
+/* Order list */
+function itemFor(id){return BUILD.filter(function(b){return b.id===id;})[0];}
+function renderOrder(focusSpec){
+  const ol=$('#order');
+  ol.textContent='';
+  order.forEach(function(id,i){
+    const b=itemFor(id), f=flags[id];
+    const card=h('li',{class:'ocard'+(f?' '+f.s:'')});
+    card.appendChild(h('div',null,[
+      h('span',{class:'zone',text:'Position '+fmt(i+1)}),h('br'),
+      h('span',{class:'ptitle',text:b.title}),h('br'),
+      h('span',{class:'pdesc',text:b.desc})
+    ]));
+    const up=h('button',{type:'button',class:'btn small','data-mv':id+':up','aria-label':'Move up: '+b.title,text:'Move up'});
+    const dn=h('button',{type:'button',class:'btn small','data-mv':id+':down','aria-label':'Move down: '+b.title,text:'Move down'});
+    if(i===0)up.disabled=true;
+    if(i===order.length-1)dn.disabled=true;
+    if(phase==='done'){up.disabled=true;dn.disabled=true;}
+    up.addEventListener('click',function(){move(id,-1);});
+    dn.addEventListener('click',function(){move(id,1);});
+    card.appendChild(h('div',{class:'mv'},[up,dn]));
+    if(f){
+      const fb=h('div',{class:'fb '+f.s,role:'status'});
+      fb.appendChild(h('span',{class:'chip',text:COPY.chip[f.s]}));
+      fb.appendChild(document.createTextNode(f.m));
+      card.appendChild(fb);
+    }
+    ol.appendChild(card);
+  });
+  if(focusSpec){
+    let t=document.querySelector('[data-mv="'+focusSpec+'"]');
+    if(t&&t.disabled){
+      const other=focusSpec.replace(/:(up|down)$/,function(_,d){return d==='up'?':down':':up';});
+      t=document.querySelector('[data-mv="'+other+'"]');
+    }
+    if(t)t.focus();
+  }
+}
+function move(id,dir){
+  if(phase==='done')return;
+  const i=order.indexOf(id), j=i+dir;
+  if(j<0||j>=order.length)return;
+  order[i]=order[j];order[j]=id;
+  flags={};
+  renderOrder(id+':'+(dir<0?'up':'down'));
+  $('#live').textContent=itemFor(id).title+' is now at position '+fmt(order.indexOf(id)+1)+'.';
+}
+
+$('#check').addEventListener('click',function(){
+  if(phase==='rows'){
+    let all=true,anyIdle=false;
+    ROWS.forEach(function(r){
+      const res=rowState($('#cls-'+r.id).value,$('#rte-'+r.id).value,r);
+      showFb($('#fb-'+r.id),$('#card-'+r.id),res,'card');
+      if(res.s==='idle')anyIdle=true;
+      if(res.s!=='ok')all=false;
+    });
+    if(all){
+      ROWS.forEach(function(r){$('#cls-'+r.id).disabled=true;$('#rte-'+r.id).disabled=true;});
+      phase='order';
+      $('#orderSec').hidden=false;
+      renderOrder(null);
+      $('#check').textContent='Check the build order';
+      $('#summary').textContent=COPY.summary.order;
+    }else{
+      $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+    }
+  }else if(phase==='order'){
+    const res=orderFlags(order);
+    flags=res.flags;
+    if(res.ok){
+      phase='done';
+      renderOrder(null);
+      $('#check').hidden=true;
+      $('#second').hidden=false;
+      $('#summary').textContent=COPY.summary.all;
+    }else{
+      renderOrder(null);
+      $('#summary').textContent=COPY.summary.orderSome;
+    }
+  }
+});
+
+/* Second pass: the same manifest, computed again with the model dependency removed. */
+function manifestFacts(withoutModel){
+  const rows=ROWS.filter(function(r){return !(withoutModel&&r.id==='r2');});
+  const steps=BUILD.filter(function(b){return !(withoutModel&&b.id==='r2');});
+  return {
+    rows:rows.length,
+    steps:steps.length,
+    unverified:rows.filter(function(r){return r.route==='unverified';}).length,
+    requiredUnverified:rows.filter(function(r){return r.cls==='dependency'&&r.route==='unverified';}).length
+  };
+}
+function renderCompare(){
+  const a=manifestFacts(false), b=manifestFacts(true);
+  const box=$('#vwrap');
+  box.textContent='';
+  const tb=h('table',{class:'tally'});
+  tb.appendChild(h('thead',null,[h('tr',null,[
+    h('th',{scope:'col',text:'Measure'}),
+    h('th',{scope:'col',class:'num',text:'As planned'}),
+    h('th',{scope:'col',class:'num',text:'No model dependency'})
+  ])]));
+  const body=h('tbody');
+  [['Rows in the manifest',a.rows,b.rows],['Build steps',a.steps,b.steps],['Routes still unverified',a.unverified,b.unverified],['Required items with an unverified route',a.requiredUnverified,b.requiredUnverified]].forEach(function(r){
+    body.appendChild(h('tr',null,[h('td',{text:r[0]}),h('td',{class:'num',text:fmt(r[1])}),h('td',{class:'num',text:fmt(r[2])})]));
+  });
+  tb.appendChild(body);
+  box.appendChild(tb);
+  box.appendChild(h('p',{text:COPY.second.close}));
+}
+$('#swap').addEventListener('click',function(){
+  $('#restoreNote').textContent='';
+  renderCompare();
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#restore').focus();
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>
