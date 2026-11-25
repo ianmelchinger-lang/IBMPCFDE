@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit the identity and credential of each connection</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#d9d3ea;--soft:#f1edfb;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#0a4fc4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.cname{font-size:1.02rem;font-weight:600;margin:0 0 .4rem}
+.cell{border-top:1px solid var(--line);padding:.6rem 0}
+.cell:first-of-type{border-top:0}
+.cellhead{display:flex;flex-wrap:wrap;gap:.2rem .7rem;align-items:baseline}
+.fname{font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:.05rem .5rem}
+.fval{font-size:.98rem}
+.sel{display:grid;grid-template-columns:1fr 2fr;gap:10px 14px;margin-top:.45rem}
+.field label{display:block;font-weight:600;font-size:.88rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--muted);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--muted)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.sel{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Audit the identity and credential of each connection</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Four things a connection must show</h2>
+<dl id="defs"></dl>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">The binding table</h2>
+<p id="phaseNote" class="hint"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my audit</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the original checks</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" hidden>
+<p class="hint" id="vnote"></p>
+<div id="vcards"></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check these four bindings</button></div>
+<p id="vsummary" class="summary" role="status" aria-live="polite"></p>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A connection that works has been reached by someone. A connection that is defined runs as a named non-human identity, holds only the grants its directions need, resolves its credential by reference, and has been checked in the space where it will run. Audit four connections, mark each field sound or defective, and choose the correction for each defect. One connection has no defect.`,
+ defs:[
+  ['Principal','The identity a call runs as. A sound one is non-human, attributable to the workload, and named for what it does.'],
+  ['Grants','The operations that identity may perform. Sound grants equal the operations the connection\'s directions need, and no more.'],
+  ['Credential source','What proves the identity. A sound source is a reference to where the credential is held, not a value kept in the connection.'],
+  ['Target-space binding','Whether the connection has been checked in the production space, where it will run, and not only where it was built.']
+ ],
+ phase:{sort:'Mark each of the sixteen fields. For a defect, choose the correction. Nothing is timed.',done:'Every field holds. Nothing further is required here.'},
+ verdictOpts:[['sound','Sound'],['defective','Defective']],
+ corr:{
+  principal:[['sa','svc-claims-assist, the workload identity'],['new','A new identity named for the function, requested from the identity and access lead'],['tf','Keep svc-tf-apply and add a note'],['shared','A shared team login'],['person','Another engineer\'s login']],
+  grants:[['two','Read on claims_events and determinations only'],['allread','Read on every lakehouse table'],['insert','Read, plus insert on determinations'],['apply','Keep the apply rights and add monitoring']],
+  cred:[['kvPolicy','A reference to kv-claims/data/prod/policy-api'],['kvRules','A reference to kv-claims/data/prod/rules-index'],['kvDoc','A reference to kv-claims/data/prod/docstore'],['hide','Keep the value and restrict who can see the connection'],['space','Keep the value, stored in the production space settings']],
+  bind:[['check','Check the binding in the production space'],['promoted','Treat it as bound, because the connection was promoted'],['test','Check the binding in the test space'],['copy','Copy the connection definition again']]
+ },
+ fieldName:{principal:'Principal',grants:'Grants',cred:'Credential source',bind:'Target-space binding'},
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ test:{
+  principal:'Test the principal: is it non-human, attributable to this workload, and named for what it does? Ask whose access the call would carry if the person who built it left.',
+  grants:'Test the grants: do they equal the operations this connection\'s directions need, and no more? Ask what else this identity could do.',
+  cred:'Test the credential: does the connection hold a reference, or a value? Ask what travels wherever the configuration is copied.',
+  bind:'Test the binding: has anyone checked it in the space where the connection will run? Ask where it was last checked.'
+ },
+ firstMove:' First move: read the field against that test before you mark it.',
+ badCorr:{
+  principal:'A principal must be non-human, attributable to the workload, and granted only what the flow needs. Choose the one that meets all three.',
+  grants:'Grants should match the operations the flow performs. This option keeps or adds operations the flow does not use.',
+  cred:'A value kept anywhere in configuration travels with the configuration. The correction points to where the credential is held.',
+  bind:'Promotion shows that a definition was copied. Binding is shown by checking in the target space, not by assuming it from the copy.'
+ },
+ idle:'Mark this field, and choose a correction if it is defective.',
+ summary:{
+  idle:'Mark every field, and choose a correction for each defect, then check again.',
+  some:'Some fields need another look. Read the notes on the marked fields, change your choices and check again.',
+  all:'Every field holds. Six fields were defective across three connections, and one connection was sound throughout.'
+ },
+ second:{
+  intro:'Each connection above shows its binding as confirmed. Move one fact: suppose those confirmations were made in the development project, before promotion, and mark each binding again.',
+  swap:'Place the confirmations before promotion',
+  restoreNote:'Restored. The confirmations were made in the production space, as the table showed.',
+  note:'Illustrative variant: each confirmation below was recorded in the development project. It is not part of the real record.',
+  all:'None of the four is confirmed where it will run. A promoted connection proves only that a definition was copied. The rule holds whatever the platform does: verify the credential binding separately after promotion, in the space where the connection runs.'
+ }
+};
+
+/* The binding table. Each cell: value, key (sound or defective with accepted, near), okMsg. */
+const CONNS=[
+ {id:'b1',name:'conn-policy-api',cells:[
+  {f:'principal',value:'svc-claims-assist, the workload identity',key:{sound:true},okMsg:'Sound. A non-human workload identity, named for what it does.'},
+  {f:'grants',value:'Invoke the policy read operations (read group)',key:{sound:true},okMsg:'Sound. It can invoke the policy read operations and nothing else.'},
+  {f:'cred',value:'An API key typed into the connection settings',key:{ok:['kvPolicy'],near:['kvRules','kvDoc']},
+   okMsg:'Defective, and the correction is a reference. The typed value is replaced by a pointer whose source of truth is the vault path for this connection, so the value never sits in configuration. How the secret reaches the connection is a separate matter, and it stays open.',
+   nearMsg:'A reference is right. This path belongs to a different connection.'},
+  {f:'bind',value:'Checked and confirmed in the production space',key:{sound:true},okMsg:'Sound. Someone checked it in the production space, where it will run.'}
+ ]},
+ {id:'b2',name:'conn-claims-api',cells:[
+  {f:'principal',value:'svc-claims-assist, the workload identity',key:{sound:true},okMsg:'Sound. A non-human workload identity, named for what it does.'},
+  {f:'grants',value:'Invoke the claim-header read operation (read group)',key:{sound:true},okMsg:'Sound. It can invoke one read operation and nothing else.'},
+  {f:'cred',value:'A signed token issued to the workload when it runs; nothing stored in the connection',key:{sound:true},okMsg:'Sound. Nothing is stored in the connection, so nothing travels with a copy of the configuration.'},
+  {f:'bind',value:'Checked and confirmed in the production space',key:{sound:true},okMsg:'Sound. Someone checked it in the production space, where it will run.'}
+ ]},
+ {id:'b3',name:'conn-rules-index',cells:[
+  {f:'principal',value:'An engineer\'s personal login',key:{ok:['sa'],near:['new']},
+   okMsg:'Defective. A personal login ties production to one person and carries that person\'s other access. The workload identity already serves this flow.',
+   nearMsg:'A non-human identity is the right kind. An existing workload identity already serves this flow, and a new identity waits on the six-week review for no gain.'},
+  {f:'grants',value:'Read on the coverage-rules index',key:{sound:true},okMsg:'Sound as written. Read on the index is all the flow needs.'},
+  {f:'cred',value:'The engineer\'s personal credential',key:{ok:['kvRules'],near:['kvPolicy','kvDoc']},
+   okMsg:'Defective. A personal credential leaves with its owner. It is replaced by a reference to this connection\'s own vault path.',
+   nearMsg:'A reference is right. This path belongs to a different connection.'},
+  {f:'bind',value:'Not checked in the production space',key:{ok:['check'],near:['test']},
+   okMsg:'Defective. Nobody has seen this connection work in the production space. It is confirmed only after the check there.',
+   nearMsg:'Checking is right. The test space is not where this connection will run.'}
+ ]},
+ {id:'b4',name:'conn-lakehouse',cells:[
+  {f:'principal',value:'svc-tf-apply, the infrastructure apply identity',key:{ok:['sa','new'],near:[]},
+   okMsg:'Defective. The infrastructure apply identity exists to change infrastructure, not to read two tables. The workload identity scoped to the read is accepted, and so is a new identity requested with the six-week entitlement lead time.'},
+  {f:'grants',value:'Create, alter, read and write on every table in the lakehouse',key:{ok:['two'],near:['allread']},
+   okMsg:'Defective. Apply rights reach every table and every operation. The flow needs read on two tables.',
+   nearMsg:'Read is right. Every table is wider than the two the flow needs.'},
+  {f:'cred',value:'Resolved at run time through a reference; nothing stored in the connection',key:{sound:true},okMsg:'Sound as written. Nothing is stored in the connection.'},
+  {f:'bind',value:'Checked and confirmed in the production space',key:{sound:true},okMsg:'Sound. Someone checked it in the production space, where it will run.'}
+ ]}
+];
+const VCONNS=CONNS.map(function(c){
+  return {id:'v'+c.id,name:c.name,cells:[{f:'bind',value:'Confirmed in the development project, before promotion',key:{ok:['check'],near:['test']},
+   okMsg:'Defective. A confirmation made before promotion says nothing about the production space.',
+   nearMsg:'Checking is right. The test space is not where this connection will run.'}]};
+});
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#phaseNote').textContent=COPY.phase.sort;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+$('#vnote').textContent=COPY.second.note;
+
+function cellId(prefix,c,cell){return prefix+c.id+'-'+cell.f;}
+function buildConn(c,host,prefix){
+  const card=h('article',{class:'card',id:'card-'+prefix+c.id});
+  card.appendChild(h('p',{class:'cname',text:c.name}));
+  c.cells.forEach(function(cell){
+    const id=cellId(prefix,c,cell);
+    const v=h('select',{id:'v-'+id});
+    v.appendChild(option('','Choose'));
+    COPY.verdictOpts.forEach(function(o){v.appendChild(option(o[0],o[1]));});
+    const x=h('select',{id:'x-'+id});
+    x.appendChild(option('','Choose a correction'));
+    COPY.corr[cell.f].forEach(function(o){x.appendChild(option(o[0],o[1]));});
+    const fx=h('div',{class:'field',id:'fx-'+id},[h('label',{for:'x-'+id,text:'Correction'}),x]);
+    fx.hidden=true;
+    v.addEventListener('change',function(){fx.hidden=(v.value!=='defective');if(v.value!=='defective')x.value='';});
+    const cellEl=h('div',{class:'cell'},[
+      h('div',{class:'cellhead'},[h('span',{class:'fname',text:COPY.fieldName[cell.f]}),h('span',{class:'fval',text:cell.value})]),
+      h('div',{class:'sel'},[h('div',{class:'field'},[h('label',{for:'v-'+id,text:'Verdict'}),v]),fx]),
+      h('div',{class:'fb',id:'fb-'+id,role:'status','aria-live':'polite'})
+    ]);
+    card.appendChild(cellEl);
+  });
+  host.appendChild(card);
+}
+CONNS.forEach(function(c){buildConn(c,$('#cards'),'');});
+VCONNS.forEach(function(c){buildConn(c,$('#vcards'),'');});
+
+/* Keys */
+function evalCell(c,cell,idleMsg){
+  const id=cellId('',c,cell);
+  const v=$('#v-'+id).value,x=$('#x-'+id).value;
+  if(!v)return {s:'idle',m:idleMsg};
+  const k=cell.key;
+  if(k.sound){
+    if(v==='sound')return {s:'ok',m:cell.okMsg};
+    return {s:'bad',m:'This field holds. '+cell.okMsg.replace(/^Sound( as written)?\.\s*/,'')+' Read it against the test before you mark a defect.'};
+  }
+  if(v==='sound')return {s:'bad',m:COPY.test[cell.f]+COPY.firstMove};
+  if(!x)return {s:'idle',m:idleMsg};
+  if(k.ok.indexOf(x)>-1)return {s:'ok',m:cell.okMsg};
+  if(k.near.indexOf(x)>-1)return {s:'near',m:cell.nearMsg};
+  return {s:'bad',m:COPY.badCorr[cell.f]};
+}
+function showFb(box,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+}
+function runCheck(list,idleMsg){
+  let all=true,anyIdle=false;
+  list.forEach(function(c){
+    let worst='ok';
+    c.cells.forEach(function(cell){
+      const r=evalCell(c,cell,idleMsg);
+      showFb($('#fb-'+cellId('',c,cell)),r);
+      if(r.s==='idle')anyIdle=true;
+      if(r.s!=='ok')all=false;
+      const rank={ok:0,idle:1,near:2,bad:3};
+      if(rank[r.s]>rank[worst])worst=r.s;
+    });
+    $('#card-'+c.id).className='card '+(worst==='idle'?'':worst);
+  });
+  return {all:all,anyIdle:anyIdle};
+}
+function lockAll(list,state){
+  list.forEach(function(c){c.cells.forEach(function(cell){
+    const id=cellId('',c,cell);
+    $('#v-'+id).disabled=state;$('#x-'+id).disabled=state;
+  });});
+}
+function resetAll(list){
+  list.forEach(function(c){
+    c.cells.forEach(function(cell){
+      const id=cellId('',c,cell);
+      $('#v-'+id).value='';$('#x-'+id).value='';$('#fx-'+id).hidden=true;
+      $('#fb-'+id).className='fb';$('#fb-'+id).textContent='';
+    });
+    $('#card-'+c.id).className='card';
+  });
+}
+
+$('#check').addEventListener('click',function(){
+  const r=runCheck(CONNS,COPY.idle);
+  if(r.all){
+    lockAll(CONNS,true);
+    $('#phaseNote').textContent=COPY.phase.done;
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=r.anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass */
+$('#swap').addEventListener('click',function(){
+  $('#restoreNote').textContent='';
+  resetAll(VCONNS);
+  lockAll(VCONNS,false);
+  $('#vsummary').textContent='';
+  $('#vcheck').hidden=false;
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#v-'+cellId('',VCONNS[0],VCONNS[0].cells[0])).focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  const r=runCheck(VCONNS,COPY.idle);
+  if(r.all){
+    lockAll(VCONNS,true);
+    $('#vsummary').textContent=COPY.second.all;
+    $('#vcheck').hidden=true;
+  }else{
+    $('#vsummary').textContent=r.anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

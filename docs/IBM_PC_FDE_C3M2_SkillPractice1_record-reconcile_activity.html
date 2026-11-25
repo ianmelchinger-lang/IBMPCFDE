@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reconcile the draft connections against the map</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#d9d3ea;--soft:#f1edfb;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#0a4fc4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.card .lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:.05rem .5rem;letter-spacing:.04em;margin-bottom:.3rem}
+.stmt{margin:.2rem 0 .7rem;font-size:1.02rem}
+.sel{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+.field label{display:block;font-weight:600;font-size:.88rem;margin-bottom:.2rem}
+select{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--muted);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled{background:var(--soft);color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.6rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--muted)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+table.rows{width:100%;border-collapse:collapse;font-size:.93rem}
+table.rows th,table.rows td{text-align:left;vertical-align:top;padding:.4rem .5rem;border-top:1px solid var(--line)}
+table.rows th{white-space:nowrap;font-weight:600}
+table.rows tr.added td,table.rows tr.added th{background:var(--mark)}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.sel{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Reconcile the draft connections against the map</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-terms">
+<h2 id="h-terms">Four dispositions</h2>
+<dl id="defs"></dl>
+</section>
+
+<section aria-labelledby="h-map">
+<h2 id="h-map">The integration map</h2>
+<p class="hint" id="mapNote"></p>
+<div class="panel"><table class="rows" id="maptable"><tbody></tbody></table></div>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Place the eleven items</h2>
+<p id="phaseNote" class="hint"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my placements</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the original map</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" hidden>
+<p class="hint" id="vnote"></p>
+<div id="vcards"></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check this placement</button></div>
+<p id="vsummary" class="summary" role="status" aria-live="polite"></p>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const COPY={
+ lead:`A connection is defined only when every direction it carries traces to one row of the integration map, and every row has a record. A draft connections section lists five connections. Place each item below in one of four dispositions, then check.`,
+ defs:[
+  ['Pair','The item matches a map row. Record each direction it carries: what leaves, what comes back, and who starts it.'],
+  ['Strip','The item names a direction that no row asks for. Take it out of the record and send it where it can be decided.'],
+  ['Hold for design','A whole connection that no row names. Keep it, record nothing, and ask its owner what it is for.'],
+  ['Outside this section','A row that another part of the deployment owns. Name whose it is.']
+ ],
+ mapNote:'Nine rows. Each says which exchange the design calls for, who starts it, and the operation.',
+ rows:[
+  ['IMAP-01','Row 1','Policy terms at draft time','The assistant reads the provisions and endorsements in force from the policy master, through the published interface layer. Read.'],
+  ['IMAP-02','Row 2','Claim header at draft time','The assistant reads the claim header from the claims master, through the published interface layer. Read.'],
+  ['IMAP-03','Row 3','Claim-received notice','The claims master sends a notice to the assistant over a queue.'],
+  ['IMAP-04','Row 4','Approved determination','The platform sends the adjuster-approved determination to the claims master over a queue, under the write-function identity.'],
+  ['IMAP-05','Row 5','Nightly policy snapshot','A batch job copies policy data into the lakehouse each night, under a batch identity.'],
+  ['IMAP-06','Row 6','Coverage wordings for citation','The assistant reads published wordings from the coverage-rules index so each draft can cite the provision relied on. Read.'],
+  ['IMAP-07','Row 7','Adjuster request and sign-in','An adjuster signs in against the subsidiary directory and asks for a draft.'],
+  ['IMAP-08','Row 8','Platform logs','The platform sends request and error logs to the observability stack.'],
+  ['IMAP-09','Row 9','Outcome measurement','The assistant reads the claim-events and determinations tables in the lakehouse. Read only.']
+ ],
+ rowAdded:['IMAP-10','Row 10','Outcome record (illustrative)','The assistant writes each measurement run\'s outcome to the determinations table in the lakehouse. Write. Illustrative: not part of the real map.'],
+ phase:{sort:'Choose a disposition for each item, then the detail it needs. Nothing is timed.',done:'Every placement holds. Nothing further is required here.'},
+ disp:[['pair','Pair with a map row'],['strip','Strip an unmapped direction'],['hold','Hold for design'],['outside','Outside this section']],
+ detailLabel:{pair:'Which row asks for it?',strip:'Where does it go?',hold:'Who settles its purpose?',outside:'Whose is it?'},
+ dirLabel:'How does the record state the directions?',
+ owners:[['arch','Enterprise architect'],['plat','AI platform owner'],['integ','Integration engineer, systems of record'],['iam','Identity and access lead'],['sre','Site reliability engineer, platform operations'],['stew','Data steward, policy and claims data'],['dir','Claims operations director']],
+ dests:[['design','Route to design review'],['leave','Leave it in place until it is used'],['delete','Delete it'],['record','Record it as a write direction']],
+ dirs:[
+  ['collapse','One record that says "connected"'],
+  ['out','Request out: a read. The response coming back is not recorded'],
+  ['both','Request out: a read the assistant starts. Response back: the data. Both recorded'],
+  ['rw','Request out: read and write']
+ ],
+ dirsV:[
+  ['collapse','One record that says "connected"'],
+  ['readrec','Request out: a read the assistant starts. Response back: the data. Both recorded'],
+  ['writeboth','Request out: a write the assistant starts, marked as changing its source. Response back: an acknowledgement. Both recorded'],
+  ['out','Request out: a write. The response coming back is not recorded']
+ ],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a disposition and the detail it asks for.',
+  first:'First move: find the row that asks for it, if there is one, then ask which of the four dispositions that result calls for.',
+  badPair:'A pair needs a map row that asks for this exact direction. Check the counterparty, the operation and who starts it against the nine rows.',
+  badStrip:'Strip only what no row asks for. Check whether any row asks for this before you take it out.',
+  badHold:'Hold applies to a whole connection that no row names. Check whether any row asks for this.',
+  badOutside:'Outside applies to a row that another part of the deployment owns. Check whether this belongs to one of the assistant\'s own connections.',
+  nearRow:'The disposition is right. The row is out of place: match on the counterparty and the purpose, not the name.',
+  nearDir:'The pairing holds. The way the directions are recorded is out of place: write what leaves, what comes back, and who starts it.',
+  nearDirCollapse:'The pairing holds. "Connected" is out of place: it hides the operation and the return path, so the grants, paths and monitoring for each direction cannot be worked out from it.',
+  nearDirOut:'The pairing holds. The return path is missing: the response carries information the request never did, and it needs its own record.',
+  nearBoth:'The disposition is right. Both the row and the way the directions are recorded are out of place.',
+  nearDest:'The disposition is right. Where it goes is out of place: a direction that no row asks for is decided by design, not removed on a guess or left to run.',
+  nearOwner:'The disposition is right. The owner is out of place: ask which role runs the system or arrangement the row touches.'
+ },
+ summary:{
+  idle:'Choose a disposition and its detail for every item, then check again.',
+  some:'Some placements need another look. Read the notes on the marked items, change your choices and check again.',
+  all:'Every placement holds. Four connections pair with four rows, one grant is stripped, one connection is held, and five rows belong elsewhere.'
+ },
+ second:{
+  intro:'The insert grant stays as it is. Change the map, then place the grant again.',
+  swap:'Add a row that approves the insert',
+  restoreNote:'Restored. No row asks for the insert, so it is stripped again.',
+  note:'Illustrative variant: the map has a tenth row, shown highlighted above. It is not part of the real map.',
+  idle:'Choose a disposition, its detail and how the directions are recorded.',
+  all:'The insert is unchanged. The map changed, so the grant now has a row and a strip no longer applies. A write with a row is designed, not undesigned, but it still changes its source: its record names who starts it and what it changes, and its grant, identity and return path now need design in later work.'
+ }
+};
+
+/* Items. key.disp is the keyed disposition. */
+const ITEMS=[
+ {id:'c1',label:'Draft item A',text:'conn-policy-api. The draft says: connected; reads policy and endorsement data.',
+  key:{disp:'pair',row:'IMAP-01',dir:'both'},
+  why:'Pair with row 1. The request carries the lookup out and the response carries the policy data back. Both directions are recorded, and the assistant starts the call.'},
+ {id:'r3',label:'Map row 3',text:'Claim-received notice, from the claims master to the assistant over a queue. No connection in the draft carries it.',
+  key:{disp:'outside',owner:'integ'},
+  why:'Outside this section. Queue traffic with the claims master belongs to the system-of-record access path, and the integration engineer owns that system.',
+  bad:{pair:'A row pairs with a connection that carries it. No connection in the draft carries this exchange, so there is nothing to pair.',strip:'Strip removes a direction from a record. This row has no record to strip.',hold:'Hold applies to a connection nobody designed. This row is designed. Ask whose system it touches.'}},
+ {id:'c5',label:'Draft item B',text:'conn-lakehouse, insert grant. The draft says: insert on the determinations table.',
+  key:{disp:'strip',dest:'design'},
+  why:'Strip, and route it to design review. No row asks the assistant to write to this table, and the one row for it is read only. Someone has to decide whether the write is wanted before anything records it.',
+  bad:{pair:'No row asks the assistant to write to this table. The nearest row, for outcome measurement, is read only. A pair needs a row that asks for this exact operation.'}},
+ {id:'c2',label:'Draft item C',text:'conn-claims-api. The draft says: connected; reads the claim header.',
+  key:{disp:'pair',row:'IMAP-02',dir:'both'},
+  why:'Pair with row 2. The request names the claim, and the response carries the header back. Both directions are recorded.'},
+ {id:'r7',label:'Map row 7',text:'Adjuster request and sign-in, against the subsidiary directory. No connection in the draft carries it.',
+  key:{disp:'outside',owner:'iam'},
+  why:'Outside this section. Sign-in runs against the subsidiary directory, and the identity and access lead owns who may sign in.',
+  bad:{pair:'A row pairs with a connection that carries it. No connection in the draft carries this exchange, so there is nothing to pair.',strip:'Strip removes a direction from a record. This row has no record to strip.',hold:'Hold applies to a connection nobody designed. This row is designed. Ask whose arrangement it touches.'}},
+ {id:'c6',label:'Draft item D',text:'conn-docstore. The draft says: connected; reads claim documents.',
+  key:{disp:'hold',owner:'arch'},
+  why:'Hold for the enterprise architect. None of the nine rows asks for this link, so it is undesigned. Recording it would make it look designed, and deleting it would remove something its owner may need. It stays unrecorded and undeleted until its purpose is settled.',
+  bad:{pair:'A pair needs a row that asks for this link. Read the nine rows for one that names the document store.',strip:'Taking it out settles a question nobody has answered. Ask whether the missing row is a defect in the connection or a gap in the design, and who decides.',outside:'Outside means another part of the deployment already owns a designed row. Check whether any row names this connection.'}},
+ {id:'c3',label:'Draft item E',text:'conn-rules-index. The draft says: connected; reads coverage wordings for citation.',
+  key:{disp:'pair',row:'IMAP-06',dir:'both'},
+  why:'Pair with row 6. The request asks for wordings, and the response returns the published text the draft will cite. Both directions are recorded.'},
+ {id:'r4',label:'Map row 4',text:'Approved determination, from the platform to the claims master over a queue. No connection in the draft carries it.',
+  key:{disp:'outside',owner:'integ'},
+  why:'Outside this section. Writes to the claims master go through its existing transactions, and the access path to that system is the integration engineer\'s to design.',
+  bad:{pair:'A row pairs with a connection that carries it. No connection in the draft carries this exchange, so there is nothing to pair.',strip:'Strip removes a direction from a record. This row has no record to strip.',hold:'Hold applies to a connection nobody designed. This row is designed. Ask whose system it touches.'}},
+ {id:'c4',label:'Draft item F',text:'conn-lakehouse, read grant. The draft says: connected; reads the claim-events and determinations tables to measure outcomes.',
+  key:{disp:'pair',row:'IMAP-09',dir:'both'},
+  why:'Pair with row 9, which is read only. The request names the tables, and the response returns the rows. The lakehouse also carries a second grant, placed separately.'},
+ {id:'r8',label:'Map row 8',text:'Platform logs, sent to the observability stack. No connection in the draft carries it.',
+  key:{disp:'outside',owner:'sre'},
+  why:'Outside this section. Routing logs belongs to platform operations, and the site reliability engineer owns that path.',
+  bad:{pair:'A row pairs with a connection that carries it. No connection in the draft carries this exchange, so there is nothing to pair.',strip:'Strip removes a direction from a record. This row has no record to strip.',hold:'Hold applies to a connection nobody designed. This row is designed. Ask whose system it touches.'}},
+ {id:'r5',label:'Map row 5',text:'Nightly policy snapshot into the lakehouse, by batch job. No connection in the draft carries it.',
+  key:{disp:'outside',owner:'integ'},
+  why:'Outside this section. The batch identity for the snapshot belongs to the integration engineer, so it is not a platform connection.',
+  bad:{pair:'A row pairs with a connection that carries it. No connection in the draft carries this exchange, so there is nothing to pair.',strip:'Strip removes a direction from a record. This row has no record to strip.',hold:'Hold applies to a connection nobody designed. This row is designed. Ask whose system it touches.'}}
+];
+const VITEM={id:'vi',label:'The same grant',text:'conn-lakehouse, insert grant on the determinations table. Row 10 now asks for it.',
+  key:{disp:'pair',row:'IMAP-10',dir:'writeboth'},
+  why:COPY.second.all,
+  bad:{strip:'Strip applied while no row asked for the write. A row asks for it now. Check the map again.',hold:'Hold applies to a connection that no row names. Row 10 names this one.',outside:'Outside applies to a row that another part of the deployment owns. Check whose row 10 is.'}};
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+COPY.defs.forEach(function(d){$('#defs').appendChild(h('dt',{text:d[0]}));$('#defs').appendChild(h('dd',{text:d[1]}));});
+$('#mapNote').textContent=COPY.mapNote;
+$('#phaseNote').textContent=COPY.phase.sort;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+$('#vnote').textContent=COPY.second.note;
+
+function renderMap(withAdded){
+  const tb=$('#maptable tbody');
+  tb.textContent='';
+  COPY.rows.concat(withAdded?[COPY.rowAdded]:[]).forEach(function(r,i){
+    const tr=h('tr',{class:(withAdded&&i===COPY.rows.length)?'added':''},[h('th',{scope:'row',text:r[1]}),h('td',{text:r[2]}),h('td',{text:r[3]})]);
+    tb.appendChild(tr);
+  });
+}
+renderMap(false);
+
+/* Cards */
+function rowOptions(withAdded){
+  const list=COPY.rows.concat(withAdded?[COPY.rowAdded]:[]);
+  return list.map(function(r){return [r[0],r[1]+': '+r[2]];});
+}
+function fillSelect(sel,prompt,pairs){
+  sel.textContent='';
+  sel.appendChild(option('',prompt));
+  pairs.forEach(function(p){sel.appendChild(option(p[0],p[1]));});
+}
+function buildCard(it,host,prefix,withAdded,dirSet){
+  const id=prefix+it.id;
+  const card=h('article',{class:'card',id:'card-'+id});
+  card.appendChild(h('span',{class:'lab',text:it.label}));
+  card.appendChild(h('p',{class:'stmt',text:it.text}));
+  const d=h('select',{id:'d-'+id});
+  fillSelect(d,'Choose a disposition',COPY.disp);
+  const x=h('select',{id:'x-'+id});
+  const r=h('select',{id:'r-'+id});
+  fillSelect(r,'Choose how it is recorded',dirSet);
+  const fx=h('div',{class:'field',id:'fx-'+id},[h('label',{for:'x-'+id,id:'lx-'+id,text:'Detail'}),x]);
+  const fr=h('div',{class:'field',id:'fr-'+id},[h('label',{for:'r-'+id,text:COPY.dirLabel}),r]);
+  fx.hidden=true;fr.hidden=true;
+  card.appendChild(h('div',{class:'sel'},[h('div',{class:'field'},[h('label',{for:'d-'+id,text:'Disposition'}),d]),fx,fr]));
+  card.appendChild(h('div',{class:'fb',id:'fb-'+id,role:'status','aria-live':'polite'}));
+  d.addEventListener('change',function(){
+    const v=d.value;
+    fx.hidden=!v;fr.hidden=(v!=='pair');
+    if(v){
+      $('#lx-'+id).textContent=COPY.detailLabel[v];
+      if(v==='pair')fillSelect(x,'Choose a row',rowOptions(withAdded));
+      else if(v==='strip')fillSelect(x,'Choose where it goes',COPY.dests);
+      else fillSelect(x,'Choose a role',COPY.owners);
+    }
+    r.value='';
+  });
+  host.appendChild(card);
+}
+ITEMS.forEach(function(it){buildCard(it,$('#cards'),'',false,COPY.dirs);});
+buildCard(VITEM,$('#vcards'),'v-',true,COPY.dirsV);
+
+/* Keys */
+function evalItem(it,prefix){
+  const id=prefix+it.id;
+  const d=$('#d-'+id).value,x=$('#x-'+id).value,r=$('#r-'+id).value;
+  if(!d||!x||(d==='pair'&&!r))return {s:'idle',m:(prefix?COPY.second.idle:COPY.msg.idle)};
+  const k=it.key;
+  if(d!==k.disp){
+    const generic={pair:COPY.msg.badPair,strip:COPY.msg.badStrip,hold:COPY.msg.badHold,outside:COPY.msg.badOutside}[d];
+    const specific=it.bad&&it.bad[d];
+    return {s:'bad',m:(specific||generic)+' '+COPY.msg.first};
+  }
+  if(d==='pair'){
+    const rowOk=(x===k.row),dirOk=(r===k.dir);
+    if(rowOk&&dirOk)return {s:'ok',m:it.why};
+    let dm=COPY.msg.nearDir;
+    if(r==='collapse')dm=COPY.msg.nearDirCollapse;
+    else if(r==='out')dm=COPY.msg.nearDirOut;
+    else if(prefix&&r==='readrec')dm='The pairing holds. The row now says write. A record of a read would hide that this direction changes its source.';
+    if(!rowOk&&!dirOk)return {s:'near',m:COPY.msg.nearBoth};
+    if(!rowOk)return {s:'near',m:COPY.msg.nearRow};
+    return {s:'near',m:dm};
+  }
+  if(d==='strip')return x===k.dest?{s:'ok',m:it.why}:{s:'near',m:COPY.msg.nearDest};
+  return x===k.owner?{s:'ok',m:it.why}:{s:'near',m:COPY.msg.nearOwner};
+}
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+function lockItem(prefix,id){
+  ['d-','x-','r-'].forEach(function(p){$('#'+p+prefix+id).disabled=true;});
+}
+function unlockItem(prefix,id){
+  ['d-','x-','r-'].forEach(function(p){$('#'+p+prefix+id).disabled=false;});
+}
+function resetItem(prefix,id){
+  $('#d-'+prefix+id).value='';
+  $('#x-'+prefix+id).value='';
+  $('#r-'+prefix+id).value='';
+  $('#fx-'+prefix+id).hidden=true;
+  $('#fr-'+prefix+id).hidden=true;
+  $('#fb-'+prefix+id).className='fb';
+  $('#fb-'+prefix+id).textContent='';
+  $('#card-'+prefix+id).className='card';
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  ITEMS.forEach(function(it){
+    const r=evalItem(it,'');
+    showFb($('#fb-'+it.id),$('#card-'+it.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    ITEMS.forEach(function(it){lockItem('',it.id);});
+    $('#phaseNote').textContent=COPY.phase.done;
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the same instrument, one assumption moved */
+$('#swap').addEventListener('click',function(){
+  renderMap(true);
+  $('#restoreNote').textContent='';
+  resetItem('v-',VITEM.id);
+  unlockItem('v-',VITEM.id);
+  $('#vsummary').textContent='';
+  $('#vcheck').hidden=false;
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#d-v-'+VITEM.id).focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  const r=evalItem(VITEM,'v-');
+  showFb($('#fb-v-'+VITEM.id),$('#card-v-'+VITEM.id),r);
+  if(r.s==='ok'){
+    lockItem('v-',VITEM.id);
+    $('#vsummary').textContent='The placement moved because the map moved.';
+    $('#vcheck').hidden=true;
+  }else{
+    $('#vsummary').textContent=r.s==='idle'?COPY.second.idle:'This placement needs another look. Read the note and check again.';
+  }
+});
+$('#restore').addEventListener('click',function(){
+  renderMap(false);
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>

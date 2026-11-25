@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bound every way a source can fail</title>
+<style>
+:root{--bg:#ffffff;--panel:#ffffff;--ink:#1b2430;--muted:#73777D;--line:#d9d3ea;--soft:#f1edfb;--accent:#8A40FC;--accent-ink:#ffffff;--accent-soft:#D6CAFE;--ok:#17653a;--ok-bg:#e4f2ea;--near:#744900;--near-bg:#fbefd6;--bad:#92282a;--bad-bg:#f8e3e1;--mark:#fff0b3;--focus:#0a4fc4}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:900px;margin:0 auto;padding:22px 16px 56px}
+.kicker{margin:0 0 .3rem;color:var(--muted);font-size:.82rem;letter-spacing:.05em;text-transform:uppercase}
+h1{margin:0 0 .6rem;font:600 1.6rem/1.25 Georgia,"Times New Roman",serif}
+h2{margin:1.8rem 0 .5rem;font:600 1.18rem/1.3 Georgia,"Times New Roman",serif}
+h3{margin:0 0 .35rem;font-size:1rem;font-weight:600}
+p{margin:.4rem 0 .8rem}
+ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+li{margin:.3rem 0}
+dl{margin:.4rem 0 .8rem}
+dt{font-weight:600;margin-top:.5rem}
+dd{margin:0 0 .2rem}
+.hint{color:var(--muted);font-size:.92rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.card.ok{border-left:5px solid var(--ok)}
+.card.near{border-left:5px solid var(--near)}
+.card.bad{border-left:5px solid var(--bad)}
+.card .lab{display:inline-block;font-size:.78rem;font-weight:700;color:var(--ink);background:var(--accent-soft);border-radius:6px;padding:.05rem .5rem;letter-spacing:.04em;margin-bottom:.3rem}
+.stmt{margin:.2rem 0 .3rem;font-size:1.02rem}
+.draft{display:inline-block;font-size:.85rem;border:1px dashed var(--muted);border-radius:6px;padding:.05rem .5rem;margin:.1rem 0 .7rem}
+.sel{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+.dl3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 14px}
+.field label{display:block;font-weight:600;font-size:.88rem;margin-bottom:.2rem}
+select,input[type=number]{font:inherit;font-size:.95rem;padding:.45rem .5rem;border:1px solid var(--muted);border-radius:6px;background:#fff;color:var(--ink);width:100%}
+select:disabled,input:disabled{background:var(--soft);color:var(--muted)}
+.btn{font:inherit;font-weight:600;padding:.55rem 1.1rem;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.secondary{background:#fff;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.chip{display:inline-block;padding:.08rem .6rem;border-radius:999px;font-size:.8rem;font-weight:700;margin-right:.45rem;border:1px solid transparent}
+.fb{margin-top:.5rem;font-size:.95rem}
+.fb:empty{display:none}
+.fb.ok .chip{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.fb.near .chip{background:var(--near-bg);color:var(--near);border-color:var(--near)}
+.fb.bad .chip{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.fb.idle .chip{background:var(--soft);color:var(--ink);border-color:var(--muted)}
+.bar{margin:14px 0 4px}
+.summary{font-weight:600;min-height:1.5rem}
+table.bud{border-collapse:collapse;font-size:.95rem}
+table.bud th,table.bud td{text-align:left;padding:.25rem 1rem .25rem 0}
+table.bud td.n{text-align:right}
+mark{background:var(--mark);color:var(--ink);padding:0 .15rem;border-radius:3px}
+#second .btn{margin:.3rem .5rem .3rem 0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:480px){.wrap{padding:16px 12px 40px}h1{font-size:1.35rem}.cols,.sel,.dl3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header>
+<p class="kicker">Skill practice</p>
+<h1>Bound every way a source can fail</h1>
+<p id="lead"></p>
+</header>
+
+<section aria-labelledby="h-given">
+<h2 id="h-given">What the design gives you</h2>
+<div class="panel cols">
+<div>
+<h3>The time available</h3>
+<table class="bud" id="bud"><tbody></tbody></table>
+<p class="hint" id="budNote"></p>
+</div>
+<div>
+<h3>What a draft must do</h3>
+<ul id="reqs"></ul>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="h-dl">
+<h2 id="h-dl">Set the deadline for each connection</h2>
+<p class="hint" id="dlNote"></p>
+<div class="dl3" id="deadlines"></div>
+</section>
+
+<section aria-labelledby="h-work">
+<h2 id="h-work">Complete the six state rows</h2>
+<p id="phaseNote" class="hint"></p>
+<div id="cards"></div>
+<div class="bar"><button type="button" class="btn" id="check">Check my matrix</button></div>
+<p id="summary" class="summary" role="status" aria-live="polite"></p>
+</section>
+
+<section id="second" class="panel" hidden aria-labelledby="h-second">
+<h2 id="h-second" style="margin-top:0">Move one assumption</h2>
+<p id="secondIntro"></p>
+<button type="button" class="btn secondary" id="swap"></button>
+<button type="button" class="btn secondary" id="restore" hidden>Restore the original budget</button>
+<p id="restoreNote" class="hint" role="status" aria-live="polite"></p>
+<div id="vwrap" hidden>
+<p class="hint" id="vnote"></p>
+<table class="bud" id="vbud"><tbody></tbody></table>
+<div class="dl3" id="vdeadlines"></div>
+<div class="bar"><button type="button" class="btn" id="vcheck">Check these deadlines</button></div>
+<p id="vsummary" class="summary" role="status" aria-live="polite"></p>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const fmt=function(n,d){return Number(n).toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});};
+
+/* All copy and keys live in this block. */
+const BUDGET=6.0, GEN=3.0, GEN_V=3.5;
+const CEIL=BUDGET-GEN;       /* the longest any read may wait */
+const CEIL_V=BUDGET-GEN_V;   /* second pass */
+
+const COPY={
+ lead:`A call that can wait without limit, repeat without limit, or fail without a trace is not finished. Set a deadline for three connections, then complete six source states: whether to retry, what the adjuster sees, and which signal the team receives. A call that reaches its deadline is treated as unavailable.`,
+ budRows:[['A draft must be back within (95th percentile)',BUDGET],['Generation needs, after the last input arrives',GEN]],
+ budNote:'The three reads and the retrieval run in parallel, so one wait bounds all of them.',
+ reqs:[
+  'A determination letter must cite the policy provision relied on. No citation, no draft.',
+  'When an input is missing, the draft says which input is missing.',
+  'The design reads policy data live at draft time. A nightly snapshot is current only to its cutoff, and no requirement lets it stand in for a live read.',
+  'The month-end close runs on the last two and first three business days. The interface runs at reduced capacity then.'
+ ],
+ dlNote:'Enter a deadline in seconds for each connection. The draft\'s own entries are shown for reference.',
+ conns:[
+  {id:'policy',name:'conn-policy-api',draft:'The draft says: 10 seconds',onPath:true},
+  {id:'rules',name:'conn-rules-index',draft:'The draft says: no deadline',onPath:true},
+  {id:'lake',name:'conn-lakehouse',draft:'The draft says: no deadline',onPath:false}
+ ],
+ dlBad:'A deadline is a positive number of seconds.',
+ dlOver:'That wait leaves too little time. Take the time the draft must be back, subtract the time generation needs after the last input, and keep every read within what is left.',
+ dlOkPath:function(c){return 'Within the ceiling: '+fmt(BUDGET,1)+' − '+fmt(GEN,1)+' = '+fmt(CEIL,1)+' seconds.';},
+ dlOkLake:function(c){return 'Within the ceiling. The lakehouse read is not on the draft\'s path, so the same limit is applied for consistency: '+fmt(BUDGET,1)+' − '+fmt(GEN,1)+' = '+fmt(CEIL,1)+' seconds.';},
+ phase:{sort:'For each state, choose the retry rule, what the adjuster sees, and the signal. Then check. Nothing is timed.',done:'Every deadline and every row holds. Nothing further is required here.'},
+ retry:[['none','No retry'],['noread','No synchronous read in this period'],['within','One retry, inside the deadline'],['three','Three retries on any error'],['next','Retry on the next measurement run, up to a stated number of attempts'],['unbounded','Retry until it succeeds']],
+ user:[['closed','No draft. The adjuster is told the draft cannot be produced'],['marked','A draft marked "incomplete inputs", with the missing inputs named'],['unmarked','A draft with no mark'],['stale','A draft built on last night\'s snapshot'],['uncited','A draft without a citation'],['untouched','The draft is untouched. Only the measurement run is affected']],
+ signal:[['thr','Throttled: the source asked callers to ease off'],['cred','Credential refused, sent to the secrets and keys engineer'],['cert','Certificate untrusted, sent to the secrets and keys engineer'],['unav','Source unavailable'],['sched','Reduced capacity by schedule, deferred by calendar'],['none','No signal; the failure is logged only']],
+ chip:{ok:'Correct',near:'Close',bad:'Look again',idle:'Not yet chosen'},
+ msg:{
+  idle:'Choose a retry rule, an outcome and a signal for this state.',
+  attemptsLabel:'Attempts per run',
+  attemptsBad:'A bound is a whole number of attempts, at least one.',
+  first:'First move: name the state. Then ask whether a repeat can change it, how much the missing input matters, and which cause the team must be able to tell apart.',
+  unbounded:'Every repeat needs a bound inside the deadline or the run.',
+  userGeneric:'Ask how much the missing input matters. If the draft cannot be acted on safely without it, withhold the draft. If a partial draft still has value, mark what is missing.',
+  userStale:'The design reads policy data live, and no requirement lets an older snapshot stand in. Use an older value only where a requirement says so.',
+  userUncited:'A determination letter must cite a provision, so a draft without one cannot go out.',
+  userUnmarked:'When an input is missing the draft must say which one, so an unmarked draft hides the gap.',
+  signalGeneric:'Ask which cause the team must be able to tell apart from the others. A signal that merges causes sends the wrong person to the wrong fix.',
+  signalCert:'An untrusted certificate is not an outage. The cause and the fix differ, so the signal must tell them apart.',
+  nearHead:'One part is out of place. '
+ },
+ summary:{
+  idle:'Complete every deadline and every row, then check again.',
+  some:'Some entries need another look. Read the notes on the marked ones, change your choices and check again.',
+  all:'Every deadline and every state holds. No source state waits without limit, repeats without limit, or fails without a signal.'
+ },
+ second:{
+  intro:'Your deadlines hold within the time available. Move one assumption: suppose generation needs longer, and see where the same deadlines land.',
+  swap:'Let generation need 3.5 seconds',
+  restoreNote:'Restored. Generation needs 3.0 seconds again.',
+  note:'Illustrative variant: generation needs 3.5 seconds. That figure is not part of the case, and nothing here is scored.',
+  idle:'Enter a deadline for each connection.',
+  all:'The ceiling moved from 3.0 to 2.5 seconds, so a deadline that fit before can now make the answer late. The wait is set by what generation leaves, not by what the source usually takes.'
+ }
+};
+
+/* The six state rows. */
+const ROWS=[
+ {id:'s1',conn:'conn-policy-api',state:'Throttled',desc:'The interface answers that it has too many requests and asks callers to ease off.',draft:'The draft says: three retries on any error',
+  key:{retry:['none'],user:'marked',signal:'thr'},never:true,
+  retryMsg:'Ask whether an immediate repeat helps when the source is asking callers to ease off.',
+  why:'No retry: a repeat spends capacity the callers share and makes the throttle worse. The adjuster gets a draft marked "incomplete inputs" with the missing policy terms named. The signal names the throttle, so the team sees a demand problem and not an outage.'},
+ {id:'s2',conn:'conn-policy-api',state:'Credential refused',desc:'The interface answers that the credential is not accepted.',draft:'The draft says: three retries on any error',
+  key:{retry:['none'],user:'marked',signal:'cred'},never:true,
+  retryMsg:'Ask whether the same credential will be accepted on a second try.',
+  why:'No retry: a refused credential is refused again, and repeating risks a lockout. The draft is marked "incomplete inputs". The signal is its own, and it goes to the secrets and keys engineer, because the fix is a corrected credential, not more waiting.'},
+ {id:'s3',conn:'conn-policy-api',state:'Month-end close',desc:'The last two and first three business days of the month, when the interface runs at reduced capacity.',draft:'The draft says: fall back to last night\'s snapshot',
+  key:{retry:['noread'],user:'marked',signal:'sched'},never:false,
+  retryMsg:'Ask whether calls the source cannot serve should be made at all during the window.',
+  why:'No synchronous read in the window: the schedule is known, so the call is not attempted. The draft is marked "incomplete inputs" with the missing inputs named, and no snapshot stands in, because no requirement allows it. The signal records a scheduled reduction, not a fault.'},
+ {id:'s4',conn:'conn-rules-index',state:'Unavailable',desc:'The index does not answer, or the deadline passes.',draft:'The draft says: produce the draft without a citation',
+  key:{retry:['none','within'],user:'closed',signal:'unav'},never:false,
+  retryMsg:'Ask how many attempts fit inside the deadline, and what each one costs.',
+  why:'Fail closed: a determination letter must cite a provision, so without the wordings there is no draft. At most one retry inside the deadline is reasonable, and none is also correct. The signal says the source is unavailable.'},
+ {id:'s5',conn:'conn-rules-index',state:'Certificate untrusted',desc:'The index presents a certificate the platform does not trust.',draft:'The draft says: logged as unavailable',
+  key:{retry:['none'],user:'closed',signal:'cert'},never:true,
+  retryMsg:'Ask whether the same certificate will be trusted on a second try.',
+  why:'No retry: the same certificate is untrusted again. With no citation there is no draft, so it fails closed. The signal is distinct from an outage and goes to the secrets and keys engineer, who checks certificate status independently of the platform\'s own message.'},
+ {id:'s6',conn:'conn-lakehouse',state:'Unavailable',desc:'The lakehouse does not answer during a measurement run. No draft depends on it.',draft:'The draft says: not covered',
+  key:{retry:['next'],user:'untouched',signal:'unav'},never:false,
+  retryMsg:'Ask what bounded repeat could help a read that nobody is waiting for.',
+  why:'The draft is untouched, because nothing in a draft depends on this read. The measurement run retries on its next run, up to a stated number of attempts. Any bounded count is acceptable, and an unbounded one is not.'}
+];
+
+const $=function(s,r){return (r||document).querySelector(s);};
+function h(tag,attrs,kids){
+  const e=document.createElement(tag);
+  if(attrs){Object.keys(attrs).forEach(function(k){
+    if(k==='class')e.className=attrs[k];
+    else if(k==='text')e.textContent=attrs[k];
+    else e.setAttribute(k,attrs[k]);
+  });}
+  (kids||[]).forEach(function(c){e.appendChild(typeof c==='string'?document.createTextNode(c):c);});
+  return e;
+}
+function option(v,t){return h('option',{value:v,text:t});}
+
+/* Static content */
+$('#lead').textContent=COPY.lead;
+$('#budNote').textContent=COPY.budNote;
+COPY.reqs.forEach(function(t){$('#reqs').appendChild(h('li',{text:t}));});
+$('#dlNote').textContent=COPY.dlNote;
+$('#phaseNote').textContent=COPY.phase.sort;
+$('#secondIntro').textContent=COPY.second.intro;
+$('#swap').textContent=COPY.second.swap;
+$('#vnote').textContent=COPY.second.note;
+function renderBud(tbody,gen){
+  tbody.textContent='';
+  tbody.appendChild(h('tr',null,[h('th',{scope:'row',text:COPY.budRows[0][0]}),h('td',{class:'n',text:fmt(BUDGET,1)+' s'})]));
+  tbody.appendChild(h('tr',null,[h('th',{scope:'row',text:COPY.budRows[1][0]}),h('td',{class:'n',text:fmt(gen,1)+' s'})]));
+}
+renderBud($('#bud tbody'),GEN);
+
+/* Deadline inputs */
+function buildDeadlines(host,prefix){
+  COPY.conns.forEach(function(c){
+    const inp=h('input',{type:'number',id:prefix+'dl-'+c.id,min:'0',step:'0.1',inputmode:'decimal'});
+    host.appendChild(h('div',{class:'card',id:prefix+'dcard-'+c.id},[
+      h('span',{class:'lab',text:c.name}),
+      h('p',{class:'draft',text:c.draft}),
+      h('div',{class:'field'},[h('label',{for:prefix+'dl-'+c.id,text:'Deadline in seconds'}),inp]),
+      h('div',{class:'fb',id:prefix+'dfb-'+c.id,role:'status','aria-live':'polite'})
+    ]));
+  });
+}
+buildDeadlines($('#deadlines'),'');
+buildDeadlines($('#vdeadlines'),'v-');
+
+/* State rows */
+ROWS.forEach(function(r){
+  const retry=h('select',{id:'retry-'+r.id});
+  retry.appendChild(option('','Choose'));
+  COPY.retry.forEach(function(o){retry.appendChild(option(o[0],o[1]));});
+  const user=h('select',{id:'user-'+r.id});
+  user.appendChild(option('','Choose'));
+  COPY.user.forEach(function(o){user.appendChild(option(o[0],o[1]));});
+  const sig=h('select',{id:'sig-'+r.id});
+  sig.appendChild(option('','Choose'));
+  COPY.signal.forEach(function(o){sig.appendChild(option(o[0],o[1]));});
+  const att=h('input',{type:'number',id:'att-'+r.id,min:'1',step:'1',inputmode:'numeric'});
+  const fa=h('div',{class:'field',id:'fa-'+r.id},[h('label',{for:'att-'+r.id,text:COPY.msg.attemptsLabel}),att]);
+  fa.hidden=true;
+  retry.addEventListener('change',function(){fa.hidden=(retry.value!=='next');if(retry.value!=='next')att.value='';});
+  const card=h('article',{class:'card',id:'card-'+r.id},[
+    h('span',{class:'lab',text:r.conn+' · '+r.state}),
+    h('p',{class:'stmt',text:r.desc}),
+    h('p',{class:'draft',text:r.draft}),
+    h('div',{class:'sel'},[
+      h('div',{class:'field'},[h('label',{for:'retry-'+r.id,text:'Retry rule'}),retry,fa]),
+      h('div',{class:'field'},[h('label',{for:'user-'+r.id,text:'What the adjuster sees'}),user]),
+      h('div',{class:'field'},[h('label',{for:'sig-'+r.id,text:'Signal the team receives'}),sig])
+    ]),
+    h('div',{class:'fb',id:'fb-'+r.id,role:'status','aria-live':'polite'})
+  ]);
+  $('#cards').appendChild(card);
+});
+
+/* Keys */
+function showFb(box,cardEl,res){
+  box.className='fb '+res.s;
+  box.textContent='';
+  box.appendChild(h('span',{class:'chip',text:COPY.chip[res.s]}));
+  box.appendChild(document.createTextNode(res.m||''));
+  if(cardEl)cardEl.className='card '+(res.s==='idle'?'':res.s);
+}
+function evalDeadline(c,prefix,ceil,idleMsg){
+  const raw=$('#'+prefix+'dl-'+c.id).value;
+  if(raw==='')return {s:'idle',m:idleMsg,v:null};
+  const n=parseFloat(raw);
+  if(!isFinite(n)||n<=0)return {s:'bad',m:COPY.dlBad,v:n};
+  if(n>ceil+1e-9)return {s:'bad',m:prefix?('Over the ceiling by '+fmt(n-ceil,1)+' s: '+fmt(BUDGET,1)+' − '+fmt(GEN_V,1)+' = '+fmt(ceil,1)+' seconds. The answer would arrive after '+fmt(BUDGET,1)+' seconds.'):COPY.dlOver,v:n};
+  if(prefix)return {s:'ok',m:'Within the ceiling: '+fmt(BUDGET,1)+' − '+fmt(GEN_V,1)+' = '+fmt(ceil,1)+' seconds.',v:n};
+  return {s:'ok',m:c.onPath?COPY.dlOkPath(c):COPY.dlOkLake(c),v:n};
+}
+function evalRow(r){
+  const rt=$('#retry-'+r.id).value,us=$('#user-'+r.id).value,sg=$('#sig-'+r.id).value;
+  if(!rt||!us||!sg)return {s:'idle',m:COPY.msg.idle};
+  let attemptsOk=true;
+  if(rt==='next'){
+    const a=$('#att-'+r.id).value;
+    if(a==='')return {s:'idle',m:COPY.msg.idle};
+    const n=Number(a);
+    attemptsOk=(isFinite(n)&&n>=1&&Math.floor(n)===n);
+  }
+  if(rt==='unbounded')return {s:'bad',m:COPY.msg.unbounded+' '+COPY.msg.first};
+  if(r.never&&rt==='three')return {s:'bad',m:r.retryMsg+' A repeat cannot fix this state, and it costs shared capacity or risks a lockout. '+COPY.msg.first};
+  const retryOk=r.key.retry.indexOf(rt)>-1&&attemptsOk;
+  const userOk=(us===r.key.user);
+  const sigOk=(sg===r.key.signal);
+  if(retryOk&&userOk&&sigOk)return {s:'ok',m:r.why};
+  const notes=[];
+  if(!retryOk)notes.push(rt==='next'&&!attemptsOk?COPY.msg.attemptsBad:r.retryMsg);
+  if(!userOk){
+    notes.push(us==='stale'?COPY.msg.userStale:us==='uncited'?COPY.msg.userUncited:us==='unmarked'?COPY.msg.userUnmarked:COPY.msg.userGeneric);
+  }
+  if(!sigOk)notes.push((r.id==='s5'&&sg==='unav')?COPY.msg.signalCert:COPY.msg.signalGeneric);
+  const wrong=(retryOk?0:1)+(userOk?0:1)+(sigOk?0:1);
+  if(wrong===1)return {s:'near',m:COPY.msg.nearHead+notes[0]};
+  return {s:'bad',m:notes.join(' ')+' '+COPY.msg.first};
+}
+
+function setDisabledAll(state){
+  COPY.conns.forEach(function(c){$('#dl-'+c.id).disabled=state;});
+  ROWS.forEach(function(r){['retry-','user-','sig-','att-'].forEach(function(p){$('#'+p+r.id).disabled=state;});});
+}
+
+$('#check').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  COPY.conns.forEach(function(c){
+    const r=evalDeadline(c,'',CEIL,'Enter a deadline in seconds.');
+    showFb($('#dfb-'+c.id),$('#dcard-'+c.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  ROWS.forEach(function(r){
+    const res=evalRow(r);
+    showFb($('#fb-'+r.id),$('#card-'+r.id),res);
+    if(res.s==='idle')anyIdle=true;
+    if(res.s!=='ok')all=false;
+  });
+  if(all){
+    setDisabledAll(true);
+    $('#phaseNote').textContent=COPY.phase.done;
+    $('#summary').textContent=COPY.summary.all;
+    $('#check').hidden=true;
+    $('#second').hidden=false;
+    COPY.conns.forEach(function(c){$('#v-dl-'+c.id).value=$('#dl-'+c.id).value;});
+  }else{
+    $('#summary').textContent=anyIdle?COPY.summary.idle:COPY.summary.some;
+  }
+});
+
+/* Second pass: the budget moves */
+$('#swap').addEventListener('click',function(){
+  renderBud($('#vbud tbody'),GEN_V);
+  $('#restoreNote').textContent='';
+  COPY.conns.forEach(function(c){
+    $('#v-dl-'+c.id).value=$('#dl-'+c.id).value;
+    $('#v-dl-'+c.id).disabled=false;
+    $('#v-dfb-'+c.id).className='fb';$('#v-dfb-'+c.id).textContent='';
+    $('#v-dcard-'+c.id).className='card';
+  });
+  $('#vsummary').textContent='';
+  $('#vcheck').hidden=false;
+  $('#vwrap').hidden=false;
+  $('#swap').hidden=true;
+  $('#restore').hidden=false;
+  $('#v-dl-'+COPY.conns[0].id).focus();
+});
+$('#vcheck').addEventListener('click',function(){
+  let all=true,anyIdle=false;
+  COPY.conns.forEach(function(c){
+    const r=evalDeadline(c,'v-',CEIL_V,COPY.second.idle);
+    showFb($('#v-dfb-'+c.id),$('#v-dcard-'+c.id),r);
+    if(r.s==='idle')anyIdle=true;
+    if(r.s!=='ok')all=false;
+  });
+  if(all){
+    COPY.conns.forEach(function(c){$('#v-dl-'+c.id).disabled=true;});
+    $('#vsummary').textContent=COPY.second.all;
+    $('#vcheck').hidden=true;
+  }else{
+    $('#vsummary').textContent=anyIdle?COPY.second.idle:'Some deadlines now exceed the ceiling. Read the notes, change them and check again.';
+  }
+});
+$('#restore').addEventListener('click',function(){
+  $('#vwrap').hidden=true;
+  $('#restore').hidden=true;
+  $('#swap').hidden=false;
+  $('#restoreNote').textContent=COPY.second.restoreNote;
+  $('#swap').focus();
+});
+})();
+</script>
+</body>
+</html>
